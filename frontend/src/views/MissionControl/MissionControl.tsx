@@ -65,7 +65,7 @@ export function MissionControl() {
           minimal
           text="К списку игр"
           className="!text-odi-text-muted"
-          onClick={() => navigate('/')}
+          onClick={() => navigate('/dashboard')}
         />
         <Button
           icon="rocket-slant"

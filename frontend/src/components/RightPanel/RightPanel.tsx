@@ -1,7 +1,8 @@
-import { Card, Tag } from '@blueprintjs/core'
+import { Card } from '@blueprintjs/core'
 import { useAppSelector } from '@/store'
 import { useViewMode } from '@/hooks/useViewMode'
 import { EmotionCompass } from './EmotionCompass'
+import { BotsList } from './BotsList'
 import { MiniChat } from '../Chat/MiniChat'
 
 export function RightPanel() {
@@ -31,15 +32,7 @@ export function RightPanel() {
         </Card>
       )}
 
-      <div>
-        <div className="text-xs text-odi-text-muted uppercase tracking-wider mb-2">
-          Текущий спикер
-        </div>
-        <div className="flex items-center gap-2 p-2 rounded bg-odi-surface-hover">
-          <Tag intent="primary" round minimal>AI</Tag>
-          <span className="text-sm">Модератор</span>
-        </div>
-      </div>
+      <BotsList />
 
       <MiniChat />
     </aside>

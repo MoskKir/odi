@@ -44,6 +44,15 @@ export const syncPreferencesToServer = createAsyncThunk(
 
 const saved = loadFromLocalStorage()
 
+export interface SessionBot {
+  id: string
+  specialistId: string
+  name: string
+  description: string
+  stars: number
+  tag?: string | null
+}
+
 interface AppState {
   devMode: boolean
   theme: Theme
@@ -56,6 +65,7 @@ interface AppState {
   currentEmotion: Emotion | null
   messages: ChatMessage[]
   cards: BoardCard[]
+  sessionBots: SessionBot[]
   rightPanelCollapsed: boolean
   leftSidebarCollapsed: boolean
   socketJoined: boolean
@@ -73,6 +83,7 @@ const initialState: AppState = {
   currentEmotion: null,
   messages: [],
   cards: [],
+  sessionBots: [],
   rightPanelCollapsed: false,
   leftSidebarCollapsed: false,
   socketJoined: false,
@@ -115,6 +126,12 @@ export const appSlice = createSlice({
       const { elapsed } = action.payload
       if (elapsed !== undefined) state.elapsed = elapsed
     },
+    setSessionTitle(state, action: PayloadAction<string>) {
+      state.sessionTitle = action.payload
+    },
+    setSessionBots(state, action: PayloadAction<SessionBot[]>) {
+      state.sessionBots = action.payload
+    },
     setSocketJoined(state, action: PayloadAction<boolean>) {
       state.socketJoined = action.payload
     },
@@ -147,6 +164,8 @@ export const {
   updateSession,
   updatePhase,
   setSocketJoined,
+  setSessionTitle,
+  setSessionBots,
   toggleRightPanel,
   toggleLeftSidebar,
 } = appSlice.actions

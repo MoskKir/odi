@@ -1,8 +1,9 @@
 import { useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAppDispatch } from '@/store'
-import { setMessages, addMessage, addCard, updateSession, updatePhase, setSocketJoined } from '@/store/appSlice'
+import { setMessages, addMessage, addCard, updateSession, updatePhase, setSocketJoined, setSessionTitle, setSessionBots } from '@/store/appSlice'
 import { connectSocket, disconnectSocket } from '@/api/socket'
+import { fetchGame } from '@/api/games'
 import type { ChatMessage, BoardCard } from '@/types'
 
 interface ServerChatMessage {
@@ -51,8 +52,23 @@ export function useGameSocket() {
 
     const joinSession = async () => {
       socket.emit('session:join', { sessionId })
-      const history = await loadHistory(sessionId)
-      if (mounted) dispatch(setMessages(history))
+      const [history, game] = await Promise.all([
+        loadHistory(sessionId),
+        fetchGame(sessionId).catch(() => null),
+      ])
+      if (mounted) {
+        dispatch(setMessages(history))
+        if (game?.title) {
+          dispatch(setSessionTitle(game.title))
+          document.title = game.title
+        }
+        if (game?.participants) {
+          const bots = game.participants
+            .filter((p) => p.botConfig)
+            .map((p) => p.botConfig!)
+          dispatch(setSessionBots(bots))
+        }
+      }
     }
 
     socket.on('session:joined', () => {

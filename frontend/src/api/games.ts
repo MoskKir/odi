@@ -22,7 +22,12 @@ export interface GameSessionResponse {
   completedAt: string | null
   createdAt: string
   scenario?: { title: string; subtitle: string; icon: string }
-  participants?: { id: string; role: string; slotIndex: number }[]
+  participants?: {
+    id: string
+    role: string
+    slotIndex: number
+    botConfig?: { id: string; specialistId: string; name: string; description: string; stars: number; tag?: string | null }
+  }[]
 }
 
 export interface GameListResponse {
@@ -61,6 +66,14 @@ export async function updateGameTitle(id: string, title: string): Promise<void> 
     body: JSON.stringify({ title }),
   })
   if (!res.ok) throw new Error('Failed to update title')
+}
+
+export async function fetchGame(id: string): Promise<GameSessionResponse> {
+  const res = await fetch(`${API_BASE}/${id}`, {
+    headers: getAuthHeaders(),
+  })
+  if (!res.ok) throw new Error('Failed to fetch game')
+  return res.json()
 }
 
 export async function fetchGames(params?: {

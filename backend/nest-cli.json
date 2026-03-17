@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json.schemastore.org/nest-cli",
+  "collection": "@nestjs/schematics",
+  "sourceRoot": "apps/gateway/src",
+  "monorepo": true,
+  "root": "apps/gateway",
+  "compilerOptions": {
+    "webpack": false,
+    "tsConfigPath": "apps/gateway/tsconfig.app.json"
+  },
+  "projects": {
+    "gateway": { "type": "application", "root": "apps/gateway", "entryFile": "main", "sourceRoot": "apps/gateway/src", "compilerOptions": { "tsConfigPath": "apps/gateway/tsconfig.app.json" } },
+    "auth": { "type": "application", "root": "apps/auth", "entryFile": "main", "sourceRoot": "apps/auth/src", "compilerOptions": { "tsConfigPath": "apps/auth/tsconfig.app.json" } },
+    "game": { "type": "application", "root": "apps/game", "entryFile": "main", "sourceRoot": "apps/game/src", "compilerOptions": { "tsConfigPath": "apps/game/tsconfig.app.json" } },
+    "ai": { "type": "application", "root": "apps/ai", "entryFile": "main", "sourceRoot": "apps/ai/src", "compilerOptions": { "tsConfigPath": "apps/ai/tsconfig.app.json" } },
+    "chat": { "type": "application", "root": "apps/chat", "entryFile": "main", "sourceRoot": "apps/chat/src", "compilerOptions": { "tsConfigPath": "apps/chat/tsconfig.app.json" } },
+    "common": { "type": "library", "root": "libs/common", "entryFile": "index", "sourceRoot": "libs/common/src", "compilerOptions": { "tsConfigPath": "libs/common/tsconfig.lib.json" } },
+    "database": { "type": "library", "root": "libs/database", "entryFile": "index", "sourceRoot": "libs/database/src", "compilerOptions": { "tsConfigPath": "libs/database/tsconfig.lib.json" } }
+  }
+}

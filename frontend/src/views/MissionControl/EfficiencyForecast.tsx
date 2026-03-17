@@ -1,20 +1,19 @@
 import { useState } from 'react'
 import { ProgressBar, Button, Collapse } from '@blueprintjs/core'
 import { useAppSelector } from '@/store'
-import { SCENARIOS } from '@/store/missionSlice'
 
 export function EfficiencyForecast() {
-  const { selectedScenario, crewSlots } = useAppSelector((s) => s.mission)
+  const { selectedScenario, crewSlots, scenarios } = useAppSelector((s) => s.mission)
   const [isOpen, setIsOpen] = useState(false)
 
   const filledSlots = crewSlots.filter(Boolean)
-  const scenario = SCENARIOS.find((s) => s.id === selectedScenario)
+  const scenario = scenarios.find((s) => s.slug === selectedScenario)
 
   let successChance = 40
   if (scenario) {
-    const hasRequired = scenario.required.every((r) => crewSlots.includes(r))
+    const hasRequired = (scenario.requiredBots ?? []).every((r) => crewSlots.includes(r))
     if (hasRequired) successChance += 25
-    const recCount = scenario.recommended.filter((r) => crewSlots.includes(r)).length
+    const recCount = (scenario.recommendedBots ?? []).filter((r) => crewSlots.includes(r)).length
     successChance += recCount * 12
   }
   successChance += filledSlots.length * 5

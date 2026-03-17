@@ -14,12 +14,14 @@ import {
   EmotionSnapshotEntity,
   SystemSettingEntity,
 } from '@app/database';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { GameController } from './game.controller';
 import { GameService } from './game.service';
 import { PhaseService } from './phase.service';
 import { ScenarioService } from './scenario.service';
 import { ParticipantService } from './participant.service';
 import { BoardService } from './board.service';
+import { SerializeInterceptor } from './serialize.interceptor';
 
 @Module({
   imports: [
@@ -57,6 +59,7 @@ import { BoardService } from './board.service';
   ],
   controllers: [GameController],
   providers: [
+    { provide: APP_INTERCEPTOR, useClass: SerializeInterceptor },
     GameService,
     PhaseService,
     ScenarioService,

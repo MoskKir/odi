@@ -1,41 +1,13 @@
-import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
+import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit'
 import type {
-  ScenarioId,
   SpecialistId,
   Difficulty,
   Duration,
   InterfaceMode,
   AiVisibility,
-  Scenario,
   Specialist,
 } from '@/types'
-
-export const SCENARIOS: Scenario[] = [
-  {
-    id: 'business',
-    icon: '\u{1F3E2}',
-    title: 'БИЗНЕС-СТРАТЕГИЯ',
-    subtitle: 'Совет директоров',
-    recommended: ['critic', 'analyst'],
-    required: ['moderator'],
-  },
-  {
-    id: 'creative',
-    icon: '\u{1F4A1}',
-    title: 'КРЕАТИВНЫЙ ШТУРМ',
-    subtitle: 'Генерация идей',
-    recommended: ['visionary', 'provocateur'],
-    required: ['moderator'],
-  },
-  {
-    id: 'teambuilding',
-    icon: '\u{1F91D}',
-    title: 'КОМАНДООБРАЗОВАНИЕ',
-    subtitle: 'Работа с конфликтами',
-    recommended: ['peacemaker', 'keeper'],
-    required: ['moderator'],
-  },
-]
+import { fetchScenarios, type ScenarioResponse } from '@/api/scenarios'
 
 export const SPECIALISTS: Specialist[] = [
   { id: 'moderator', name: 'Модератор', description: 'Ведущий', stars: 5, tag: 'популярный' },
@@ -48,11 +20,21 @@ export const SPECIALISTS: Specialist[] = [
   { id: 'expert', name: 'Эксперт', description: 'Глубина', stars: 5, tag: 'редкий' },
 ]
 
+export const loadScenarios = createAsyncThunk(
+  'mission/loadScenarios',
+  async () => {
+    return await fetchScenarios()
+  },
+)
+
 const MIN_SLOTS = 1
 const MAX_SLOTS = 7
 
 interface MissionState {
-  selectedScenario: ScenarioId | null
+  scenarios: ScenarioResponse[]
+  scenariosLoading: boolean
+  title: string
+  selectedScenario: string | null
   crewSize: number
   crewSlots: (SpecialistId | null)[]
   difficulty: Difficulty
@@ -62,6 +44,9 @@ interface MissionState {
 }
 
 const initialState: MissionState = {
+  scenarios: [],
+  scenariosLoading: false,
+  title: '',
   selectedScenario: null,
   crewSize: 3,
   crewSlots: [null, null, null],
@@ -75,16 +60,17 @@ export const missionSlice = createSlice({
   name: 'mission',
   initialState,
   reducers: {
-    selectScenario(state, action: PayloadAction<ScenarioId>) {
+    setTitle(state, action: PayloadAction<string>) {
+      state.title = action.payload
+    },
+    selectScenario(state, action: PayloadAction<string>) {
       state.selectedScenario = action.payload
     },
     setCrewSize(state, action: PayloadAction<number>) {
       const size = Math.max(MIN_SLOTS, Math.min(MAX_SLOTS, action.payload))
       if (size > state.crewSize) {
-        // Add empty slots
         while (state.crewSlots.length < size) state.crewSlots.push(null)
       } else if (size < state.crewSize) {
-        // Shrink: keep filled slots first, trim from the end
         state.crewSlots = state.crewSlots.slice(0, size)
       }
       state.crewSize = size
@@ -92,7 +78,6 @@ export const missionSlice = createSlice({
     assignSlot(state, action: PayloadAction<{ slotIndex: number; specialistId: SpecialistId }>) {
       const { slotIndex, specialistId } = action.payload
       if (slotIndex >= 0 && slotIndex < state.crewSize) {
-        // Remove from other slot if already assigned
         state.crewSlots = state.crewSlots.map((s) => (s === specialistId ? null : s))
         state.crewSlots[slotIndex] = specialistId
       }
@@ -103,12 +88,12 @@ export const missionSlice = createSlice({
       }
     },
     autoFillCrew(state) {
-      const scenario = SCENARIOS.find((s) => s.id === state.selectedScenario)
+      const scenario = state.scenarios.find((s) => s.slug === state.selectedScenario)
       if (!scenario) return
-      const toFill = [...scenario.required, ...scenario.recommended]
+      const toFill = [...(scenario.requiredBots ?? []), ...(scenario.recommendedBots ?? [])]
       const newSlots: (SpecialistId | null)[] = Array(state.crewSize).fill(null)
       toFill.slice(0, state.crewSize).forEach((id, i) => {
-        newSlots[i] = id
+        newSlots[i] = id as SpecialistId
       })
       state.crewSlots = newSlots
     },
@@ -125,9 +110,22 @@ export const missionSlice = createSlice({
       state.aiVisibility = action.payload
     },
   },
+  extraReducers: (builder) => {
+    builder.addCase(loadScenarios.pending, (state) => {
+      state.scenariosLoading = true
+    })
+    builder.addCase(loadScenarios.fulfilled, (state, action) => {
+      state.scenariosLoading = false
+      state.scenarios = action.payload
+    })
+    builder.addCase(loadScenarios.rejected, (state) => {
+      state.scenariosLoading = false
+    })
+  },
 })
 
 export const {
+  setTitle,
   selectScenario,
   setCrewSize,
   assignSlot,

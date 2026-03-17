@@ -1,9 +1,9 @@
 import { HTMLSelect } from '@blueprintjs/core'
 import { useAppSelector, useAppDispatch } from '@/store'
-import { selectScenario, SCENARIOS } from '@/store/missionSlice'
+import { selectScenario } from '@/store/missionSlice'
 
 export function ScenarioSelector() {
-  const selectedScenario = useAppSelector((s) => s.mission.selectedScenario)
+  const { scenarios, selectedScenario } = useAppSelector((s) => s.mission)
   const dispatch = useAppDispatch()
 
   return (
@@ -16,14 +16,14 @@ export function ScenarioSelector() {
         value={selectedScenario ?? ''}
         onChange={(e) => {
           const val = e.currentTarget.value
-          if (val) dispatch(selectScenario(val as typeof SCENARIOS[number]['id']))
+          if (val) dispatch(selectScenario(val))
         }}
         className="!text-sm"
         fill
       >
         <option value="">— выберите сценарий —</option>
-        {SCENARIOS.map((s) => (
-          <option key={s.id} value={s.id}>
+        {scenarios.map((s) => (
+          <option key={s.slug} value={s.slug}>
             {s.icon} {s.title} — {s.subtitle}
           </option>
         ))}

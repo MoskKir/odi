@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ClientKafka } from '@nestjs/microservices';
+import { ClientKafka, RpcException } from '@nestjs/microservices';
 import {
   GameSessionEntity,
   ScenarioEntity,
@@ -34,18 +34,25 @@ export class GameService {
   ) {}
 
   async create(dto: any, hostId: string) {
-    const scenario = await this.scenarioRepo.findOne({
+    // Resolve scenario by UUID or slug
+    let scenario = await this.scenarioRepo.findOne({
       where: { id: dto.scenarioId },
-    });
+    }).catch(() => null);
+
+    if (!scenario && dto.scenarioSlug) {
+      scenario = await this.scenarioRepo.findOne({
+        where: { slug: dto.scenarioSlug },
+      });
+    }
 
     if (!scenario) {
-      throw new Error('Scenario not found');
+      throw new RpcException('Scenario not found');
     }
 
     // Create game session
     const session = this.sessionRepo.create({
       title: dto.title,
-      scenarioId: dto.scenarioId,
+      scenarioId: scenario.id,
       hostId,
       difficulty: dto.difficulty,
       durationMinutes: dto.durationMinutes,
@@ -80,9 +87,12 @@ export class GameService {
     });
     await this.participantRepo.save(hostParticipant);
 
-    // Create bot participants from botSlots
-    if (dto.botSlots && dto.botSlots.length > 0) {
-      const botConfigs = await this.botConfigRepo.findByIds(dto.botSlots);
+    // Create bot participants from botSlots (UUIDs) or specialistIds (slugs)
+    const botSlots: string[] = dto.botSlots ?? [];
+    const specialistIds: string[] = dto.specialistIds ?? [];
+
+    if (botSlots.length > 0) {
+      const botConfigs = await this.botConfigRepo.findByIds(botSlots);
       const botParticipants = botConfigs.map((bot, index) =>
         this.participantRepo.create({
           sessionId: session.id,
@@ -93,6 +103,26 @@ export class GameService {
         }),
       );
       await this.participantRepo.save(botParticipants);
+    } else if (specialistIds.length > 0) {
+      const botConfigs: BotConfigEntity[] = [];
+      for (const specId of specialistIds) {
+        const bot = await this.botConfigRepo.findOne({
+          where: { specialistId: specId },
+        });
+        if (bot) botConfigs.push(bot);
+      }
+      const botParticipants = botConfigs.map((bot, index) =>
+        this.participantRepo.create({
+          sessionId: session.id,
+          botConfigId: bot.id,
+          role: 'bot',
+          isOnline: true,
+          slotIndex: index + 1,
+        }),
+      );
+      if (botParticipants.length > 0) {
+        await this.participantRepo.save(botParticipants);
+      }
     }
 
     // Emit event
@@ -155,6 +185,11 @@ export class GameService {
         'phases',
       ],
     });
+  }
+
+  async updateTitle(sessionId: string, title: string) {
+    await this.sessionRepo.update(sessionId, { title });
+    return { ok: true };
   }
 
   async updateStatus(sessionId: string, status: GameStatus) {

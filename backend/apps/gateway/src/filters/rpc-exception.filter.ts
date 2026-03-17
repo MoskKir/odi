@@ -36,7 +36,8 @@ export class RpcExceptionFilter implements ExceptionFilter {
     const isBusinessError =
       message.includes('Invalid email or password') ||
       message.includes('already exists') ||
-      message.includes('User not found');
+      message.includes('not found') ||
+      message.includes('required');
 
     const status = isBusinessError
       ? HttpStatus.BAD_REQUEST

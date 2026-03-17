@@ -1,6 +1,7 @@
-import { Button, Tag } from '@blueprintjs/core'
+import { useState, useEffect } from 'react'
+import { Button, Tag, InputGroup } from '@blueprintjs/core'
 import { useNavigate } from 'react-router-dom'
-import { useAppSelector } from '@/store'
+import { useAppSelector, useAppDispatch } from '@/store'
 import { SettingsMenu } from '@/components/SettingsMenu'
 import { ScenarioSelector } from './ScenarioSelector'
 import { CrewBuilder } from './CrewBuilder'
@@ -8,13 +9,55 @@ import { RecommendedCrew } from './RecommendedCrew'
 import { SpecialistGrid } from './SpecialistGrid'
 import { SessionSettings } from './SessionSettings'
 import { EfficiencyForecast } from './EfficiencyForecast'
+import { loadScenarios, setTitle } from '@/store/missionSlice'
+import { createGame } from '@/api/games'
 
 export function MissionControl() {
   const navigate = useNavigate()
-  const { selectedScenario, crewSlots } = useAppSelector((s) => s.mission)
+  const dispatch = useAppDispatch()
+  const mission = useAppSelector((s) => s.mission)
   const theme = useAppSelector((s) => s.app.theme)
+  const [launching, setLaunching] = useState(false)
+  const [error, setError] = useState('')
 
-  const canLaunch = selectedScenario && crewSlots.some(Boolean)
+  useEffect(() => {
+    if (mission.scenarios.length === 0) {
+      dispatch(loadScenarios())
+    }
+  }, [dispatch, mission.scenarios.length])
+
+  const canLaunch = mission.title.trim() && mission.selectedScenario && mission.crewSlots.some(Boolean)
+
+  const handleLaunch = async () => {
+    if (!mission.selectedScenario) return
+
+    const scenario = mission.scenarios.find((s) => s.slug === mission.selectedScenario)
+    if (!scenario) return
+
+    setLaunching(true)
+    setError('')
+
+    try {
+      const specialistIds = mission.crewSlots.filter(Boolean) as string[]
+
+      await createGame({
+        title: mission.title.trim(),
+        scenarioSlug: mission.selectedScenario,
+        difficulty: mission.difficulty,
+        durationMinutes: mission.duration || 9999,
+        interfaceMode: mission.interfaceMode,
+        aiVisibility: mission.aiVisibility,
+        crewSize: mission.crewSize + 1,
+        specialistIds,
+      })
+
+      navigate('/game')
+    } catch (e: any) {
+      setError(e.message || 'Ошибка создания игры')
+    } finally {
+      setLaunching(false)
+    }
+  }
 
   return (
     <div className={`${theme === 'dark' ? 'bp5-dark' : ''} h-screen flex flex-col bg-odi-bg`}>
@@ -39,6 +82,15 @@ export function MissionControl() {
         <div className="max-w-5xl mx-auto space-y-4">
           <div className="bg-odi-surface rounded-lg border border-odi-border">
             <div className="p-4 space-y-4">
+              <InputGroup
+                value={mission.title}
+                onChange={(e) => dispatch(setTitle(e.target.value))}
+                placeholder="Название миссии *"
+                large
+                leftIcon="bookmark"
+                className="[&_input]:!bg-transparent [&_input]:!text-odi-text"
+              />
+              <div className="border-t border-odi-border" />
               <ScenarioSelector />
               <div className="border-t border-odi-border" />
               <CrewBuilder />
@@ -62,14 +114,20 @@ export function MissionControl() {
           className="!text-odi-text-muted"
           onClick={() => navigate('/dashboard')}
         />
-        <Button
-          icon="rocket-slant"
-          intent="success"
-          large
-          text="ЗАПУСТИТЬ МИССИЮ"
-          disabled={!canLaunch}
-          onClick={() => navigate('/game')}
-        />
+        <div className="flex items-center gap-3">
+          {error && (
+            <span className="text-sm text-odi-danger">{error}</span>
+          )}
+          <Button
+            icon="rocket-slant"
+            intent="success"
+            large
+            text="ЗАПУСТИТЬ МИССИЮ"
+            disabled={!canLaunch || launching}
+            loading={launching}
+            onClick={handleLaunch}
+          />
+        </div>
       </footer>
     </div>
   )

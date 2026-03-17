@@ -30,6 +30,7 @@ export class GameController {
     this.kafkaClient.subscribeToResponseOf(KAFKA_TOPICS.GAME.LIST);
     this.kafkaClient.subscribeToResponseOf(KAFKA_TOPICS.GAME.CREATE);
     this.kafkaClient.subscribeToResponseOf('odi.game.get');
+    this.kafkaClient.subscribeToResponseOf('odi.game.update-title');
     this.kafkaClient.subscribeToResponseOf(KAFKA_TOPICS.GAME.UPDATE_STATUS);
     this.kafkaClient.subscribeToResponseOf(KAFKA_TOPICS.GAME.JOIN);
     this.kafkaClient.subscribeToResponseOf(KAFKA_TOPICS.GAME.LEAVE);
@@ -73,6 +74,19 @@ export class GameController {
   async getOne(@Param('id') id: string) {
     return lastValueFrom(
       this.kafkaClient.send('odi.game.get', { id }),
+    );
+  }
+
+  @Patch(':id/title')
+  async updateTitle(
+    @Param('id') id: string,
+    @Body() body: { title: string },
+  ) {
+    return lastValueFrom(
+      this.kafkaClient.send('odi.game.update-title', {
+        sessionId: id,
+        title: body.title,
+      }),
     );
   }
 

@@ -2,9 +2,11 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { DatabaseModule, UserEntity } from '@app/database';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { SerializeInterceptor } from './serialize.interceptor';
 
 @Module({
   imports: [
@@ -23,6 +25,9 @@ import { AuthService } from './auth.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService],
+  providers: [
+    { provide: APP_INTERCEPTOR, useClass: SerializeInterceptor },
+    AuthService,
+  ],
 })
 export class AuthModule {}

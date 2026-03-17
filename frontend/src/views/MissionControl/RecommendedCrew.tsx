@@ -1,12 +1,12 @@
 import { Button, Tag } from '@blueprintjs/core'
 import { useAppSelector, useAppDispatch } from '@/store'
-import { autoFillCrew, SCENARIOS, SPECIALISTS } from '@/store/missionSlice'
+import { autoFillCrew, SPECIALISTS } from '@/store/missionSlice'
 
 export function RecommendedCrew() {
-  const selectedScenario = useAppSelector((s) => s.mission.selectedScenario)
+  const { scenarios, selectedScenario } = useAppSelector((s) => s.mission)
   const dispatch = useAppDispatch()
 
-  const scenario = SCENARIOS.find((s) => s.id === selectedScenario)
+  const scenario = scenarios.find((s) => s.slug === selectedScenario)
 
   if (!scenario) {
     return (
@@ -22,7 +22,7 @@ export function RecommendedCrew() {
     )
   }
 
-  const allRecommended = [...scenario.required, ...scenario.recommended]
+  const allRecommended = [...(scenario.requiredBots ?? []), ...(scenario.recommendedBots ?? [])]
 
   return (
     <div className="flex items-center gap-3 flex-wrap">
@@ -33,7 +33,7 @@ export function RecommendedCrew() {
       {allRecommended.map((specId) => {
         const spec = SPECIALISTS.find((s) => s.id === specId)
         if (!spec) return null
-        const isRequired = scenario.required.includes(specId)
+        const isRequired = (scenario.requiredBots ?? []).includes(specId)
         return (
           <Tag
             key={specId}

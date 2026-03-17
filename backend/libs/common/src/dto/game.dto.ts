@@ -14,14 +14,19 @@ export class CreateGameDto {
   @IsString()
   title: string;
 
+  @IsOptional()
   @IsUUID()
-  scenarioId: string;
+  scenarioId?: string;
+
+  @IsOptional()
+  @IsString()
+  scenarioSlug?: string;
 
   @IsEnum(Difficulty)
   difficulty: Difficulty;
 
   @IsNumber()
-  @Min(1)
+  @Min(0)
   durationMinutes: number;
 
   @IsString()
@@ -38,6 +43,11 @@ export class CreateGameDto {
   @IsArray()
   @IsString({ each: true })
   botSlots?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  specialistIds?: string[];
 }
 
 export class UpdateGameStatusDto {

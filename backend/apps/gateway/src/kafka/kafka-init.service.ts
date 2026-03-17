@@ -39,6 +39,7 @@ export class KafkaInitService implements OnModuleInit {
       KAFKA_TOPICS.GAME.LIST,
       KAFKA_TOPICS.GAME.CREATE,
       'odi.game.get',
+      'odi.game.update-title',
       KAFKA_TOPICS.GAME.UPDATE_STATUS,
       KAFKA_TOPICS.GAME.JOIN,
       KAFKA_TOPICS.GAME.LEAVE,

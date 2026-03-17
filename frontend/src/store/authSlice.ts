@@ -11,6 +11,7 @@ export interface User {
 interface AuthState {
   user: User | null
   isAuthenticated: boolean
+  restoring: boolean
   loading: boolean
   error: string | null
 }
@@ -45,6 +46,7 @@ export const registerAsync = createAsyncThunk(
 const initialState: AuthState = {
   user: null,
   isAuthenticated: false,
+  restoring: !!localStorage.getItem('odi_token'),
   loading: false,
   error: null,
 }
@@ -95,11 +97,16 @@ export const authSlice = createSlice({
     })
 
     // restoreSession
+    builder.addCase(restoreSession.pending, (state) => {
+      state.restoring = true
+    })
     builder.addCase(restoreSession.fulfilled, (state, action) => {
+      state.restoring = false
       state.user = action.payload
       state.isAuthenticated = true
     })
     builder.addCase(restoreSession.rejected, (state) => {
+      state.restoring = false
       state.user = null
       state.isAuthenticated = false
       localStorage.removeItem('odi_token')

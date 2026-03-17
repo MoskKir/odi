@@ -34,6 +34,11 @@ export class GameController {
     return this.gameService.findOne(data.id);
   }
 
+  @MessagePattern('odi.game.update-title')
+  async updateTitle(@Payload() data: { sessionId: string; title: string }) {
+    return this.gameService.updateTitle(data.sessionId, data.title);
+  }
+
   @MessagePattern(KAFKA_TOPICS.GAME.UPDATE_STATUS)
   async updateGameStatus(@Payload() data: any) {
     return this.gameService.updateStatus(data.sessionId, data.status);

@@ -1,0 +1,64 @@
+@import "tailwindcss";
+@import "@blueprintjs/core/lib/css/blueprint.css";
+@import "@blueprintjs/icons/lib/css/blueprint-icons.css";
+
+@theme {
+  --color-odi-bg: var(--odi-bg);
+  --color-odi-surface: var(--odi-surface);
+  --color-odi-surface-hover: var(--odi-surface-hover);
+  --color-odi-border: var(--odi-border);
+  --color-odi-text: var(--odi-text);
+  --color-odi-text-muted: var(--odi-text-muted);
+  --color-odi-accent: var(--odi-accent);
+  --color-odi-accent-hover: var(--odi-accent-hover);
+  --color-odi-success: var(--odi-success);
+  --color-odi-warning: var(--odi-warning);
+  --color-odi-danger: var(--odi-danger);
+  --color-odi-energy: var(--odi-energy);
+}
+
+/* Dark theme (default) */
+:root,
+[data-theme="dark"] {
+  --odi-bg: #1a1d23;
+  --odi-surface: #242830;
+  --odi-surface-hover: #2d323a;
+  --odi-border: #3a3f4b;
+  --odi-text: #e1e4ea;
+  --odi-text-muted: #8b919e;
+  --odi-accent: #4c9aff;
+  --odi-accent-hover: #3d8bef;
+  --odi-success: #3dcc91;
+  --odi-warning: #ffb366;
+  --odi-danger: #ff6b6b;
+  --odi-energy: #a78bfa;
+}
+
+/* Light theme */
+[data-theme="light"] {
+  --odi-bg: #f0f2f5;
+  --odi-surface: #ffffff;
+  --odi-surface-hover: #f5f6f8;
+  --odi-border: #d1d5db;
+  --odi-text: #1f2937;
+  --odi-text-muted: #6b7280;
+  --odi-accent: #2563eb;
+  --odi-accent-hover: #1d4ed8;
+  --odi-success: #16a34a;
+  --odi-warning: #d97706;
+  --odi-danger: #dc2626;
+  --odi-energy: #7c3aed;
+}
+
+body {
+  @apply bg-odi-bg text-odi-text m-0 font-sans;
+}
+
+#root {
+  @apply h-screen w-screen overflow-hidden;
+}
+
+/* Blueprint dark theme overrides */
+.bp5-dark {
+  --pt-app-background-color: var(--odi-bg);
+}

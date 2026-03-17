@@ -54,6 +54,9 @@ export class KafkaInitService implements OnModuleInit {
       'odi.game.settings-update',
       'odi.game.bot-list',
       'odi.game.bot-update',
+      'odi.game.emotion-set',
+      'odi.game.board-add',
+      'odi.game.board-vote',
       // Chat
       KAFKA_TOPICS.CHAT.HISTORY,
       KAFKA_TOPICS.CHAT.SEND,

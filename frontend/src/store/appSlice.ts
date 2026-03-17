@@ -58,6 +58,7 @@ interface AppState {
   cards: BoardCard[]
   rightPanelCollapsed: boolean
   leftSidebarCollapsed: boolean
+  socketJoined: boolean
 }
 
 const initialState: AppState = {
@@ -70,22 +71,11 @@ const initialState: AppState = {
   teamSize: 6,
   energy: 7,
   currentEmotion: null,
-  messages: [
-    {
-      id: '1',
-      author: 'Модератор',
-      role: 'moderator',
-      text: 'Добро пожаловать в сессию! Начнем с генерации идей.',
-      timestamp: Date.now(),
-    },
-  ],
-  cards: [
-    { id: '1', column: 'problems', text: 'Нехватка парковых зон', author: 'Анна', votes: 3 },
-    { id: '2', column: 'solutions', text: 'Велодорожки в центре', author: 'Борис', votes: 5 },
-    { id: '3', column: 'creative', text: 'Лавочки-зарядки для телефонов', author: 'Визионер', votes: 2 },
-  ],
+  messages: [],
+  cards: [],
   rightPanelCollapsed: false,
   leftSidebarCollapsed: false,
+  socketJoined: false,
 }
 
 export const appSlice = createSlice({
@@ -107,11 +97,26 @@ export const appSlice = createSlice({
     setEmotion(state, action: PayloadAction<Emotion | null>) {
       state.currentEmotion = action.payload
     },
+    setMessages(state, action: PayloadAction<ChatMessage[]>) {
+      state.messages = action.payload
+    },
     addMessage(state, action: PayloadAction<ChatMessage>) {
       state.messages.push(action.payload)
     },
     addCard(state, action: PayloadAction<BoardCard>) {
       state.cards.push(action.payload)
+    },
+    updateSession(state, action: PayloadAction<{ teamOnline?: number; energy?: number }>) {
+      const { teamOnline, energy } = action.payload
+      if (teamOnline !== undefined) state.teamOnline = teamOnline
+      if (energy !== undefined) state.energy = energy
+    },
+    updatePhase(state, action: PayloadAction<{ phase?: string; elapsed?: string }>) {
+      const { elapsed } = action.payload
+      if (elapsed !== undefined) state.elapsed = elapsed
+    },
+    setSocketJoined(state, action: PayloadAction<boolean>) {
+      state.socketJoined = action.payload
     },
     toggleRightPanel(state) {
       state.rightPanelCollapsed = !state.rightPanelCollapsed
@@ -136,8 +141,12 @@ export const {
   setTheme,
   setFontSize,
   setEmotion,
+  setMessages,
   addMessage,
   addCard,
+  updateSession,
+  updatePhase,
+  setSocketJoined,
   toggleRightPanel,
   toggleLeftSidebar,
 } = appSlice.actions

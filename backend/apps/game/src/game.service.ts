@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ClientKafka, RpcException } from '@nestjs/microservices';
@@ -14,7 +14,7 @@ import {
 import { KAFKA_TOPICS } from '@app/common';
 
 @Injectable()
-export class GameService {
+export class GameService implements OnModuleInit {
   private readonly logger = new Logger(GameService.name);
 
   constructor(
@@ -32,6 +32,10 @@ export class GameService {
     private readonly settingsRepo: Repository<SystemSettingEntity>,
     @Inject('KAFKA_SERVICE') private readonly kafkaClient: ClientKafka,
   ) {}
+
+  async onModuleInit() {
+    await this.kafkaClient.connect();
+  }
 
   async create(dto: any, hostId: string) {
     // Resolve scenario by UUID or slug

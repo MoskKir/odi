@@ -40,7 +40,7 @@ export function MissionControl() {
     try {
       const specialistIds = mission.crewSlots.filter(Boolean) as string[]
 
-      await createGame({
+      const game = await createGame({
         title: mission.title.trim(),
         scenarioSlug: mission.selectedScenario,
         difficulty: mission.difficulty,
@@ -51,7 +51,7 @@ export function MissionControl() {
         specialistIds,
       })
 
-      navigate('/game')
+      navigate(`/game/board?session=${game.id}`)
     } catch (e: any) {
       setError(e.message || 'Ошибка создания игры')
     } finally {

@@ -1,4 +1,5 @@
 import { useAppSelector } from '@/store'
+import { useGameSocket } from '@/hooks/useGameSocket'
 import { Header } from '@/components/Header/Header'
 import { Sidebar } from '@/components/Sidebar/Sidebar'
 import { MainContent } from '@/components/MainContent/MainContent'
@@ -6,6 +7,7 @@ import { RightPanel } from '@/components/RightPanel/RightPanel'
 import { InputBar } from '@/components/InputBar/InputBar'
 
 export function GameLayout() {
+  useGameSocket()
   const theme = useAppSelector((s) => s.app.theme)
 
   return (

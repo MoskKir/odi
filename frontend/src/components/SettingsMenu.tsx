@@ -1,5 +1,5 @@
 import { Button, Popover, Menu, MenuItem, MenuDivider, Switch, Tag } from '@blueprintjs/core'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAppSelector, useAppDispatch } from '@/store'
 import { setTheme, setFontSize, toggleDevMode } from '@/store/appSlice'
 import { logout } from '@/store/authSlice'
@@ -34,6 +34,7 @@ export function SettingsMenu() {
   const dispatch = useAppDispatch()
   const location = useLocation()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
 
   const currentViewMode = location.pathname.startsWith('/game')
     ? location.pathname.split('/')[2]
@@ -127,7 +128,10 @@ export function SettingsMenu() {
               icon={icon as any}
               text={label}
               active={currentViewMode === mode}
-              onClick={() => navigate(`/game/${mode}`)}
+              onClick={() => {
+                const qs = searchParams.toString()
+                navigate(`/game/${mode}${qs ? `?${qs}` : ''}`)
+              }}
             />
           ))}
         </>

@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ClientKafka } from '@nestjs/microservices';
 import { KAFKA_TOPICS, GenerateDto } from '@app/common';
 import { OpenRouterService } from './openrouter/openrouter.service';
@@ -7,7 +7,7 @@ import { ContextBuilderService } from './prompts/context-builder.service';
 import { EmotionAnalyzerService } from './emotion/emotion-analyzer.service';
 
 @Injectable()
-export class AiService {
+export class AiService implements OnModuleInit {
   private readonly logger = new Logger(AiService.name);
   private readonly strategyOverrides = new Map<string, string>();
 
@@ -18,6 +18,10 @@ export class AiService {
     private readonly contextBuilder: ContextBuilderService,
     private readonly emotionAnalyzer: EmotionAnalyzerService,
   ) {}
+
+  async onModuleInit() {
+    await this.kafkaClient.connect();
+  }
 
   async generate(dto: GenerateDto) {
     try {

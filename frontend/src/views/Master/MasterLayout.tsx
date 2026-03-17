@@ -1,11 +1,13 @@
 import { Button, Tag } from '@blueprintjs/core'
-import { useNavigate, Outlet } from 'react-router-dom'
+import { useNavigate, useSearchParams, Outlet } from 'react-router-dom'
 import { useAppSelector } from '@/store'
 import { SettingsMenu } from '@/components/SettingsMenu'
 
 export function MasterLayout() {
   const theme = useAppSelector((s) => s.app.theme)
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const qs = searchParams.toString()
 
   return (
     <div className={`${theme === 'dark' ? 'bp5-dark' : ''} h-screen flex flex-col bg-odi-bg`}>
@@ -17,7 +19,7 @@ export function MasterLayout() {
           <span className="font-bold text-odi-text text-sm">Панель управления сессией</span>
         </div>
         <div className="flex items-center gap-2">
-          <Button icon="eye-open" minimal small text="Вид игрока" onClick={() => navigate('/game/board')} className="!text-odi-text-muted" />
+          <Button icon="eye-open" minimal small text="Вид игрока" onClick={() => navigate(`/game/board${qs ? `?${qs}` : ''}`)} className="!text-odi-text-muted" />
           <SettingsMenu />
         </div>
       </header>

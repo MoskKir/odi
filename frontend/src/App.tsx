@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { LandingPage } from '@/views/Landing/LandingPage'
@@ -17,6 +17,11 @@ import { SystemPage } from '@/views/Admin/SystemPage'
 import { MasterLayout } from '@/views/Master/MasterLayout'
 import { MasterDashboard } from '@/views/Master/MasterDashboard'
 
+function GameRedirect() {
+  const { search } = useLocation()
+  return <Navigate to={`/game/board${search}`} replace />
+}
+
 function App() {
   return (
     <BrowserRouter>
@@ -27,7 +32,7 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/dashboard" element={<ProtectedRoute><GameList /></ProtectedRoute>} />
           <Route path="/mission" element={<ProtectedRoute><MissionControl /></ProtectedRoute>} />
-          <Route path="/game" element={<ProtectedRoute><Navigate to="/game/board" replace /></ProtectedRoute>} />
+          <Route path="/game" element={<ProtectedRoute><GameRedirect /></ProtectedRoute>} />
           <Route path="/game/:viewMode" element={<ProtectedRoute><GameLayout /></ProtectedRoute>} />
           <Route path="/master" element={<ProtectedRoute><MasterLayout /></ProtectedRoute>}>
             <Route index element={<MasterDashboard />} />

@@ -1,10 +1,11 @@
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import type { ViewMode } from '@/types'
 
 const VALID_MODES: ViewMode[] = ['board', 'theatre', 'graph', 'hq', 'aquarium', 'terminal']
 
 export function useViewMode() {
   const { viewMode } = useParams<{ viewMode: string }>()
+  const [searchParams] = useSearchParams()
   const navigate = useNavigate()
 
   const current: ViewMode = VALID_MODES.includes(viewMode as ViewMode)
@@ -12,7 +13,8 @@ export function useViewMode() {
     : 'board'
 
   const setViewMode = (mode: ViewMode) => {
-    navigate(`/game/${mode}`, { replace: true })
+    const qs = searchParams.toString()
+    navigate(`/game/${mode}${qs ? `?${qs}` : ''}`, { replace: true })
   }
 
   return { viewMode: current, setViewMode }

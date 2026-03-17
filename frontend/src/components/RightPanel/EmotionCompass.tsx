@@ -1,6 +1,8 @@
 import { Button, ButtonGroup } from '@blueprintjs/core'
+import { useSearchParams } from 'react-router-dom'
 import { useAppSelector, useAppDispatch } from '@/store'
 import { setEmotion } from '@/store/appSlice'
+import { getSocket } from '@/api/socket'
 import type { Emotion } from '@/types'
 
 const EMOTIONS: { emotion: Emotion; emoji: string; label: string }[] = [
@@ -13,6 +15,16 @@ const EMOTIONS: { emotion: Emotion; emoji: string; label: string }[] = [
 export function EmotionCompass() {
   const currentEmotion = useAppSelector((s) => s.app.currentEmotion)
   const dispatch = useAppDispatch()
+  const [searchParams] = useSearchParams()
+  const sessionId = searchParams.get('session')
+
+  const handleEmotion = (emotion: Emotion) => {
+    const next = currentEmotion === emotion ? null : emotion
+    dispatch(setEmotion(next))
+    if (sessionId && next) {
+      getSocket()?.emit('emotion:set', { sessionId, emotion: next })
+    }
+  }
 
   return (
     <div>
@@ -25,7 +37,7 @@ export function EmotionCompass() {
             key={emotion}
             minimal
             active={currentEmotion === emotion}
-            onClick={() => dispatch(setEmotion(currentEmotion === emotion ? null : emotion))}
+            onClick={() => handleEmotion(emotion)}
             title={label}
             className={
               currentEmotion === emotion

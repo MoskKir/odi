@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ClientKafka } from '@nestjs/microservices';
@@ -9,7 +9,7 @@ import {
 import { KAFKA_TOPICS } from '@app/common';
 
 @Injectable()
-export class ChatService {
+export class ChatService implements OnModuleInit {
   private readonly logger = new Logger(ChatService.name);
 
   constructor(
@@ -20,6 +20,10 @@ export class ChatService {
     @Inject('KAFKA_SERVICE') private readonly kafkaClient: ClientKafka,
   ) {}
 
+  async onModuleInit() {
+    await this.kafkaClient.connect();
+  }
+
   async send(data: {
     sessionId: string;
     userId?: string;
@@ -27,6 +31,10 @@ export class ChatService {
     text: string;
     isBot?: boolean;
   }) {
+    this.logger.log(
+      `chat.send received: sessionId=${data.sessionId}, userId=${data.userId}, isBot=${data.isBot}`,
+    );
+
     // Find the participant record
     let participant: SessionParticipantEntity | null = null;
 
@@ -44,9 +52,9 @@ export class ChatService {
 
     if (!participant) {
       this.logger.warn(
-        `Participant not found for session ${data.sessionId}`,
+        `Participant not found for session ${data.sessionId}, userId=${data.userId}`,
       );
-      throw new Error('Participant not found in this session');
+      return { error: 'Participant not found in this session' };
     }
 
     // Create the message

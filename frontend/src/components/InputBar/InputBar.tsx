@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { InputGroup, Button, ButtonGroup, Tag } from '@blueprintjs/core'
-import { useAppDispatch } from '@/store'
-import { addMessage } from '@/store/appSlice'
+import { useSearchParams } from 'react-router-dom'
+import { useAppSelector } from '@/store'
+import { getSocket } from '@/api/socket'
 
 const BOT_TARGETS = [
   { role: 'moderator' as const, label: '@Модератор' },
@@ -11,17 +12,16 @@ const BOT_TARGETS = [
 
 export function InputBar() {
   const [text, setText] = useState('')
-  const dispatch = useAppDispatch()
+  const [searchParams] = useSearchParams()
+  const sessionId = searchParams.get('session')
+  const socketJoined = useAppSelector((s) => s.app.socketJoined)
+
+  const canSend = socketJoined && !!sessionId
 
   const handleSend = () => {
-    if (!text.trim()) return
-    dispatch(addMessage({
-      id: crypto.randomUUID(),
-      author: 'Вы',
-      role: 'user',
-      text: text.trim(),
-      timestamp: Date.now(),
-    }))
+    if (!text.trim() || !canSend) return
+    const socket = getSocket()
+    socket?.emit('chat:send', { sessionId, text: text.trim() })
     setText('')
   }
 
@@ -46,7 +46,7 @@ export function InputBar() {
         />
         <Button icon="microphone" minimal title="Голос" />
         <Button icon="paperclip" minimal title="Файл" />
-        <Button icon="send-message" intent="primary" onClick={handleSend} />
+        <Button icon="send-message" intent="primary" onClick={handleSend} disabled={!canSend} />
       </div>
       <div className="flex items-center gap-2 mt-2">
         <ButtonGroup minimal>

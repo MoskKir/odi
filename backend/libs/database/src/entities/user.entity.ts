@@ -35,6 +35,9 @@ export class UserEntity {
   @Column({ default: false })
   isOnline: boolean;
 
+  @Column({ type: 'jsonb', nullable: true, default: null })
+  preferences: Record<string, unknown> | null;
+
   @CreateDateColumn()
   createdAt: Date;
 

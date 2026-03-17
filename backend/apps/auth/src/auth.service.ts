@@ -5,7 +5,7 @@ import { Repository, ILike } from 'typeorm';
 import { RpcException } from '@nestjs/microservices';
 import * as bcrypt from 'bcrypt';
 import { UserEntity } from '@app/database';
-import { RegisterDto, LoginDto } from '@app/common';
+import { RegisterDto, LoginDto, UpdatePreferencesDto } from '@app/common';
 
 @Injectable()
 export class AuthService {
@@ -16,19 +16,25 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
+    const { name, email, password } = dto ?? {} as any;
+
+    if (!email || !password || !name) {
+      throw new RpcException('Name, email and password are required');
+    }
+
     const existing = await this.userRepo.findOne({
-      where: { email: dto.email },
+      where: { email },
     });
 
     if (existing) {
       throw new RpcException('User with this email already exists');
     }
 
-    const passwordHash = await bcrypt.hash(dto.password, 10);
+    const passwordHash = await bcrypt.hash(password, 10);
 
     const user = this.userRepo.create({
-      name: dto.name,
-      email: dto.email,
+      name,
+      email,
       passwordHash,
     });
 
@@ -43,8 +49,14 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
+    const { email, password } = dto ?? {} as any;
+
+    if (!email || !password) {
+      throw new RpcException('Email and password are required');
+    }
+
     const user = await this.userRepo.findOne({
-      where: { email: dto.email },
+      where: { email },
     });
 
     if (!user) {
@@ -52,7 +64,7 @@ export class AuthService {
     }
 
     const isPasswordValid = await bcrypt.compare(
-      dto.password,
+      password,
       user.passwordHash,
     );
 
@@ -101,6 +113,25 @@ export class AuthService {
       items: users.map((u) => this.sanitizeUser(u)),
       total,
     };
+  }
+
+  async getPreferences(userId: string) {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new RpcException('User not found');
+    }
+    return user.preferences ?? {};
+  }
+
+  async updatePreferences(userId: string, dto: UpdatePreferencesDto) {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new RpcException('User not found');
+    }
+
+    const merged = { ...(user.preferences ?? {}), ...dto };
+    await this.userRepo.update(userId, { preferences: merged });
+    return merged;
   }
 
   async updateUser(id: string, dto: Partial<UserEntity>) {

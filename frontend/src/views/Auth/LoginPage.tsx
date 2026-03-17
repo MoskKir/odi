@@ -1,47 +1,45 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { FormGroup, InputGroup, Button, Callout } from '@blueprintjs/core'
-import { useAppDispatch } from '@/store'
-import { login } from '@/store/authSlice'
+import { useAppDispatch, useAppSelector } from '@/store'
+import { loginAsync, clearError } from '@/store/authSlice'
+import { loadPreferencesFromServer } from '@/store/appSlice'
 import { AuthLayout } from './AuthLayout'
 
 export function LoginPage() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
+  const { loading, error } = useAppSelector((s) => s.auth)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [localError, setLocalError] = useState('')
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError('')
+    setLocalError('')
+    dispatch(clearError())
 
     if (!email.trim() || !password.trim()) {
-      setError('Заполните все поля')
+      setLocalError('Заполните все поля')
       return
     }
 
-    setLoading(true)
-    // Mock login
-    setTimeout(() => {
-      dispatch(login({
-        id: '1',
-        name: email.split('@')[0],
-        email: email.trim(),
-      }))
-      setLoading(false)
+    const result = await dispatch(loginAsync({ email: email.trim(), password }))
+    if (loginAsync.fulfilled.match(result)) {
+      dispatch(loadPreferencesFromServer())
       navigate('/dashboard')
-    }, 500)
+    }
   }
+
+  const displayError = localError || error
 
   return (
     <AuthLayout>
       <h2 className="text-lg font-bold text-odi-text mb-4">Вход</h2>
 
-      {error && (
+      {displayError && (
         <Callout intent="danger" className="mb-4 !text-sm">
-          {error}
+          {displayError}
         </Callout>
       )}
 

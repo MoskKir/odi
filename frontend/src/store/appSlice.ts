@@ -1,5 +1,48 @@
-import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
+import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit'
 import type { Emotion, ChatMessage, BoardCard, Theme, FontSize } from '@/types'
+import {
+  fetchPreferences,
+  savePreferences,
+  type UserPreferences,
+} from '@/api/preferences'
+
+// ── localStorage helpers ──
+
+const LS_KEY = 'odi_preferences'
+
+function loadFromLocalStorage(): Partial<{ theme: Theme; fontSize: FontSize; devMode: boolean }> {
+  try {
+    const raw = localStorage.getItem(LS_KEY)
+    if (!raw) return {}
+    return JSON.parse(raw)
+  } catch {
+    return {}
+  }
+}
+
+function persistToLocalStorage(prefs: { theme: Theme; fontSize: FontSize; devMode: boolean }) {
+  localStorage.setItem(LS_KEY, JSON.stringify(prefs))
+}
+
+// ── Async thunks for backend sync ──
+
+export const loadPreferencesFromServer = createAsyncThunk(
+  'app/loadPreferencesFromServer',
+  async () => {
+    return await fetchPreferences()
+  },
+)
+
+export const syncPreferencesToServer = createAsyncThunk(
+  'app/syncPreferencesToServer',
+  async (prefs: UserPreferences) => {
+    return await savePreferences(prefs)
+  },
+)
+
+// ── Slice ──
+
+const saved = loadFromLocalStorage()
 
 interface AppState {
   devMode: boolean
@@ -18,9 +61,9 @@ interface AppState {
 }
 
 const initialState: AppState = {
-  devMode: false,
-  theme: 'dark',
-  fontSize: 16,
+  devMode: saved.devMode ?? false,
+  theme: saved.theme ?? 'dark',
+  fontSize: saved.fontSize ?? 16,
   sessionTitle: 'Стратегия 2026',
   elapsed: '00:00',
   teamOnline: 4,
@@ -51,12 +94,15 @@ export const appSlice = createSlice({
   reducers: {
     toggleDevMode(state) {
       state.devMode = !state.devMode
+      persistToLocalStorage({ theme: state.theme, fontSize: state.fontSize, devMode: state.devMode })
     },
     setTheme(state, action: PayloadAction<Theme>) {
       state.theme = action.payload
+      persistToLocalStorage({ theme: state.theme, fontSize: state.fontSize, devMode: state.devMode })
     },
     setFontSize(state, action: PayloadAction<FontSize>) {
       state.fontSize = action.payload
+      persistToLocalStorage({ theme: state.theme, fontSize: state.fontSize, devMode: state.devMode })
     },
     setEmotion(state, action: PayloadAction<Emotion | null>) {
       state.currentEmotion = action.payload
@@ -73,6 +119,15 @@ export const appSlice = createSlice({
     toggleLeftSidebar(state) {
       state.leftSidebarCollapsed = !state.leftSidebarCollapsed
     },
+  },
+  extraReducers: (builder) => {
+    builder.addCase(loadPreferencesFromServer.fulfilled, (state, action) => {
+      const prefs = action.payload
+      if (prefs.theme) state.theme = prefs.theme
+      if (prefs.fontSize) state.fontSize = prefs.fontSize
+      if (prefs.devMode !== undefined) state.devMode = prefs.devMode
+      persistToLocalStorage({ theme: state.theme, fontSize: state.fontSize, devMode: state.devMode })
+    })
   },
 })
 

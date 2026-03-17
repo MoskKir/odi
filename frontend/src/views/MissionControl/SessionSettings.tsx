@@ -1,4 +1,4 @@
-import { Radio, RadioGroup } from '@blueprintjs/core'
+import { HTMLSelect } from '@blueprintjs/core'
 import { useAppSelector, useAppDispatch } from '@/store'
 import {
   setDifficulty,
@@ -19,56 +19,61 @@ export function SessionSettings() {
       <div className="text-sm font-bold text-odi-text-muted mb-3">
         {'\u2699\uFE0F'} НАСТРОЙКИ СЕССИИ
       </div>
-      <div className="bg-odi-surface rounded-lg border border-odi-border p-4 space-y-4">
-        <RadioGroup
-          label="Сложность"
-          inline
-          onChange={(e) => dispatch(setDifficulty(e.currentTarget.value as Difficulty))}
-          selectedValue={difficulty}
-          className="!text-odi-text-muted !text-sm [&_.bp5-label]:!text-odi-text-muted"
-        >
-          <Radio label="Легкая (обучение)" value="easy" />
-          <Radio label="Средняя" value="medium" />
-          <Radio label="Сложная (эксперт)" value="hard" />
-        </RadioGroup>
-
-        <RadioGroup
-          label="Длительность"
-          inline
-          onChange={(e) => dispatch(setDuration(Number(e.currentTarget.value) as Duration))}
-          selectedValue={String(duration)}
-          className="!text-odi-text-muted !text-sm [&_.bp5-label]:!text-odi-text-muted"
-        >
-          <Radio label="30 мин" value="30" />
-          <Radio label="60 мин" value="60" />
-          <Radio label="90 мин" value="90" />
-          <Radio label="Без лимита" value="0" />
-        </RadioGroup>
-
-        <RadioGroup
-          label="Режим интерфейса"
-          inline
-          onChange={(e) => dispatch(setInterfaceMode(e.currentTarget.value as InterfaceMode))}
-          selectedValue={interfaceMode}
-          className="!text-odi-text-muted !text-sm [&_.bp5-label]:!text-odi-text-muted"
-        >
-          <Radio label="Хамелеон (адаптивный)" value="chameleon" />
-          <Radio label="Доска" value="board" />
-          <Radio label="Театр" value="theatre" />
-          <Radio label="Терминал" value="terminal" />
-        </RadioGroup>
-
-        <RadioGroup
-          label="Видимость AI-мыслей"
-          inline
-          onChange={(e) => dispatch(setAiVisibility(e.currentTarget.value as AiVisibility))}
-          selectedValue={aiVisibility}
-          className="!text-odi-text-muted !text-sm [&_.bp5-label]:!text-odi-text-muted"
-        >
-          <Radio label="Скрыты" value="hidden" />
-          <Radio label="Только капитан" value="captain" />
-          <Radio label="Вся команда" value="team" />
-        </RadioGroup>
+      <div className="bg-odi-surface rounded-lg border border-odi-border p-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div>
+          <label className="text-xs text-odi-text-muted block mb-1">Сложность</label>
+          <HTMLSelect
+            value={difficulty}
+            onChange={(e) => dispatch(setDifficulty(e.currentTarget.value as Difficulty))}
+            fill
+            className="!text-sm"
+          >
+            <option value="easy">Легкая (обучение)</option>
+            <option value="medium">Средняя</option>
+            <option value="hard">Сложная (эксперт)</option>
+          </HTMLSelect>
+        </div>
+        <div>
+          <label className="text-xs text-odi-text-muted block mb-1">Длительность</label>
+          <HTMLSelect
+            value={String(duration)}
+            onChange={(e) => dispatch(setDuration(Number(e.currentTarget.value) as Duration))}
+            fill
+            className="!text-sm"
+          >
+            <option value="30">30 мин</option>
+            <option value="60">60 мин</option>
+            <option value="90">90 мин</option>
+            <option value="0">Без лимита</option>
+          </HTMLSelect>
+        </div>
+        <div>
+          <label className="text-xs text-odi-text-muted block mb-1">Интерфейс</label>
+          <HTMLSelect
+            value={interfaceMode}
+            onChange={(e) => dispatch(setInterfaceMode(e.currentTarget.value as InterfaceMode))}
+            fill
+            className="!text-sm"
+          >
+            <option value="chameleon">Хамелеон (адаптивный)</option>
+            <option value="board">Доска</option>
+            <option value="theatre">Театр</option>
+            <option value="terminal">Терминал</option>
+          </HTMLSelect>
+        </div>
+        <div>
+          <label className="text-xs text-odi-text-muted block mb-1">AI-мысли</label>
+          <HTMLSelect
+            value={aiVisibility}
+            onChange={(e) => dispatch(setAiVisibility(e.currentTarget.value as AiVisibility))}
+            fill
+            className="!text-sm"
+          >
+            <option value="hidden">Скрыты</option>
+            <option value="captain">Только капитан</option>
+            <option value="team">Вся команда</option>
+          </HTMLSelect>
+        </div>
       </div>
     </div>
   )

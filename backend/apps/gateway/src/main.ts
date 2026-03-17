@@ -4,6 +4,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { Transport, MicroserviceOptions } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
 import { GatewayModule } from './gateway.module';
+import { RpcExceptionFilter } from './filters/rpc-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(GatewayModule);
@@ -23,6 +24,8 @@ async function bootstrap() {
       transform: true,
     }),
   );
+
+  app.useGlobalFilters(new RpcExceptionFilter());
 
   const kafkaBrokers = configService
     .get<string>('KAFKA_BROKERS', 'localhost:9092')

@@ -3,6 +3,8 @@ export const KAFKA_TOPICS = {
     REGISTER: 'odi.auth.register',
     LOGIN: 'odi.auth.login',
     VALIDATE_TOKEN: 'odi.auth.validate-token',
+    GET_PREFERENCES: 'odi.auth.get-preferences',
+    UPDATE_PREFERENCES: 'odi.auth.update-preferences',
     RESULT: 'odi.auth.result',
   },
   GAME: {

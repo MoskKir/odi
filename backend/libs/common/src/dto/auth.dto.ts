@@ -31,3 +31,9 @@ export class TokenPayloadDto {
   @IsString()
   role: string;
 }
+
+export class UpdatePreferencesDto {
+  theme?: 'dark' | 'light';
+  fontSize?: number;
+  devMode?: boolean;
+}

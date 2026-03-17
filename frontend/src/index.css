@@ -36,18 +36,18 @@
 
 /* Light theme */
 [data-theme="light"] {
-  --odi-bg: #f0f2f5;
+  --odi-bg: #e8eaef;
   --odi-surface: #ffffff;
-  --odi-surface-hover: #f5f6f8;
-  --odi-border: #d1d5db;
-  --odi-text: #1f2937;
-  --odi-text-muted: #6b7280;
-  --odi-accent: #2563eb;
-  --odi-accent-hover: #1d4ed8;
-  --odi-success: #16a34a;
-  --odi-warning: #d97706;
-  --odi-danger: #dc2626;
-  --odi-energy: #7c3aed;
+  --odi-surface-hover: #eef0f3;
+  --odi-border: #b0b6c3;
+  --odi-text: #111827;
+  --odi-text-muted: #4b5563;
+  --odi-accent: #1d4ed8;
+  --odi-accent-hover: #1e40af;
+  --odi-success: #15803d;
+  --odi-warning: #b45309;
+  --odi-danger: #b91c1c;
+  --odi-energy: #6d28d9;
 }
 
 body {

@@ -35,15 +35,10 @@ export function MissionControl() {
       </header>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto px-6 py-6">
-        <div className="max-w-5xl mx-auto space-y-8">
+      <div className="flex-1 overflow-y-auto px-6 py-4">
+        <div className="max-w-5xl mx-auto space-y-4">
           <div className="bg-odi-surface rounded-lg border border-odi-border">
-            <div className="border-b border-odi-border px-5 py-3">
-              <h2 className="text-sm font-bold text-odi-text uppercase tracking-wider m-0">
-                Формирование экипажа
-              </h2>
-            </div>
-            <div className="p-5 space-y-6">
+            <div className="p-4 space-y-4">
               <ScenarioSelector />
               <div className="border-t border-odi-border" />
               <CrewBuilder />

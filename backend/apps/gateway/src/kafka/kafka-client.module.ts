@@ -18,9 +18,17 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
               brokers: configService
                 .get<string>('KAFKA_BROKERS', 'localhost:9092')
                 .split(','),
+              retry: {
+                initialRetryTime: 300,
+                retries: 10,
+              },
+            },
+            producer: {
+              allowAutoTopicCreation: true,
             },
             consumer: {
               groupId: 'odi-gateway-consumer',
+              allowAutoTopicCreation: true,
             },
           },
         }),

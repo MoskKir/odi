@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { DatabaseModule } from '@app/database';
 import { KafkaClientModule } from './kafka/kafka-client.module';
+import { KafkaInitService } from './kafka/kafka-init.service';
 import { GameGatewayModule } from './websocket/game.gateway.module';
 import { AuthController } from './controllers/auth.controller';
 import { GameController } from './controllers/game.controller';
@@ -33,6 +34,6 @@ import { EventListenerService } from './kafka/event-listener.service';
     AdminController,
     ChatController,
   ],
-  providers: [EventListenerService],
+  providers: [KafkaInitService, EventListenerService],
 })
 export class GatewayModule {}

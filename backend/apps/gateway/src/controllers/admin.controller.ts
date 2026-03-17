@@ -91,7 +91,7 @@ export class AdminController {
   @Put('settings')
   async updateSettings(@Body() dto: any) {
     return lastValueFrom(
-      this.kafkaClient.send('odi.game.settings-update', dto),
+      this.kafkaClient.send('odi.game.settings-update', { ...dto }),
     );
   }
 }

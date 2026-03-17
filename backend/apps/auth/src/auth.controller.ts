@@ -1,6 +1,6 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { KAFKA_TOPICS, RegisterDto, LoginDto } from '@app/common';
+import { KAFKA_TOPICS, RegisterDto, LoginDto, UpdatePreferencesDto } from '@app/common';
 import { AuthService } from './auth.service';
 
 @Controller()
@@ -20,6 +20,18 @@ export class AuthController {
   @MessagePattern(KAFKA_TOPICS.AUTH.VALIDATE_TOKEN)
   async validateToken(@Payload() data: { userId: string }) {
     return this.authService.validateToken(data.userId);
+  }
+
+  @MessagePattern(KAFKA_TOPICS.AUTH.GET_PREFERENCES)
+  async getPreferences(@Payload() data: { userId: string }) {
+    return this.authService.getPreferences(data.userId);
+  }
+
+  @MessagePattern(KAFKA_TOPICS.AUTH.UPDATE_PREFERENCES)
+  async updatePreferences(
+    @Payload() data: { userId: string; preferences: UpdatePreferencesDto },
+  ) {
+    return this.authService.updatePreferences(data.userId, data.preferences);
   }
 
   @MessagePattern('odi.auth.user-list')

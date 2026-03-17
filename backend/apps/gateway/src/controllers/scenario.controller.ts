@@ -46,7 +46,7 @@ export class ScenarioController {
   @Roles(UserRole.ADMIN)
   async create(@Body() dto: any) {
     return lastValueFrom(
-      this.kafkaClient.send('odi.game.scenario-create', dto),
+      this.kafkaClient.send('odi.game.scenario-create', { ...dto }),
     );
   }
 

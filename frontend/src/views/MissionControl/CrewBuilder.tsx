@@ -1,4 +1,4 @@
-import { Card, Button, Tag } from '@blueprintjs/core'
+import { Button, Tag } from '@blueprintjs/core'
 import { useAppSelector, useAppDispatch } from '@/store'
 import { removeFromSlot, setCrewSize, SPECIALISTS } from '@/store/missionSlice'
 
@@ -11,7 +11,7 @@ export function CrewBuilder() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-2">
         <div className="text-odi-text-muted text-sm font-bold uppercase tracking-wider">
           <span className="text-odi-accent mr-2">[2]</span>
           Состав команды
@@ -37,56 +37,46 @@ export function CrewBuilder() {
           />
         </div>
       </div>
-      <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${crewSize + 1}, minmax(0, 1fr))` }}>
-        {/* Captain slot */}
-        <Card className="!bg-odi-accent/10 !border-odi-accent/30 !shadow-none text-center">
-          <div className="text-2xl mb-1">{'\u{1F464}'}</div>
-          <div className="text-xs font-bold text-odi-accent uppercase">Капитан</div>
-          <div className="text-xs text-odi-text-muted mt-1">(Вы)</div>
-        </Card>
+      <div className="flex flex-wrap gap-2">
+        {/* Captain */}
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-odi-accent/10 border border-odi-accent/30">
+          <span className="text-sm">{'\u{1F464}'}</span>
+          <span className="text-xs font-bold text-odi-accent uppercase">Капитан (Вы)</span>
+        </div>
 
         {/* AI slots */}
         {crewSlots.map((slotId, index) => {
-          const specialist = slotId
-            ? SPECIALISTS.find((s) => s.id === slotId)
-            : null
+          const specialist = slotId ? SPECIALISTS.find((s) => s.id === slotId) : null
 
-          return (
-            <Card
+          return specialist ? (
+            <div
               key={index}
-              className={`!shadow-none text-center relative ${
-                specialist
-                  ? '!bg-odi-surface-hover !border-odi-accent/30'
-                  : '!bg-odi-surface !border-odi-border border-dashed'
-              }`}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-odi-surface-hover border border-odi-accent/30"
             >
-              {specialist ? (
-                <>
-                  <Button
-                    icon="cross"
-                    minimal
-                    small
-                    className="!absolute !top-1 !right-1 !text-odi-text-muted"
-                    onClick={() => dispatch(removeFromSlot(index))}
-                  />
-                  <div className="text-2xl mb-1">{'\u{1F916}'}</div>
-                  <Tag minimal intent="primary" className="text-[10px]">
-                    СЛОТ {index + 1}
-                  </Tag>
-                  <div className="text-xs font-medium text-odi-text mt-1">
-                    {specialist.name}
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="text-2xl mb-1 opacity-30">{'\u{1F916}'}</div>
-                  <Tag minimal className="text-[10px]">
-                    СЛОТ {index + 1}
-                  </Tag>
-                  <div className="text-xs text-odi-text-muted mt-1">???</div>
-                </>
-              )}
-            </Card>
+              <span className="text-sm">{'\u{1F916}'}</span>
+              <Tag minimal intent="primary" className="text-[10px]">
+                {index + 1}
+              </Tag>
+              <span className="text-xs font-medium text-odi-text">{specialist.name}</span>
+              <Button
+                icon="cross"
+                minimal
+                small
+                className="!text-odi-text-muted !p-0 !min-h-0 !min-w-0"
+                onClick={() => dispatch(removeFromSlot(index))}
+              />
+            </div>
+          ) : (
+            <div
+              key={index}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-odi-surface border border-dashed border-odi-border"
+            >
+              <span className="text-sm opacity-30">{'\u{1F916}'}</span>
+              <Tag minimal className="text-[10px]">
+                {index + 1}
+              </Tag>
+              <span className="text-xs text-odi-text-muted">???</span>
+            </div>
           )
         })}
       </div>

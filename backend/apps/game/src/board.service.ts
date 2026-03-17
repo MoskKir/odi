@@ -7,6 +7,7 @@ import {
   SessionParticipantEntity,
 } from '@app/database';
 import { KAFKA_TOPICS } from '@app/common';
+import { lastValueFrom } from 'rxjs';
 
 @Injectable()
 export class BoardService {
@@ -41,11 +42,13 @@ export class BoardService {
 
     await this.cardRepo.save(card);
 
-    this.kafkaClient.emit(KAFKA_TOPICS.EVENTS.SESSION, {
-      sessionId: data.sessionId,
-      type: 'board-card-added',
-      card,
-    });
+    await lastValueFrom(
+      this.kafkaClient.emit(KAFKA_TOPICS.EVENTS.SESSION, {
+        sessionId: data.sessionId,
+        type: 'board-card-added',
+        card,
+      }),
+    );
 
     return card;
   }
@@ -62,11 +65,13 @@ export class BoardService {
     await this.cardRepo.increment({ id: cardId }, 'votes', 1);
     const card = await this.cardRepo.findOne({ where: { id: cardId } });
 
-    this.kafkaClient.emit(KAFKA_TOPICS.EVENTS.SESSION, {
-      sessionId: card!.sessionId,
-      type: 'board-card-voted',
-      card,
-    });
+    await lastValueFrom(
+      this.kafkaClient.emit(KAFKA_TOPICS.EVENTS.SESSION, {
+        sessionId: card!.sessionId,
+        type: 'board-card-voted',
+        card,
+      }),
+    );
 
     return card;
   }

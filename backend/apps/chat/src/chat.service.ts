@@ -2,6 +2,7 @@ import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ClientKafka } from '@nestjs/microservices';
+import { lastValueFrom } from 'rxjs';
 import {
   ChatMessageEntity,
   SessionParticipantEntity,
@@ -79,27 +80,33 @@ export class ChatService implements OnModuleInit {
       ? participant.botConfig?.name || 'Bot'
       : participant.user?.name || 'User';
 
-    this.kafkaClient.emit(KAFKA_TOPICS.EVENTS.CHAT, {
-      sessionId: data.sessionId,
-      message: {
-        id: message.id,
-        sessionId: message.sessionId,
-        participantId: message.participantId,
-        author,
-        role: participant.role,
-        text: message.text,
-        isSystem: message.isSystem,
-        createdAt: message.createdAt,
-      },
-    });
+    await lastValueFrom(
+      this.kafkaClient.emit(KAFKA_TOPICS.EVENTS.CHAT, {
+        sessionId: data.sessionId,
+        message: {
+          id: message.id,
+          sessionId: message.sessionId,
+          participantId: message.participantId,
+          author,
+          role: participant.role,
+          text: message.text,
+          isSystem: message.isSystem,
+          createdAt: message.createdAt,
+        },
+      }),
+    );
+
+    this.logger.log(`Emitted EVENTS.CHAT for session ${data.sessionId}`);
 
     // If this is a human message, trigger AI generation for bots
     if (!data.isBot && data.userId) {
-      this.kafkaClient.emit(KAFKA_TOPICS.AI.GENERATE, {
-        sessionId: data.sessionId,
-        trigger: data.text,
-        userId: data.userId,
-      });
+      lastValueFrom(
+        this.kafkaClient.emit(KAFKA_TOPICS.AI.GENERATE, {
+          sessionId: data.sessionId,
+          trigger: data.text,
+          userId: data.userId,
+        }),
+      ).catch((err) => this.logger.error(`AI.GENERATE emit failed: ${err.message}`));
     }
 
     return {

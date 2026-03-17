@@ -2,6 +2,7 @@ import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ClientKafka, RpcException } from '@nestjs/microservices';
+import { lastValueFrom } from 'rxjs';
 import {
   GameSessionEntity,
   ScenarioEntity,
@@ -130,11 +131,13 @@ export class GameService implements OnModuleInit {
     }
 
     // Emit event
-    this.kafkaClient.emit(KAFKA_TOPICS.EVENTS.SESSION, {
-      sessionId: session.id,
-      type: 'created',
-      session,
-    });
+    await lastValueFrom(
+      this.kafkaClient.emit(KAFKA_TOPICS.EVENTS.SESSION, {
+        sessionId: session.id,
+        type: 'created',
+        session,
+      }),
+    );
 
     // Increment scenario usage
     await this.scenarioRepo.increment({ id: scenario.id }, 'sessionsCount', 1);
@@ -209,12 +212,14 @@ export class GameService implements OnModuleInit {
 
     const session = await this.findOne(sessionId);
 
-    this.kafkaClient.emit(KAFKA_TOPICS.EVENTS.SESSION, {
-      sessionId,
-      type: 'status-changed',
-      status,
-      session,
-    });
+    await lastValueFrom(
+      this.kafkaClient.emit(KAFKA_TOPICS.EVENTS.SESSION, {
+        sessionId,
+        type: 'status-changed',
+        status,
+        session,
+      }),
+    );
 
     return session;
   }

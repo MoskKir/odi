@@ -27,7 +27,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
               allowAutoTopicCreation: true,
             },
             consumer: {
-              groupId: 'odi-gateway-consumer',
+              groupId: 'odi-gateway-client',
               allowAutoTopicCreation: true,
             },
           },

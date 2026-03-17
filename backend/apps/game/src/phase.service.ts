@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { ClientKafka } from '@nestjs/microservices';
 import { SessionPhaseEntity, PhaseStatus } from '@app/database';
 import { KAFKA_TOPICS } from '@app/common';
+import { lastValueFrom } from 'rxjs';
 
 @Injectable()
 export class PhaseService {
@@ -75,13 +76,15 @@ export class PhaseService {
       (p) => p.status === PhaseStatus.ACTIVE,
     );
 
-    this.kafkaClient.emit(KAFKA_TOPICS.EVENTS.PHASE, {
-      sessionId,
-      type: 'phase-advanced',
-      direction,
-      currentPhase,
-      phases: updatedPhases,
-    });
+    await lastValueFrom(
+      this.kafkaClient.emit(KAFKA_TOPICS.EVENTS.PHASE, {
+        sessionId,
+        type: 'phase-advanced',
+        direction,
+        currentPhase,
+        phases: updatedPhases,
+      }),
+    );
 
     return { phases: updatedPhases, currentPhase };
   }

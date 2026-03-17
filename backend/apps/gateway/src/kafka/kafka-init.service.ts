@@ -62,11 +62,24 @@ export class KafkaInitService implements OnModuleInit {
       KAFKA_TOPICS.CHAT.SEND,
     ];
 
+    // Event topics (fire-and-forget, no reply needed)
+    const eventTopics = [
+      KAFKA_TOPICS.EVENTS.SESSION,
+      KAFKA_TOPICS.EVENTS.CHAT,
+      KAFKA_TOPICS.EVENTS.EMOTION,
+      KAFKA_TOPICS.EVENTS.PHASE,
+      KAFKA_TOPICS.AI.GENERATE,
+      KAFKA_TOPICS.AI.ANALYZE_EMOTION,
+    ];
+
     // Build list of topics + reply topics
     const allTopics = new Set<string>();
     for (const topic of replyTopics) {
       allTopics.add(topic);
       allTopics.add(`${topic}.reply`);
+    }
+    for (const topic of eventTopics) {
+      allTopics.add(topic);
     }
 
     const existing = await admin.listTopics();

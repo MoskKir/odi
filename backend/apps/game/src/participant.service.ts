@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { ClientKafka } from '@nestjs/microservices';
 import { SessionParticipantEntity, GameSessionEntity } from '@app/database';
 import { KAFKA_TOPICS } from '@app/common';
+import { lastValueFrom } from 'rxjs';
 
 @Injectable()
 export class ParticipantService {
@@ -48,11 +49,13 @@ export class ParticipantService {
       relations: ['user', 'botConfig'],
     });
 
-    this.kafkaClient.emit(KAFKA_TOPICS.EVENTS.SESSION, {
-      sessionId,
-      type: 'participant-joined',
-      participant,
-    });
+    await lastValueFrom(
+      this.kafkaClient.emit(KAFKA_TOPICS.EVENTS.SESSION, {
+        sessionId,
+        type: 'participant-joined',
+        participant,
+      }),
+    );
 
     return participant;
   }
@@ -65,12 +68,14 @@ export class ParticipantService {
     if (participant) {
       await this.participantRepo.update(participant.id, { isOnline: false });
 
-      this.kafkaClient.emit(KAFKA_TOPICS.EVENTS.SESSION, {
-        sessionId,
-        type: 'participant-left',
-        userId,
-        participantId: participant.id,
-      });
+      await lastValueFrom(
+        this.kafkaClient.emit(KAFKA_TOPICS.EVENTS.SESSION, {
+          sessionId,
+          type: 'participant-left',
+          userId,
+          participantId: participant.id,
+        }),
+      );
     }
 
     return { success: true };
@@ -86,12 +91,14 @@ export class ParticipantService {
         currentEmotion: emotion,
       });
 
-      this.kafkaClient.emit(KAFKA_TOPICS.EVENTS.EMOTION, {
-        sessionId,
-        userId,
-        participantId: participant.id,
-        emotion,
-      });
+      await lastValueFrom(
+        this.kafkaClient.emit(KAFKA_TOPICS.EVENTS.EMOTION, {
+          sessionId,
+          userId,
+          participantId: participant.id,
+          emotion,
+        }),
+      );
     }
 
     return { success: true };

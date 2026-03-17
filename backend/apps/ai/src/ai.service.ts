@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ClientKafka } from '@nestjs/microservices';
+import { lastValueFrom } from 'rxjs';
 import { KAFKA_TOPICS, GenerateDto } from '@app/common';
 import { OpenRouterService } from './openrouter/openrouter.service';
 import { PromptBuilderService } from './prompts/prompt-builder.service';
@@ -52,21 +53,25 @@ export class AiService implements OnModuleInit {
       });
 
       // Emit the generated message to chat
-      this.kafkaClient.emit(KAFKA_TOPICS.CHAT.SEND, {
-        sessionId: dto.sessionId,
-        botConfigId: dto.botConfigId,
-        text: response,
-        isBot: true,
-      });
+      await lastValueFrom(
+        this.kafkaClient.emit(KAFKA_TOPICS.CHAT.SEND, {
+          sessionId: dto.sessionId,
+          botConfigId: dto.botConfigId,
+          text: response,
+          isBot: true,
+        }),
+      );
 
       // Emit chat event for WebSocket broadcast
-      this.kafkaClient.emit(KAFKA_TOPICS.EVENTS.CHAT, {
-        sessionId: dto.sessionId,
-        botConfigId: dto.botConfigId,
-        text: response,
-        isBot: true,
-        trigger: dto.trigger,
-      });
+      await lastValueFrom(
+        this.kafkaClient.emit(KAFKA_TOPICS.EVENTS.CHAT, {
+          sessionId: dto.sessionId,
+          botConfigId: dto.botConfigId,
+          text: response,
+          isBot: true,
+          trigger: dto.trigger,
+        }),
+      );
 
       return { text: response };
     } catch (error) {
@@ -78,9 +83,11 @@ export class AiService implements OnModuleInit {
   async analyzeEmotion(data: { sessionId: string; messages: any[] }) {
     const result = await this.emotionAnalyzer.analyze(data.messages);
 
-    this.kafkaClient.emit(KAFKA_TOPICS.EVENTS.EMOTION, {
-      ...result,
-    });
+    await lastValueFrom(
+      this.kafkaClient.emit(KAFKA_TOPICS.EVENTS.EMOTION, {
+        ...result,
+      }),
+    );
 
     return result;
   }

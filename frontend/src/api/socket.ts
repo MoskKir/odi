@@ -3,7 +3,7 @@ import { io, Socket } from 'socket.io-client'
 let socket: Socket | null = null
 
 export function connectSocket(): Socket {
-  if (socket?.connected) return socket
+  if (socket) return socket
 
   const token = localStorage.getItem('odi_token')
 
@@ -24,6 +24,7 @@ export function getSocket(): Socket | null {
 
 export function disconnectSocket() {
   if (socket) {
+    socket.removeAllListeners()
     socket.disconnect()
     socket = null
   }

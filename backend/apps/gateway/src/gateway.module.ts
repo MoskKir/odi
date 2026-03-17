@@ -33,7 +33,8 @@ import { EventListenerService } from './kafka/event-listener.service';
     BotController,
     AdminController,
     ChatController,
+    EventListenerService,
   ],
-  providers: [KafkaInitService, EventListenerService],
+  providers: [KafkaInitService],
 })
 export class GatewayModule {}

@@ -32,7 +32,6 @@ async function loadHistory(sessionId: string): Promise<ChatMessage[]> {
   if (!res.ok) return []
   const data = await res.json()
   const items: ServerChatMessage[] = data.items ?? []
-  // API returns DESC order, reverse to chronological
   return items.reverse().map(toClientMessage)
 }
 
@@ -46,55 +45,48 @@ export function useGameSocket() {
 
     dispatch(setSocketJoined(false))
     dispatch(setMessages([]))
+
     const socket = connectSocket()
+    let mounted = true
 
     const joinSession = async () => {
       socket.emit('session:join', { sessionId })
-
-      // Load chat history via REST
       const history = await loadHistory(sessionId)
-      dispatch(setMessages(history))
+      if (mounted) dispatch(setMessages(history))
     }
 
     socket.on('session:joined', () => {
-      dispatch(setSocketJoined(true))
+      if (mounted) dispatch(setSocketJoined(true))
+    })
+
+    socket.on('chat:message', (data: { sessionId: string; message: ServerChatMessage }) => {
+      if (mounted && data.message) dispatch(addMessage(toClientMessage(data.message)))
+    })
+
+    socket.on('session:update', (data: { teamOnline?: number; energy?: number }) => {
+      if (mounted) dispatch(updateSession(data))
+    })
+
+    socket.on('phase:update', (data: { phase?: string; elapsed?: string }) => {
+      if (mounted) dispatch(updatePhase(data))
+    })
+
+    socket.on('emotion:update', () => {})
+
+    socket.on('board:update', (data: BoardCard) => {
+      if (mounted) dispatch(addCard(data))
     })
 
     socket.on('connect', joinSession)
 
+    // Socket may already be connected (e.g. reconnect)
     if (socket.connected) {
       joinSession()
     }
 
-    socket.on('chat:message', (data: { sessionId: string; message: ServerChatMessage }) => {
-      dispatch(addMessage(toClientMessage(data.message)))
-    })
-
-    socket.on('session:update', (data: { teamOnline?: number; energy?: number }) => {
-      dispatch(updateSession(data))
-    })
-
-    socket.on('phase:update', (data: { phase?: string; elapsed?: string }) => {
-      dispatch(updatePhase(data))
-    })
-
-    socket.on('emotion:update', (_data: { userId: string; emotion: string }) => {
-      // Emotion updates from other participants
-    })
-
-    socket.on('board:update', (data: BoardCard) => {
-      dispatch(addCard(data))
-    })
-
     return () => {
+      mounted = false
       socket.emit('session:leave', { sessionId })
-      socket.off('connect', joinSession)
-      socket.off('session:joined')
-      socket.off('chat:message')
-      socket.off('session:update')
-      socket.off('phase:update')
-      socket.off('emotion:update')
-      socket.off('board:update')
       dispatch(setSocketJoined(false))
       disconnectSocket()
     }

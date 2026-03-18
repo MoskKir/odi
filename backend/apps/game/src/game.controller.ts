@@ -93,10 +93,20 @@ export class GameController {
     return this.gameService.listBots();
   }
 
+  @MessagePattern('odi.game.bot-create')
+  async createBot(@Payload() data: any) {
+    return this.gameService.createBot(data);
+  }
+
   @MessagePattern('odi.game.bot-update')
   async updateBot(@Payload() data: any) {
     const { id, ...dto } = data;
     return this.gameService.updateBot(id, dto);
+  }
+
+  @MessagePattern('odi.game.bot-delete')
+  async deleteBot(@Payload() data: { id: string }) {
+    return this.gameService.deleteBot(data.id);
   }
 
   // --- Board ---

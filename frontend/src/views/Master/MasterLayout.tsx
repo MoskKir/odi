@@ -1,4 +1,5 @@
-import { Button, ButtonGroup, Tag } from '@blueprintjs/core'
+import { Button, ButtonGroup, Tag, Tooltip } from '@blueprintjs/core'
+import { useState } from 'react'
 import { useLocation, useNavigate, useSearchParams, Outlet } from 'react-router-dom'
 import { useAppSelector } from '@/store'
 import { SettingsMenu } from '@/components/SettingsMenu'
@@ -16,6 +17,7 @@ export function MasterLayout() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const qs = searchParams.toString()
+  const [collapsed, setCollapsed] = useState(false)
 
   return (
     <div className={`${theme === 'dark' ? 'bp5-dark' : ''} h-screen flex flex-col bg-odi-bg`}>
@@ -35,17 +37,24 @@ export function MasterLayout() {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
-        <aside className="w-52 bg-odi-surface border-r border-odi-border p-3 shrink-0">
+        <aside className={`${collapsed ? 'w-12' : 'w-52'} bg-odi-surface border-r border-odi-border p-2 shrink-0 flex flex-col transition-all duration-200`}>
+          <Button
+            icon={collapsed ? 'chevron-right' : 'chevron-left'}
+            minimal
+            small
+            className="!text-odi-text-muted mb-2 self-end"
+            onClick={() => setCollapsed(!collapsed)}
+          />
           <ButtonGroup vertical minimal className="gap-1 w-full">
             {NAV_ITEMS.map(({ path, label, icon }) => {
               const isActive = path === '/master'
                 ? location.pathname === '/master'
                 : location.pathname.startsWith(path)
-              return (
+              const btn = (
                 <Button
                   key={path}
                   icon={icon}
-                  text={label}
+                  text={collapsed ? undefined : label}
                   alignText="left"
                   active={isActive}
                   onClick={() => navigate(path)}
@@ -56,15 +65,18 @@ export function MasterLayout() {
                   }
                 />
               )
+              return collapsed ? (
+                <Tooltip key={path} content={label} placement="right">
+                  {btn}
+                </Tooltip>
+              ) : btn
             })}
           </ButtonGroup>
         </aside>
 
         {/* Content */}
         <main className="flex-1 overflow-y-auto p-6">
-          <div className="max-w-6xl mx-auto">
-            <Outlet />
-          </div>
+          <Outlet />
         </main>
       </div>
     </div>

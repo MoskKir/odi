@@ -1,10 +1,12 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Inject,
   Param,
   Patch,
+  Post,
   UseGuards,
 } from '@nestjs/common';
 import { ClientKafka } from '@nestjs/microservices';
@@ -23,7 +25,9 @@ export class BotController {
 
   async onModuleInit() {
     this.kafkaClient.subscribeToResponseOf('odi.game.bot-list');
+    this.kafkaClient.subscribeToResponseOf('odi.game.bot-create');
     this.kafkaClient.subscribeToResponseOf('odi.game.bot-update');
+    this.kafkaClient.subscribeToResponseOf('odi.game.bot-delete');
     await this.kafkaClient.connect();
   }
 
@@ -34,12 +38,30 @@ export class BotController {
     );
   }
 
+  @Post()
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async create(@Body() dto: any) {
+    return lastValueFrom(
+      this.kafkaClient.send('odi.game.bot-create', { ...dto }),
+    );
+  }
+
   @Patch(':id')
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
   async update(@Param('id') id: string, @Body() dto: any) {
     return lastValueFrom(
       this.kafkaClient.send('odi.game.bot-update', { id, ...dto }),
+    );
+  }
+
+  @Delete(':id')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async delete(@Param('id') id: string) {
+    return lastValueFrom(
+      this.kafkaClient.send('odi.game.bot-delete', { id }),
     );
   }
 }

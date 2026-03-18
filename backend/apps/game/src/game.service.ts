@@ -252,9 +252,19 @@ export class GameService implements OnModuleInit {
     });
   }
 
+  async createBot(dto: Partial<BotConfigEntity>) {
+    const bot = this.botConfigRepo.create(dto);
+    return this.botConfigRepo.save(bot);
+  }
+
   async updateBot(id: string, dto: Partial<BotConfigEntity>) {
     await this.botConfigRepo.update(id, dto);
     return this.botConfigRepo.findOne({ where: { id } });
+  }
+
+  async deleteBot(id: string) {
+    await this.botConfigRepo.delete(id);
+    return { deleted: true };
   }
 
   async getSettings() {

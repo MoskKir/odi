@@ -1,7 +1,8 @@
-import { useState } from 'react'
-import { InputGroup, Button, ButtonGroup, Tag } from '@blueprintjs/core'
+import { useRef, useCallback, useState } from 'react'
+import { Button, ButtonGroup, Tag } from '@blueprintjs/core'
 import { useSearchParams } from 'react-router-dom'
-import { useAppSelector } from '@/store'
+import { useAppSelector, useAppDispatch } from '@/store'
+import { setInputBarHeight, syncPreferencesToServer } from '@/store/appSlice'
 import { getSocket } from '@/api/socket'
 
 const BOT_TARGETS = [
@@ -10,11 +11,18 @@ const BOT_TARGETS = [
   { role: 'visionary' as const, label: '@Визионер' },
 ]
 
+const MIN_HEIGHT = 36
+const MAX_HEIGHT = 300
+
 export function InputBar() {
   const [text, setText] = useState('')
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const isResizing = useRef(false)
   const [searchParams] = useSearchParams()
   const sessionId = searchParams.get('session')
   const socketJoined = useAppSelector((s) => s.app.socketJoined)
+  const inputBarHeight = useAppSelector((s) => s.app.inputBarHeight)
+  const dispatch = useAppDispatch()
 
   const canSend = socketJoined && !!sessionId
 
@@ -32,37 +40,83 @@ export function InputBar() {
     }
   }
 
+  const handleResizeMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    isResizing.current = true
+
+    const startY = e.clientY
+    const startHeight = inputBarHeight
+
+    const onMouseMove = (ev: MouseEvent) => {
+      if (!isResizing.current) return
+      const newHeight = Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, startHeight - (ev.clientY - startY)))
+      dispatch(setInputBarHeight(newHeight))
+    }
+
+    const onMouseUp = () => {
+      isResizing.current = false
+      document.removeEventListener('mousemove', onMouseMove)
+      document.removeEventListener('mouseup', onMouseUp)
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+      dispatch(syncPreferencesToServer({ inputBarHeight: undefined }))
+      // read actual value after state update
+      setTimeout(() => {
+        const el = document.querySelector('[data-input-bar]')
+        if (el) {
+          const ta = el.querySelector('textarea')
+          if (ta) {
+            dispatch(syncPreferencesToServer({ inputBarHeight: ta.offsetHeight }))
+          }
+        }
+      }, 0)
+    }
+
+    document.body.style.cursor = 'row-resize'
+    document.body.style.userSelect = 'none'
+    document.addEventListener('mousemove', onMouseMove)
+    document.addEventListener('mouseup', onMouseUp)
+  }, [inputBarHeight, dispatch])
+
   return (
-    <div className="bg-odi-surface border-t border-odi-border px-4 py-3 shrink-0">
-      <div className="flex items-center gap-2">
-        <InputGroup
-          placeholder="Ввод мысли..."
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={handleKeyDown}
-          leftIcon="edit"
-          large
-          className="flex-1"
-        />
-        <Button icon="microphone" minimal title="Голос" />
-        <Button icon="paperclip" minimal title="Файл" />
-        <Button icon="send-message" intent="primary" onClick={handleSend} disabled={!canSend} />
-      </div>
-      <div className="flex items-center gap-2 mt-2">
-        <ButtonGroup minimal>
-          {BOT_TARGETS.map(({ role, label }) => (
-            <Tag
-              key={role}
-              interactive
-              minimal
-              intent="primary"
-              className="cursor-pointer"
-              onClick={() => setText((t) => `${t} ${label} `)}
-            >
-              {label}
-            </Tag>
-          ))}
-        </ButtonGroup>
+    <div className="bg-odi-surface border-t border-odi-border shrink-0" data-input-bar>
+      {/* Resize handle */}
+      <div
+        onMouseDown={handleResizeMouseDown}
+        className="h-1 cursor-row-resize hover:bg-odi-accent/40 active:bg-odi-accent/60 transition-colors"
+      />
+
+      <div className="px-4 py-3">
+        <div className="flex items-end gap-2">
+          <textarea
+            ref={textareaRef}
+            placeholder="Ввод мысли..."
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className="flex-1 resize-none bg-odi-bg text-odi-text border border-odi-border rounded-lg px-3 py-2 text-sm leading-relaxed focus:outline-none focus:border-odi-accent placeholder:text-odi-text-muted whitespace-pre-wrap overflow-y-auto"
+            style={{ height: inputBarHeight }}
+          />
+          <Button icon="microphone" minimal title="Голос" />
+          <Button icon="paperclip" minimal title="Файл" />
+          <Button icon="send-message" intent="primary" onClick={handleSend} disabled={!canSend} />
+        </div>
+        <div className="flex items-center gap-2 mt-2">
+          <ButtonGroup minimal>
+            {BOT_TARGETS.map(({ role, label }) => (
+              <Tag
+                key={role}
+                interactive
+                minimal
+                intent="primary"
+                className="cursor-pointer"
+                onClick={() => setText((t) => `${t} ${label} `)}
+              >
+                {label}
+              </Tag>
+            ))}
+          </ButtonGroup>
+        </div>
       </div>
     </div>
   )

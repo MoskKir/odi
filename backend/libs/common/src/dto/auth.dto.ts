@@ -36,4 +36,9 @@ export class UpdatePreferencesDto {
   theme?: 'dark' | 'light';
   fontSize?: number;
   devMode?: boolean;
+  leftSidebarCollapsed?: boolean;
+  leftSidebarWidth?: number;
+  rightPanelCollapsed?: boolean;
+  rightPanelWidth?: number;
+  inputBarHeight?: number;
 }

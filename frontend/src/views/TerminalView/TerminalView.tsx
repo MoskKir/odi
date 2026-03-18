@@ -13,7 +13,7 @@ export function TerminalView() {
         <div key={msg.id} className="mb-1">
           <span className="text-odi-accent">[{msg.role}]</span>{' '}
           <span className="text-odi-text-muted">{msg.author}:</span>{' '}
-          <span className="text-odi-text">{msg.text}</span>
+          <span className="text-odi-text whitespace-pre-wrap break-words">{msg.text}</span>
         </div>
       ))}
       <div className="mt-3 text-odi-success">

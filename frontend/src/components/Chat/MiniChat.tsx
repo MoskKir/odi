@@ -13,7 +13,7 @@ export function MiniChat() {
         {lastMessages.map((msg) => (
           <div key={msg.id} className="text-xs p-1.5 rounded bg-odi-surface-hover">
             <span className="text-odi-accent font-medium">{msg.author}:</span>{' '}
-            <span className="text-odi-text-muted">{msg.text}</span>
+            <span className="text-odi-text-muted whitespace-pre-wrap break-words">{msg.text}</span>
           </div>
         ))}
       </div>

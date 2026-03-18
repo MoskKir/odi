@@ -10,7 +10,18 @@ import {
 
 const LS_KEY = 'odi_preferences'
 
-function loadFromLocalStorage(): Partial<{ theme: Theme; fontSize: FontSize; devMode: boolean }> {
+interface PersistedPrefs {
+  theme: Theme
+  fontSize: FontSize
+  devMode: boolean
+  leftSidebarCollapsed: boolean
+  leftSidebarWidth: number
+  rightPanelCollapsed: boolean
+  rightPanelWidth: number
+  inputBarHeight: number
+}
+
+function loadFromLocalStorage(): Partial<PersistedPrefs> {
   try {
     const raw = localStorage.getItem(LS_KEY)
     if (!raw) return {}
@@ -20,7 +31,7 @@ function loadFromLocalStorage(): Partial<{ theme: Theme; fontSize: FontSize; dev
   }
 }
 
-function persistToLocalStorage(prefs: { theme: Theme; fontSize: FontSize; devMode: boolean }) {
+function persistToLocalStorage(prefs: PersistedPrefs) {
   localStorage.setItem(LS_KEY, JSON.stringify(prefs))
 }
 
@@ -67,7 +78,10 @@ interface AppState {
   cards: BoardCard[]
   sessionBots: SessionBot[]
   rightPanelCollapsed: boolean
+  rightPanelWidth: number
   leftSidebarCollapsed: boolean
+  leftSidebarWidth: number
+  inputBarHeight: number
   socketJoined: boolean
 }
 
@@ -84,9 +98,25 @@ const initialState: AppState = {
   messages: [],
   cards: [],
   sessionBots: [],
-  rightPanelCollapsed: false,
-  leftSidebarCollapsed: false,
+  rightPanelCollapsed: saved.rightPanelCollapsed ?? false,
+  rightPanelWidth: saved.rightPanelWidth ?? 256,
+  leftSidebarCollapsed: saved.leftSidebarCollapsed ?? false,
+  leftSidebarWidth: saved.leftSidebarWidth ?? 208,
+  inputBarHeight: saved.inputBarHeight ?? 36,
   socketJoined: false,
+}
+
+function getPersistedPrefs(state: AppState): PersistedPrefs {
+  return {
+    theme: state.theme,
+    fontSize: state.fontSize,
+    devMode: state.devMode,
+    leftSidebarCollapsed: state.leftSidebarCollapsed,
+    leftSidebarWidth: state.leftSidebarWidth,
+    rightPanelCollapsed: state.rightPanelCollapsed,
+    rightPanelWidth: state.rightPanelWidth,
+    inputBarHeight: state.inputBarHeight,
+  }
 }
 
 export const appSlice = createSlice({
@@ -95,15 +125,15 @@ export const appSlice = createSlice({
   reducers: {
     toggleDevMode(state) {
       state.devMode = !state.devMode
-      persistToLocalStorage({ theme: state.theme, fontSize: state.fontSize, devMode: state.devMode })
+      persistToLocalStorage(getPersistedPrefs(state))
     },
     setTheme(state, action: PayloadAction<Theme>) {
       state.theme = action.payload
-      persistToLocalStorage({ theme: state.theme, fontSize: state.fontSize, devMode: state.devMode })
+      persistToLocalStorage(getPersistedPrefs(state))
     },
     setFontSize(state, action: PayloadAction<FontSize>) {
       state.fontSize = action.payload
-      persistToLocalStorage({ theme: state.theme, fontSize: state.fontSize, devMode: state.devMode })
+      persistToLocalStorage(getPersistedPrefs(state))
     },
     setEmotion(state, action: PayloadAction<Emotion | null>) {
       state.currentEmotion = action.payload
@@ -137,9 +167,23 @@ export const appSlice = createSlice({
     },
     toggleRightPanel(state) {
       state.rightPanelCollapsed = !state.rightPanelCollapsed
+      persistToLocalStorage(getPersistedPrefs(state))
+    },
+    setRightPanelWidth(state, action: PayloadAction<number>) {
+      state.rightPanelWidth = action.payload
+      persistToLocalStorage(getPersistedPrefs(state))
     },
     toggleLeftSidebar(state) {
       state.leftSidebarCollapsed = !state.leftSidebarCollapsed
+      persistToLocalStorage(getPersistedPrefs(state))
+    },
+    setLeftSidebarWidth(state, action: PayloadAction<number>) {
+      state.leftSidebarWidth = action.payload
+      persistToLocalStorage(getPersistedPrefs(state))
+    },
+    setInputBarHeight(state, action: PayloadAction<number>) {
+      state.inputBarHeight = action.payload
+      persistToLocalStorage(getPersistedPrefs(state))
     },
   },
   extraReducers: (builder) => {
@@ -148,7 +192,12 @@ export const appSlice = createSlice({
       if (prefs.theme) state.theme = prefs.theme
       if (prefs.fontSize) state.fontSize = prefs.fontSize
       if (prefs.devMode !== undefined) state.devMode = prefs.devMode
-      persistToLocalStorage({ theme: state.theme, fontSize: state.fontSize, devMode: state.devMode })
+      if (prefs.leftSidebarCollapsed !== undefined) state.leftSidebarCollapsed = prefs.leftSidebarCollapsed
+      if (prefs.leftSidebarWidth) state.leftSidebarWidth = prefs.leftSidebarWidth
+      if (prefs.rightPanelCollapsed !== undefined) state.rightPanelCollapsed = prefs.rightPanelCollapsed
+      if (prefs.rightPanelWidth) state.rightPanelWidth = prefs.rightPanelWidth
+      if (prefs.inputBarHeight) state.inputBarHeight = prefs.inputBarHeight
+      persistToLocalStorage(getPersistedPrefs(state))
     })
   },
 })
@@ -167,5 +216,8 @@ export const {
   setSessionTitle,
   setSessionBots,
   toggleRightPanel,
+  setRightPanelWidth,
   toggleLeftSidebar,
+  setLeftSidebarWidth,
+  setInputBarHeight,
 } = appSlice.actions

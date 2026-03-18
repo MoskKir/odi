@@ -9,6 +9,11 @@ export interface UserPreferences {
   theme?: 'dark' | 'light';
   fontSize?: number;
   devMode?: boolean;
+  leftSidebarCollapsed?: boolean;
+  leftSidebarWidth?: number;
+  rightPanelCollapsed?: boolean;
+  rightPanelWidth?: number;
+  inputBarHeight?: number;
 }
 
 export async function fetchPreferences(): Promise<UserPreferences> {

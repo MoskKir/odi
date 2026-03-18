@@ -1,16 +1,50 @@
 import { useRef, useEffect, useCallback, useState } from 'react'
-import { Button, Card, Tag } from '@blueprintjs/core'
+import { Button, Icon } from '@blueprintjs/core'
 import { useAppSelector } from '@/store'
 
-const ROLE_COLORS: Record<string, string> = {
-  moderator: 'bg-odi-accent',
-  critic: 'bg-odi-danger',
-  visionary: 'bg-odi-energy',
-  user: 'bg-odi-success',
+function getInitials(name: string) {
+  return name
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
+}
+
+function getRoleColor(role: string) {
+  switch (role) {
+    case 'moderator':
+      return 'bg-blue-600'
+    case 'critic':
+      return 'bg-red-600'
+    case 'visionary':
+      return 'bg-purple-600'
+    default:
+      return 'bg-odi-accent'
+  }
+}
+
+function getRoleIcon(role: string): string | null {
+  switch (role) {
+    case 'moderator':
+      return 'shield'
+    case 'critic':
+      return 'eye-open'
+    case 'visionary':
+      return 'lightbulb'
+    default:
+      return null
+  }
+}
+
+function formatTime(ts: number) {
+  const d = new Date(ts)
+  return d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
 }
 
 export function TheatreView() {
   const messages = useAppSelector((s) => s.app.messages)
+  const currentUser = useAppSelector((s) => s.auth.user)
   const containerRef = useRef<HTMLDivElement>(null)
   const shouldAutoScroll = useRef(true)
   const [showScrollDown, setShowScrollDown] = useState(false)
@@ -43,37 +77,55 @@ export function TheatreView() {
       <div
         ref={containerRef}
         onScroll={handleScroll}
-        className="flex flex-col gap-4 p-6 h-full overflow-y-auto max-w-3xl mx-auto"
+        className="flex flex-col gap-3 p-4 h-full overflow-y-auto w-full"
       >
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
-          >
+        {messages.map((msg) => {
+          const isMine = currentUser?.name === msg.author
+          const isBot = msg.role !== 'user'
+          const roleIcon = getRoleIcon(msg.role)
+
+          return (
             <div
-              className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0 ${
-                ROLE_COLORS[msg.role] || 'bg-odi-text-muted'
-              }`}
+              key={msg.id}
+              className={`flex items-end gap-2 ${isMine ? 'flex-row-reverse' : 'flex-row'}`}
             >
-              {msg.role === 'user' ? 'Вы' : 'AI'}
-            </div>
-            <Card
-              className={`!shadow-none !border-odi-border max-w-[70%] ${
-                msg.role === 'user'
-                  ? '!bg-odi-accent/10'
-                  : '!bg-odi-surface-hover'
-              }`}
-            >
-              <div className="flex items-center gap-2 mb-1">
-                <span className="font-medium text-sm text-odi-text">{msg.author}</span>
-                <Tag minimal round className="text-[10px]">
-                  {msg.role}
-                </Tag>
+              {/* Avatar at the bottom of the message */}
+              <div
+                className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold ${
+                  isMine ? 'bg-odi-accent' : getRoleColor(msg.role)
+                }`}
+                title={msg.author}
+              >
+                {isBot && roleIcon ? (
+                  <Icon icon={roleIcon as any} size={14} className="text-white" />
+                ) : (
+                  getInitials(msg.author)
+                )}
               </div>
-              <p className="text-sm text-odi-text-muted">{msg.text}</p>
-            </Card>
-          </div>
-        ))}
+
+              {/* Message bubble */}
+              <div className={`max-w-[70%] min-w-[120px]`}>
+                {!isMine && (
+                  <div className="text-xs font-medium mb-1 text-odi-text-muted">
+                    {msg.author}
+                  </div>
+                )}
+                <div
+                  className={`px-3 py-2 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap break-words ${
+                    isMine
+                      ? 'bg-odi-accent text-white rounded-br-md'
+                      : 'bg-odi-surface-hover text-odi-text rounded-bl-md'
+                  }`}
+                >
+                  {msg.text}
+                </div>
+                <div className={`text-[10px] text-odi-text-muted mt-1 ${isMine ? 'text-right' : 'text-left'}`}>
+                  {formatTime(msg.timestamp)}
+                </div>
+              </div>
+            </div>
+          )
+        })}
       </div>
 
       {showScrollDown && (

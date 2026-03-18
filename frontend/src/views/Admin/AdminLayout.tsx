@@ -2,13 +2,12 @@ import { Button, ButtonGroup, Tag } from '@blueprintjs/core'
 import { useLocation, useNavigate, Outlet } from 'react-router-dom'
 import { useAppSelector } from '@/store'
 import { SettingsMenu } from '@/components/SettingsMenu'
+import { AccountBadge } from '@/components/AccountBadge'
 
 const NAV_ITEMS = [
   { path: '/admin', label: 'Дашборд', icon: 'dashboard' as const },
   { path: '/admin/users', label: 'Пользователи', icon: 'people' as const },
   { path: '/admin/sessions', label: 'Сессии', icon: 'play' as const },
-  { path: '/admin/bots', label: 'AI-боты', icon: 'cube' as const },
-  { path: '/admin/scenarios', label: 'Сценарии', icon: 'map' as const },
   { path: '/admin/system', label: 'Система', icon: 'cog' as const },
 ]
 
@@ -26,7 +25,10 @@ export function AdminLayout() {
           <Tag intent="danger" minimal>ADMIN</Tag>
           <h1 className="text-lg font-bold text-odi-text m-0">Панель управления</h1>
         </div>
-        <SettingsMenu />
+        <div className="flex items-center gap-2">
+          <AccountBadge />
+          <SettingsMenu />
+        </div>
       </header>
 
       <div className="flex flex-1 overflow-hidden">

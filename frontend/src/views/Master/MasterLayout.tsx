@@ -1,10 +1,18 @@
-import { Button, Tag } from '@blueprintjs/core'
-import { useNavigate, useSearchParams, Outlet } from 'react-router-dom'
+import { Button, ButtonGroup, Tag } from '@blueprintjs/core'
+import { useLocation, useNavigate, useSearchParams, Outlet } from 'react-router-dom'
 import { useAppSelector } from '@/store'
 import { SettingsMenu } from '@/components/SettingsMenu'
+import { AccountBadge } from '@/components/AccountBadge'
+
+const NAV_ITEMS = [
+  { path: '/master', label: 'Дашборд', icon: 'dashboard' as const },
+  { path: '/master/scenarios', label: 'Сценарии', icon: 'map' as const },
+  { path: '/master/bots', label: 'AI-боты', icon: 'cube' as const },
+]
 
 export function MasterLayout() {
   const theme = useAppSelector((s) => s.app.theme)
+  const location = useLocation()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const qs = searchParams.toString()
@@ -16,16 +24,48 @@ export function MasterLayout() {
         <div className="flex items-center gap-3">
           <Button icon="arrow-left" minimal small className="!text-odi-text-muted" onClick={() => navigate('/dashboard')} />
           <Tag intent="warning" minimal>МАСТЕР</Tag>
-          <span className="font-bold text-odi-text text-sm">Панель управления сессией</span>
+          <span className="font-bold text-odi-text text-sm">Панель управления</span>
         </div>
         <div className="flex items-center gap-2">
           <Button icon="eye-open" minimal small text="Вид игрока" onClick={() => navigate(`/game/board${qs ? `?${qs}` : ''}`)} className="!text-odi-text-muted" />
+          <AccountBadge />
           <SettingsMenu />
         </div>
       </header>
 
-      <div className="flex-1 overflow-hidden">
-        <Outlet />
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar */}
+        <aside className="w-52 bg-odi-surface border-r border-odi-border p-3 shrink-0">
+          <ButtonGroup vertical minimal className="gap-1 w-full">
+            {NAV_ITEMS.map(({ path, label, icon }) => {
+              const isActive = path === '/master'
+                ? location.pathname === '/master'
+                : location.pathname.startsWith(path)
+              return (
+                <Button
+                  key={path}
+                  icon={icon}
+                  text={label}
+                  alignText="left"
+                  active={isActive}
+                  onClick={() => navigate(path)}
+                  className={
+                    isActive
+                      ? '!bg-odi-accent/20 !text-odi-accent'
+                      : '!text-odi-text-muted hover:!text-odi-text hover:!bg-odi-surface-hover'
+                  }
+                />
+              )
+            })}
+          </ButtonGroup>
+        </aside>
+
+        {/* Content */}
+        <main className="flex-1 overflow-y-auto p-6">
+          <div className="max-w-6xl mx-auto">
+            <Outlet />
+          </div>
+        </main>
       </div>
     </div>
   )

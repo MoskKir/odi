@@ -14,8 +14,8 @@ export class ScenarioService {
   async findAll(role: string) {
     const where: any = {};
 
-    // Non-admin users only see published scenarios
-    if (role !== UserRole.ADMIN) {
+    // Only regular users see published-only scenarios
+    if (role !== UserRole.ADMIN && role !== UserRole.MODERATOR) {
       where.published = true;
     }
 

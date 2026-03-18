@@ -1,6 +1,7 @@
 import { Navbar, Tag, ProgressBar } from '@blueprintjs/core'
 import { useAppSelector } from '@/store'
 import { SettingsMenu } from '@/components/SettingsMenu'
+import { AccountBadge } from '@/components/AccountBadge'
 
 export function Header() {
   const { sessionTitle, elapsed, teamOnline, teamSize, energy } =
@@ -32,6 +33,7 @@ export function Header() {
         </div>
       </Navbar.Group>
       <Navbar.Group align="right">
+        <AccountBadge />
         <SettingsMenu />
       </Navbar.Group>
     </Navbar>

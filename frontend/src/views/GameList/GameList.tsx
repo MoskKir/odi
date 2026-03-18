@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppSelector } from '@/store'
 import { SettingsMenu } from '@/components/SettingsMenu'
+import { AccountBadge } from '@/components/AccountBadge'
 import { fetchGames, updateGameTitle, type GameSessionResponse } from '@/api/games'
 import type { GameStatus } from '@/types'
 
@@ -91,6 +92,7 @@ export function GameList() {
             small
             className="!w-48"
           />
+          <AccountBadge />
           <SettingsMenu />
           <Button icon="plus" intent="success" small text="Новая" onClick={() => navigate('/mission')} />
         </div>

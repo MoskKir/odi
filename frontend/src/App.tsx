@@ -16,6 +16,8 @@ import { ScenariosPage } from '@/views/Admin/ScenariosPage'
 import { SystemPage } from '@/views/Admin/SystemPage'
 import { MasterLayout } from '@/views/Master/MasterLayout'
 import { MasterDashboard } from '@/views/Master/MasterDashboard'
+import { ScenarioCreatePage } from '@/views/Master/ScenarioCreatePage'
+import { ScenarioEditPage } from '@/views/Master/ScenarioEditPage'
 
 function GameRedirect() {
   const { search } = useLocation()
@@ -36,13 +38,15 @@ function App() {
           <Route path="/game/:viewMode" element={<ProtectedRoute><GameLayout /></ProtectedRoute>} />
           <Route path="/master" element={<ProtectedRoute><MasterLayout /></ProtectedRoute>}>
             <Route index element={<MasterDashboard />} />
+            <Route path="scenarios" element={<ScenariosPage />} />
+            <Route path="scenarios/new" element={<ScenarioCreatePage />} />
+            <Route path="scenarios/:id/edit" element={<ScenarioEditPage />} />
+            <Route path="bots" element={<BotsPage />} />
           </Route>
           <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
             <Route index element={<DashboardPage />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="sessions" element={<SessionsPage />} />
-            <Route path="bots" element={<BotsPage />} />
-            <Route path="scenarios" element={<ScenariosPage />} />
             <Route path="system" element={<SystemPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />

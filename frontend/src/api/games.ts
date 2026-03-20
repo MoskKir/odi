@@ -26,6 +26,10 @@ export interface GameSessionResponse {
     id: string
     role: string
     slotIndex: number
+    isOnline?: boolean
+    contributionsCount?: number
+    currentEmotion?: string | null
+    user?: { id: string; name: string; email?: string }
     botConfig?: { id: string; specialistId: string; name: string; description: string; stars: number; tag?: string | null }
   }[]
 }

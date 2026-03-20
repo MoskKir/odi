@@ -29,7 +29,7 @@ export interface GameSession {
 export interface ChatMessage {
   id: string
   author: string
-  role: BotRole | 'user'
+  role: string
   text: string
   timestamp: number
 }

@@ -30,6 +30,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.kafkaClient.subscribeToResponseOf('odi.game.emotion-set');
     this.kafkaClient.subscribeToResponseOf('odi.game.board-add');
     this.kafkaClient.subscribeToResponseOf('odi.game.board-vote');
+    this.kafkaClient.subscribeToResponseOf(KAFKA_TOPICS.AI.CHANGE_STRATEGY);
   }
 
   async handleConnection(client: Socket) {
@@ -224,6 +225,47 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }),
     ).catch((err) => {
       this.logger.error(`board:vote failed: ${err.message}`);
+    });
+  }
+
+  @SubscribeMessage('bot:change-strategy')
+  async handleBotChangeStrategy(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { sessionId: string; botConfigId: string; strategy: string },
+  ) {
+    const user = client.data?.user;
+    if (!user) return;
+
+    this.logger.log(`[BOT_STRATEGY] ${user.email} changing strategy for bot ${data.botConfigId}`);
+
+    lastValueFrom(
+      this.kafkaClient.send(KAFKA_TOPICS.AI.CHANGE_STRATEGY, {
+        botConfigId: data.botConfigId,
+        strategy: data.strategy,
+      }),
+    ).catch((err) => {
+      this.logger.error(`bot:change-strategy failed: ${err.message}`);
+    });
+  }
+
+  @SubscribeMessage('bot:speak')
+  async handleBotSpeak(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { sessionId: string; botConfigId: string; prompt?: string },
+  ) {
+    const user = client.data?.user;
+    if (!user) return;
+
+    this.logger.log(`[BOT_SPEAK] ${user.email} asking bot ${data.botConfigId} to speak`);
+
+    lastValueFrom(
+      this.kafkaClient.emit(KAFKA_TOPICS.AI.GENERATE, {
+        sessionId: data.sessionId,
+        botConfigId: data.botConfigId,
+        trigger: data.prompt || 'Мастер просит тебя высказаться по текущей теме обсуждения.',
+      }),
+    ).catch((err) => {
+      this.logger.error(`bot:speak failed: ${err.message}`);
     });
   }
 

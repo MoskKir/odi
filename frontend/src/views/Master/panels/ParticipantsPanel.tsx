@@ -1,61 +1,58 @@
-import { Card, Tag, Button } from '@blueprintjs/core'
+import { Card, Tag } from '@blueprintjs/core'
+import { useAppSelector } from '@/store'
 
-interface Participant {
-  id: string
-  name: string
-  role: string
-  isBot: boolean
-  online: boolean
-  speaking: boolean
-  emotion: string
-  contributions: number
+const ROLE_LABELS: Record<string, string> = {
+  host: 'Хост',
+  bot: 'AI',
+  participant: 'Участник',
 }
 
-const PARTICIPANTS: Participant[] = [
-  { id: '1', name: 'Анна К.', role: 'Капитан', isBot: false, online: true, speaking: true, emotion: '\u{1F60A}', contributions: 12 },
-  { id: '2', name: 'Борис М.', role: 'Участник', isBot: false, online: true, speaking: false, emotion: '\u{1F914}', contributions: 8 },
-  { id: '3', name: 'Елена В.', role: 'Участник', isBot: false, online: true, speaking: false, emotion: '\u{1F60C}', contributions: 5 },
-  { id: '4', name: 'Дмитрий С.', role: 'Участник', isBot: false, online: false, speaking: false, emotion: '', contributions: 3 },
-  { id: '5', name: 'Модератор', role: 'AI', isBot: true, online: true, speaking: false, emotion: '', contributions: 15 },
-  { id: '6', name: 'Критик', role: 'AI', isBot: true, online: true, speaking: false, emotion: '', contributions: 9 },
-]
-
 export function ParticipantsPanel() {
+  const participants = useAppSelector((s) => s.app.sessionParticipants)
+  const onlineCount = participants.filter((p) => p.isOnline).length
+
   return (
     <Card className="!bg-odi-surface !border-odi-border !shadow-none h-full flex flex-col overflow-hidden !p-3">
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs font-bold text-odi-text-muted uppercase tracking-wider">Участники</span>
-        <Tag minimal className="text-[10px]">{PARTICIPANTS.filter((p) => p.online).length} онлайн</Tag>
+        <Tag minimal className="text-[10px]">{onlineCount}/{participants.length} онлайн</Tag>
       </div>
       <div className="flex-1 overflow-y-auto space-y-1">
-        {PARTICIPANTS.map((p) => (
-          <div
-            key={p.id}
-            className={`flex items-center gap-2 p-1.5 rounded text-sm ${
-              p.speaking ? 'bg-odi-accent/10' : 'hover:bg-odi-surface-hover'
-            } ${!p.online ? 'opacity-40' : ''}`}
-          >
-            <div className="relative">
-              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white ${
-                p.isBot ? 'bg-odi-energy' : 'bg-odi-accent'
-              }`}>
-                {p.isBot ? '\u{1F916}' : p.name[0]}
+        {participants.length === 0 && (
+          <div className="text-xs text-odi-text-muted text-center py-4">Нет участников</div>
+        )}
+        {participants.map((p) => {
+          const isBot = p.role === 'bot'
+          const name = isBot ? p.botName || 'Bot' : p.userName || 'User'
+          return (
+            <div
+              key={p.id}
+              className={`flex items-center gap-2 p-1.5 rounded text-sm hover:bg-odi-surface-hover ${
+                !p.isOnline ? 'opacity-40' : ''
+              }`}
+            >
+              <div className="relative">
+                <div
+                  className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white ${
+                    isBot ? 'bg-odi-energy' : 'bg-odi-accent'
+                  }`}
+                >
+                  {isBot ? '\u{1F916}' : name[0]?.toUpperCase()}
+                </div>
+                {p.isOnline && (
+                  <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-odi-success border-2 border-odi-surface" />
+                )}
               </div>
-              {p.online && (
-                <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-odi-success border-2 border-odi-surface" />
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1">
-                <span className="text-xs text-odi-text truncate font-medium">{p.name}</span>
-                {p.speaking && <span className="text-[9px] text-odi-accent">{'\u{1F50A}'}</span>}
+              <div className="flex-1 min-w-0">
+                <div className="text-xs text-odi-text truncate font-medium">{name}</div>
+                <div className="text-[10px] text-odi-text-muted">
+                  {ROLE_LABELS[p.role] || p.role} &middot; {p.contributionsCount} msg
+                </div>
               </div>
-              <div className="text-[10px] text-odi-text-muted">{p.role} &middot; {p.contributions} msg</div>
+              {p.currentEmotion && <span className="text-sm">{p.currentEmotion}</span>}
             </div>
-            {p.emotion && <span className="text-sm">{p.emotion}</span>}
-            <Button icon="more" minimal small className="!opacity-0 group-hover:!opacity-100" />
-          </div>
-        ))}
+          )
+        })}
       </div>
     </Card>
   )

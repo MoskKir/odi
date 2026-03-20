@@ -86,7 +86,7 @@ export function TheatreView() {
       >
         {messages.map((msg) => {
           const isMine = currentUser?.name === msg.author
-          const isBot = msg.role !== 'user'
+          const isBot = msg.role === 'bot'
           const roleIcon = getRoleIcon(msg.role)
 
           return (

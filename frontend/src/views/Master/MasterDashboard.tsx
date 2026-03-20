@@ -1,3 +1,4 @@
+import { useGameSocket } from '@/hooks/useGameSocket'
 import { SessionHeader } from './panels/SessionHeader'
 import { PhaseControl } from './panels/PhaseControl'
 import { ParticipantsPanel } from './panels/ParticipantsPanel'
@@ -8,6 +9,8 @@ import { EmotionMonitor } from './panels/EmotionMonitor'
 import { QuickActions } from './panels/QuickActions'
 
 export function MasterDashboard() {
+  useGameSocket()
+
   return (
     <div className="h-full flex flex-col overflow-hidden">
       <SessionHeader />

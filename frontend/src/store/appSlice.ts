@@ -64,6 +64,18 @@ export interface SessionBot {
   tag?: string | null
 }
 
+export interface SessionParticipant {
+  id: string
+  role: string
+  isOnline: boolean
+  contributionsCount: number
+  currentEmotion?: string | null
+  userName?: string
+  botConfigId?: string
+  botName?: string
+  botSpecialistId?: string
+}
+
 interface StreamingMessage {
   streamId: string
   botConfigId: string
@@ -84,6 +96,7 @@ interface AppState {
   streamingMessages: Record<string, StreamingMessage>
   cards: BoardCard[]
   sessionBots: SessionBot[]
+  sessionParticipants: SessionParticipant[]
   rightPanelCollapsed: boolean
   rightPanelWidth: number
   leftSidebarCollapsed: boolean
@@ -106,6 +119,7 @@ const initialState: AppState = {
   streamingMessages: {},
   cards: [],
   sessionBots: [],
+  sessionParticipants: [],
   rightPanelCollapsed: saved.rightPanelCollapsed ?? false,
   rightPanelWidth: saved.rightPanelWidth ?? 256,
   leftSidebarCollapsed: saved.leftSidebarCollapsed ?? false,
@@ -193,6 +207,9 @@ export const appSlice = createSlice({
     setSessionBots(state, action: PayloadAction<SessionBot[]>) {
       state.sessionBots = action.payload
     },
+    setSessionParticipants(state, action: PayloadAction<SessionParticipant[]>) {
+      state.sessionParticipants = action.payload
+    },
     setSocketJoined(state, action: PayloadAction<boolean>) {
       state.socketJoined = action.payload
     },
@@ -249,6 +266,7 @@ export const {
   setSocketJoined,
   setSessionTitle,
   setSessionBots,
+  setSessionParticipants,
   toggleRightPanel,
   setRightPanelWidth,
   toggleLeftSidebar,

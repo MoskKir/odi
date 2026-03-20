@@ -3,11 +3,11 @@ import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { fetchAdminSessions, type AdminSessionResponse } from '@/api/admin-sessions'
 
-const STATUS_INTENT: Record<string, 'success' | 'warning' | 'danger' | 'none'> = {
+const STATUS_INTENT: Record<string, 'success' | 'warning' | 'danger' | 'primary' | 'none'> = {
   active: 'success',
   paused: 'warning',
   completed: 'none',
-  draft: 'none',
+  draft: 'primary',
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -28,12 +28,13 @@ export function SessionHeader() {
     let mounted = true
     async function load() {
       try {
-        const [active, paused] = await Promise.all([
+        const [active, paused, draft] = await Promise.all([
           fetchAdminSessions({ status: 'active', limit: 50 }),
           fetchAdminSessions({ status: 'paused', limit: 50 }),
+          fetchAdminSessions({ status: 'draft', limit: 50 }),
         ])
         if (!mounted) return
-        const all = [...active.items, ...paused.items]
+        const all = [...active.items, ...paused.items, ...draft.items]
         setSessions(all)
         // Auto-select first session if none selected
         if (!selectedId && all.length > 0) {

@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAppDispatch } from '@/store'
-import { setMessages, addMessage, addCard, updateSession, updatePhase, setSocketJoined, setSessionTitle, setSessionBots, startStream, appendStreamChunk, endStream } from '@/store/appSlice'
+import { setMessages, addMessage, addCard, updateSession, updatePhase, setSocketJoined, setSessionTitle, setSessionBots, setSessionParticipants, startStream, appendStreamChunk, endStream } from '@/store/appSlice'
 import { connectSocket, disconnectSocket } from '@/api/socket'
 import { fetchGame } from '@/api/games'
 import type { ChatMessage, BoardCard } from '@/types'
@@ -67,6 +67,19 @@ export function useGameSocket() {
             .filter((p) => p.botConfig)
             .map((p) => p.botConfig!)
           dispatch(setSessionBots(bots))
+
+          const participants = game.participants.map((p) => ({
+            id: p.id,
+            role: p.role,
+            isOnline: p.isOnline ?? false,
+            contributionsCount: p.contributionsCount ?? 0,
+            currentEmotion: p.currentEmotion,
+            userName: p.user?.name,
+            botConfigId: p.botConfig?.id,
+            botName: p.botConfig?.name,
+            botSpecialistId: p.botConfig?.specialistId,
+          }))
+          dispatch(setSessionParticipants(participants))
         }
       }
     }

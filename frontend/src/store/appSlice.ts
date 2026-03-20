@@ -64,6 +64,12 @@ export interface SessionBot {
   tag?: string | null
 }
 
+interface StreamingMessage {
+  streamId: string
+  botConfigId: string
+  text: string
+}
+
 interface AppState {
   devMode: boolean
   theme: Theme
@@ -75,6 +81,7 @@ interface AppState {
   energy: number
   currentEmotion: Emotion | null
   messages: ChatMessage[]
+  streamingMessages: Record<string, StreamingMessage>
   cards: BoardCard[]
   sessionBots: SessionBot[]
   rightPanelCollapsed: boolean
@@ -96,6 +103,7 @@ const initialState: AppState = {
   energy: 7,
   currentEmotion: null,
   messages: [],
+  streamingMessages: {},
   cards: [],
   sessionBots: [],
   rightPanelCollapsed: saved.rightPanelCollapsed ?? false,
@@ -142,7 +150,30 @@ export const appSlice = createSlice({
       state.messages = action.payload
     },
     addMessage(state, action: PayloadAction<ChatMessage>) {
+      // If this message replaces a streaming message, remove the stream
+      const streamId = Object.keys(state.streamingMessages).find(
+        (sid) => state.streamingMessages[sid].text === action.payload.text,
+      )
+      if (streamId) {
+        delete state.streamingMessages[streamId]
+      }
       state.messages.push(action.payload)
+    },
+    startStream(state, action: PayloadAction<{ streamId: string; botConfigId: string }>) {
+      state.streamingMessages[action.payload.streamId] = {
+        streamId: action.payload.streamId,
+        botConfigId: action.payload.botConfigId,
+        text: '',
+      }
+    },
+    appendStreamChunk(state, action: PayloadAction<{ streamId: string; content: string }>) {
+      const stream = state.streamingMessages[action.payload.streamId]
+      if (stream) {
+        stream.text += action.payload.content
+      }
+    },
+    endStream(state, action: PayloadAction<{ streamId: string }>) {
+      delete state.streamingMessages[action.payload.streamId]
     },
     addCard(state, action: PayloadAction<BoardCard>) {
       state.cards.push(action.payload)
@@ -209,6 +240,9 @@ export const {
   setEmotion,
   setMessages,
   addMessage,
+  startStream,
+  appendStreamChunk,
+  endStream,
   addCard,
   updateSession,
   updatePhase,

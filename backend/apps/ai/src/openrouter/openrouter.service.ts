@@ -5,6 +5,7 @@ import {
   OpenRouterRequest,
   OpenRouterResponse,
   OpenRouterMessage,
+  OpenRouterStreamChunk,
 } from './openrouter.types';
 
 @Injectable()
@@ -69,12 +70,110 @@ export class OpenRouterService {
           );
         }
 
-        // Simple delay before retry
         await new Promise((resolve) =>
           setTimeout(resolve, 1000 * attempt),
         );
       }
     }
     throw new Error('OpenRouter request failed: exhausted retries');
+  }
+
+  async *completeStream(params: {
+    model: string;
+    messages: OpenRouterMessage[];
+    temperature?: number;
+    maxTokens?: number;
+  }): AsyncGenerator<string, void, unknown> {
+    const request: OpenRouterRequest & { stream: boolean } = {
+      model: params.model,
+      messages: params.messages,
+      temperature: params.temperature ?? 0.7,
+      max_tokens: params.maxTokens ?? 512,
+      stream: true,
+    };
+
+    for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
+      try {
+        const response = await this.client.post(
+          '/chat/completions',
+          request,
+          {
+            responseType: 'stream',
+            timeout: 60000,
+            validateStatus: () => true, // don't throw on 4xx/5xx — we read the stream ourselves
+          },
+        );
+
+        // If non-2xx, read the error body from the stream
+        if (response.status >= 400) {
+          let errorBody = '';
+          for await (const chunk of response.data) {
+            errorBody += chunk.toString();
+          }
+          throw new Error(
+            `OpenRouter returned ${response.status}: ${errorBody}`,
+          );
+        }
+
+        let buffer = '';
+
+        for await (const rawChunk of response.data) {
+          buffer += rawChunk.toString();
+
+          const lines = buffer.split('\n');
+          // Keep the last (possibly incomplete) line in buffer
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed || !trimmed.startsWith('data: ')) continue;
+
+            const jsonStr = trimmed.slice(6);
+            if (jsonStr === '[DONE]') return;
+
+            try {
+              const chunk: OpenRouterStreamChunk = JSON.parse(jsonStr);
+              const content = chunk.choices?.[0]?.delta?.content;
+              if (content) {
+                yield content;
+              }
+            } catch {
+              // skip malformed chunks
+            }
+          }
+        }
+        return;
+      } catch (error) {
+        let detail = '';
+        try {
+          const respData = error.response?.data;
+          if (typeof respData === 'string') {
+            detail = respData;
+          } else if (respData && typeof respData.read !== 'function') {
+            detail = JSON.stringify(respData);
+          } else {
+            detail = `status=${error.response?.status ?? 'unknown'}`;
+          }
+        } catch {
+          detail = `status=${error.response?.status ?? 'unknown'}`;
+        }
+        this.logger.warn(
+          `OpenRouter stream attempt ${attempt}/${this.maxRetries} failed: ${error.message} | ${detail}`,
+        );
+        this.logger.warn(
+          `Request was: model=${request.model}, messages=${request.messages.length}, temp=${request.temperature}`,
+        );
+
+        if (attempt === this.maxRetries) {
+          throw new Error(
+            `OpenRouter stream failed after ${this.maxRetries} attempts: ${error.message} | ${detail}`,
+          );
+        }
+
+        await new Promise((resolve) =>
+          setTimeout(resolve, 1000 * attempt),
+        );
+      }
+    }
   }
 }

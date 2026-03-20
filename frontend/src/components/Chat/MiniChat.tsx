@@ -2,6 +2,8 @@ import { useAppSelector } from '@/store'
 
 export function MiniChat() {
   const messages = useAppSelector((s) => s.app.messages)
+  const streamingMessages = useAppSelector((s) => s.app.streamingMessages)
+  const streams = Object.values(streamingMessages)
   const lastMessages = messages.slice(-3)
 
   return (
@@ -14,6 +16,15 @@ export function MiniChat() {
           <div key={msg.id} className="text-xs p-1.5 rounded bg-odi-surface-hover">
             <span className="text-odi-accent font-medium">{msg.author}:</span>{' '}
             <span className="text-odi-text-muted whitespace-pre-wrap break-words">{msg.text}</span>
+          </div>
+        ))}
+        {streams.map((stream) => (
+          <div key={stream.streamId} className="text-xs p-1.5 rounded bg-odi-surface-hover">
+            <span className="text-odi-accent font-medium">{stream.botConfigId}:</span>{' '}
+            <span className="text-odi-text-muted whitespace-pre-wrap break-words">
+              {stream.text}
+              <span className="inline-block w-1 h-3 ml-0.5 bg-odi-accent animate-pulse rounded-sm align-text-bottom" />
+            </span>
           </div>
         ))}
       </div>

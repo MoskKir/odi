@@ -32,3 +32,20 @@ export interface OpenRouterResponse {
     total_tokens: number;
   };
 }
+
+export interface OpenRouterStreamDelta {
+  role?: string;
+  content?: string;
+}
+
+export interface OpenRouterStreamChoice {
+  index: number;
+  delta: OpenRouterStreamDelta;
+  finish_reason: string | null;
+}
+
+export interface OpenRouterStreamChunk {
+  id: string;
+  model: string;
+  choices: OpenRouterStreamChoice[];
+}

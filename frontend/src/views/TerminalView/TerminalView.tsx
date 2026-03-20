@@ -2,6 +2,8 @@ import { useAppSelector } from '@/store'
 
 export function TerminalView() {
   const messages = useAppSelector((s) => s.app.messages)
+  const streamingMessages = useAppSelector((s) => s.app.streamingMessages)
+  const streams = Object.values(streamingMessages)
 
   return (
     <div className="p-4 h-full overflow-y-auto font-mono text-sm">
@@ -14,6 +16,14 @@ export function TerminalView() {
           <span className="text-odi-accent">[{msg.role}]</span>{' '}
           <span className="text-odi-text-muted">{msg.author}:</span>{' '}
           <span className="text-odi-text whitespace-pre-wrap break-words">{msg.text}</span>
+        </div>
+      ))}
+      {streams.map((stream) => (
+        <div key={stream.streamId} className="mb-1">
+          <span className="text-odi-accent">[{stream.botConfigId}]</span>{' '}
+          <span className="text-odi-text-muted">bot:</span>{' '}
+          <span className="text-odi-text whitespace-pre-wrap break-words">{stream.text}</span>
+          <span className="animate-pulse">▌</span>
         </div>
       ))}
       <div className="mt-3 text-odi-success">

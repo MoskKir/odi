@@ -173,6 +173,41 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
   }
 
+  @SubscribeMessage('bot:test-chat')
+  async handleBotTestChat(
+    @ConnectedSocket() client: Socket,
+    @MessageBody()
+    data: {
+      botId: string;
+      messages: { role: string; content: string }[];
+      systemPrompt: string;
+      model: string;
+      temperature: number;
+      maxTokens: number;
+    },
+  ) {
+    const user = client.data?.user;
+    if (!user) return;
+
+    this.logger.log(`[BOT_TEST_CHAT] from ${user.email}, client=${client.id}, botId=${data.botId}, msgs=${data.messages?.length}`);
+
+    // Use client socket ID as the room for streaming back
+    lastValueFrom(
+      this.kafkaClient.emit(KAFKA_TOPICS.AI.TEST_CHAT, {
+        roomId: client.id,
+        botId: data.botId,
+        messages: data.messages,
+        systemPrompt: data.systemPrompt,
+        model: data.model,
+        temperature: data.temperature,
+        maxTokens: data.maxTokens,
+      }),
+    ).catch((err) => {
+      this.logger.error(`bot:test-chat failed: ${err.message}`);
+      client.emit('error', { message: err.message });
+    });
+  }
+
   @SubscribeMessage('board:vote')
   async handleBoardVote(
     @ConnectedSocket() client: Socket,

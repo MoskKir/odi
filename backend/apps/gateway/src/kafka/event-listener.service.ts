@@ -25,6 +25,22 @@ export class EventListenerService {
       .emit('chat:message', data);
   }
 
+  @EventPattern(KAFKA_TOPICS.EVENTS.CHAT_STREAM)
+  handleChatStreamEvent(@Payload() data: { sessionId: string; type: string; streamId?: string; [key: string]: any }) {
+    const eventMap = {
+      start: 'chat:stream-start',
+      chunk: 'chat:stream-chunk',
+      end: 'chat:stream-end',
+    };
+    const event = eventMap[data.type];
+    if (data.type !== 'chunk') {
+      this.logger.log(`[CHAT_STREAM] type=${data.type} streamId=${data.streamId} room=${data.sessionId}`);
+    }
+    if (event) {
+      this.gameGateway.server.to(data.sessionId).emit(event, data);
+    }
+  }
+
   @EventPattern(KAFKA_TOPICS.EVENTS.EMOTION)
   handleEmotionEvent(@Payload() data: { sessionId: string; [key: string]: any }) {
     this.gameGateway.server

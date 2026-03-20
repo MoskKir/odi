@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAppDispatch } from '@/store'
-import { setMessages, addMessage, addCard, updateSession, updatePhase, setSocketJoined, setSessionTitle, setSessionBots } from '@/store/appSlice'
+import { setMessages, addMessage, addCard, updateSession, updatePhase, setSocketJoined, setSessionTitle, setSessionBots, startStream, appendStreamChunk, endStream } from '@/store/appSlice'
 import { connectSocket, disconnectSocket } from '@/api/socket'
 import { fetchGame } from '@/api/games'
 import type { ChatMessage, BoardCard } from '@/types'
@@ -85,6 +85,18 @@ export function useGameSocket() {
 
     socket.on('phase:update', (data: { phase?: string; elapsed?: string }) => {
       if (mounted) dispatch(updatePhase(data))
+    })
+
+    socket.on('chat:stream-start', (data: { streamId: string; botConfigId: string }) => {
+      if (mounted) dispatch(startStream({ streamId: data.streamId, botConfigId: data.botConfigId }))
+    })
+
+    socket.on('chat:stream-chunk', (data: { streamId: string; content: string }) => {
+      if (mounted) dispatch(appendStreamChunk({ streamId: data.streamId, content: data.content }))
+    })
+
+    socket.on('chat:stream-end', (data: { streamId: string }) => {
+      if (mounted) dispatch(endStream({ streamId: data.streamId }))
     })
 
     socket.on('emotion:update', () => {})

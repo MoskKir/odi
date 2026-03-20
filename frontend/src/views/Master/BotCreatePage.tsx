@@ -1,12 +1,16 @@
-import { Button, Card, FormGroup, InputGroup, TextArea, HTMLSelect, Switch, NumericInput } from '@blueprintjs/core'
+import { Button, Card, FormGroup, InputGroup, TextArea, Switch, NumericInput } from '@blueprintjs/core'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createBot, type CreateBotDto } from '@/api/bots'
 
-const MODELS = [
-  'claude-sonnet',
-  'claude-opus',
-  'claude-haiku',
+const MODEL_SUGGESTIONS = [
+  'google/gemini-2.0-flash-001',
+  'anthropic/claude-sonnet-4',
+  'anthropic/claude-haiku-4',
+  'openai/gpt-4o-mini',
+  'openai/gpt-4o',
+  'meta-llama/llama-4-maverick',
+  'deepseek/deepseek-chat-v3-0324',
 ]
 
 export function BotCreatePage() {
@@ -19,7 +23,7 @@ export function BotCreatePage() {
   const [description, setDescription] = useState('')
   const [personality, setPersonality] = useState('')
   const [systemPrompt, setSystemPrompt] = useState('')
-  const [model, setModel] = useState(MODELS[0])
+  const [model, setModel] = useState(MODEL_SUGGESTIONS[0])
   const [enabled, setEnabled] = useState(true)
   const [stars, setStars] = useState(3)
   const [tag, setTag] = useState('')
@@ -137,10 +141,16 @@ export function BotCreatePage() {
           </FormGroup>
 
           <div className="flex gap-4 flex-wrap">
-            <FormGroup label="Модель" className="!mb-0">
-              <HTMLSelect value={model} onChange={(e) => setModel(e.target.value)}>
-                {MODELS.map((m) => <option key={m} value={m}>{m}</option>)}
-              </HTMLSelect>
+            <FormGroup label="Модель" labelInfo="(OpenRouter)" className="!mb-0">
+              <InputGroup
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+                placeholder="provider/model-name"
+                list="model-suggestions-create"
+              />
+              <datalist id="model-suggestions-create">
+                {MODEL_SUGGESTIONS.map((m) => <option key={m} value={m} />)}
+              </datalist>
             </FormGroup>
 
             <FormGroup label="Temperature" className="!mb-0">

@@ -4,7 +4,6 @@ import {
   FormGroup,
   InputGroup,
   TextArea,
-  HTMLSelect,
   Switch,
   NumericInput,
   Tag,
@@ -14,11 +13,16 @@ import {
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { fetchBots, updateBot, type CreateBotDto } from '@/api/bots'
+import { BotTestChat } from './BotTestChat'
 
-const MODELS = [
-  'claude-sonnet',
-  'claude-opus',
-  'claude-haiku',
+const MODEL_SUGGESTIONS = [
+  'google/gemini-2.0-flash-001',
+  'anthropic/claude-sonnet-4',
+  'anthropic/claude-haiku-4',
+  'openai/gpt-4o-mini',
+  'openai/gpt-4o',
+  'meta-llama/llama-4-maverick',
+  'deepseek/deepseek-chat-v3-0324',
 ]
 
 function autoResize(el: HTMLTextAreaElement) {
@@ -40,7 +44,7 @@ export function BotEditPage() {
   const [description, setDescription] = useState('')
   const [personality, setPersonality] = useState('')
   const [systemPrompt, setSystemPrompt] = useState('')
-  const [model, setModel] = useState(MODELS[0])
+  const [model, setModel] = useState(MODEL_SUGGESTIONS[0])
   const [enabled, setEnabled] = useState(true)
   const [stars, setStars] = useState(3)
   const [tag, setTag] = useState('')
@@ -231,10 +235,17 @@ export function BotEditPage() {
           <Card className="!bg-odi-surface !border-odi-border !shadow-none">
             <h3 className="text-sm font-bold text-odi-text mb-3">Модель</h3>
 
-            <FormGroup label="LLM" className="!mb-3">
-              <HTMLSelect value={model} onChange={(e) => setModel(e.target.value)} fill>
-                {MODELS.map((m) => <option key={m} value={m}>{m}</option>)}
-              </HTMLSelect>
+            <FormGroup label="LLM" labelInfo="(OpenRouter)" className="!mb-3">
+              <InputGroup
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+                placeholder="provider/model-name"
+                fill
+                list="model-suggestions"
+              />
+              <datalist id="model-suggestions">
+                {MODEL_SUGGESTIONS.map((m) => <option key={m} value={m} />)}
+              </datalist>
             </FormGroup>
 
             <FormGroup label="Temperature" className="!mb-3">
@@ -308,6 +319,18 @@ export function BotEditPage() {
                 }
               </div>
             </div>
+          </Card>
+
+          {/* Test chat */}
+          <Card className="!bg-odi-surface !border-odi-border !shadow-none !p-0 overflow-hidden" style={{ height: 420 }}>
+            <BotTestChat
+              botId={id!}
+              botName={name || 'Бот'}
+              systemPrompt={systemPrompt}
+              model={model}
+              temperature={temperature}
+              maxTokens={maxTokens}
+            />
           </Card>
         </div>
       </div>

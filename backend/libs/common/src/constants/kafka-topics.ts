@@ -23,6 +23,7 @@ export const KAFKA_TOPICS = {
   },
   AI: {
     GENERATE: 'odi.ai.generate',
+    TEST_CHAT: 'odi.ai.test-chat',
     ANALYZE_EMOTION: 'odi.ai.analyze-emotion',
     CHANGE_STRATEGY: 'odi.ai.change-strategy',
     RESULT: 'odi.ai.result',
@@ -30,6 +31,7 @@ export const KAFKA_TOPICS = {
   EVENTS: {
     SESSION: 'odi.events.session',
     CHAT: 'odi.events.chat',
+    CHAT_STREAM: 'odi.events.chat-stream',
     EMOTION: 'odi.events.emotion',
     PHASE: 'odi.events.phase',
   },

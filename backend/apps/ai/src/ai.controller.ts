@@ -1,15 +1,35 @@
-import { Controller } from '@nestjs/common';
-import { MessagePattern, Payload } from '@nestjs/microservices';
+import { Controller, Logger } from '@nestjs/common';
+import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
 import { KAFKA_TOPICS, GenerateDto } from '@app/common';
 import { AiService } from './ai.service';
 
 @Controller()
 export class AiController {
+  private readonly logger = new Logger(AiController.name);
+
   constructor(private readonly aiService: AiService) {}
 
   @MessagePattern(KAFKA_TOPICS.AI.GENERATE)
   async generate(@Payload() dto: GenerateDto) {
+    this.logger.log(`[GENERATE] received for session=${dto.sessionId}`);
     return this.aiService.generate(dto);
+  }
+
+  @EventPattern(KAFKA_TOPICS.AI.TEST_CHAT)
+  async testChat(
+    @Payload()
+    data: {
+      roomId: string;
+      botId: string;
+      messages: { role: string; content: string }[];
+      systemPrompt: string;
+      model: string;
+      temperature: number;
+      maxTokens: number;
+    },
+  ) {
+    this.logger.log(`[TEST_CHAT] received roomId=${data.roomId} botId=${data.botId} msgCount=${data.messages?.length}`);
+    return this.aiService.testChat(data);
   }
 
   @MessagePattern(KAFKA_TOPICS.AI.ANALYZE_EMOTION)

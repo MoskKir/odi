@@ -60,13 +60,15 @@ export class OpenRouterService {
 
         return content;
       } catch (error) {
+        const status = error.httpStatus ?? error.response?.status;
         this.logger.warn(
-          `OpenRouter attempt ${attempt}/${this.maxRetries} failed: ${error.message}`,
+          `OpenRouter attempt ${attempt}/${this.maxRetries} failed (status=${status}): ${error.message}`,
         );
 
-        if (attempt === this.maxRetries) {
+        // Don't retry client errors (4xx) — they won't succeed on retry
+        if ((status && status >= 400 && status < 500) || attempt === this.maxRetries) {
           throw new Error(
-            `OpenRouter request failed after ${this.maxRetries} attempts: ${error.message}`,
+            `OpenRouter request failed: ${error.message}`,
           );
         }
 
@@ -110,9 +112,11 @@ export class OpenRouterService {
           for await (const chunk of response.data) {
             errorBody += chunk.toString();
           }
-          throw new Error(
+          const err = new Error(
             `OpenRouter returned ${response.status}: ${errorBody}`,
-          );
+          ) as any;
+          err.httpStatus = response.status;
+          throw err;
         }
 
         let buffer = '';
@@ -144,6 +148,7 @@ export class OpenRouterService {
         }
         return;
       } catch (error) {
+        const status = error.httpStatus ?? error.response?.status;
         let detail = '';
         try {
           const respData = error.response?.data;
@@ -152,10 +157,10 @@ export class OpenRouterService {
           } else if (respData && typeof respData.read !== 'function') {
             detail = JSON.stringify(respData);
           } else {
-            detail = `status=${error.response?.status ?? 'unknown'}`;
+            detail = `status=${status ?? 'unknown'}`;
           }
         } catch {
-          detail = `status=${error.response?.status ?? 'unknown'}`;
+          detail = `status=${status ?? 'unknown'}`;
         }
         this.logger.warn(
           `OpenRouter stream attempt ${attempt}/${this.maxRetries} failed: ${error.message} | ${detail}`,
@@ -164,9 +169,10 @@ export class OpenRouterService {
           `Request was: model=${request.model}, messages=${request.messages.length}, temp=${request.temperature}`,
         );
 
-        if (attempt === this.maxRetries) {
+        // Don't retry client errors (4xx) — they won't succeed on retry
+        if ((status && status >= 400 && status < 500) || attempt === this.maxRetries) {
           throw new Error(
-            `OpenRouter stream failed after ${this.maxRetries} attempts: ${error.message} | ${detail}`,
+            `OpenRouter stream failed: ${error.message} | ${detail}`,
           );
         }
 

@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import {
   DatabaseModule,
+  BotConfigEntity,
   ChatMessageEntity,
   SessionParticipantEntity,
 } from '@app/database';

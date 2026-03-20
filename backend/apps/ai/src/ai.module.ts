@@ -1,6 +1,13 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import {
+  DatabaseModule,
+  BotConfigEntity,
+  ChatMessageEntity,
+  SessionParticipantEntity,
+} from '@app/database';
 import { AiController } from './ai.controller';
 import { AiService } from './ai.service';
 import { OpenRouterService } from './openrouter/openrouter.service';
@@ -11,6 +18,12 @@ import { EmotionAnalyzerService } from './emotion/emotion-analyzer.service';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
+    DatabaseModule,
+    TypeOrmModule.forFeature([
+      BotConfigEntity,
+      ChatMessageEntity,
+      SessionParticipantEntity,
+    ]),
     ClientsModule.registerAsync([
       {
         name: 'KAFKA_SERVICE',

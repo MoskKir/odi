@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { BotConfigEntity } from '@app/database';
 import { DEFAULT_MODERATOR_PROMPT } from './templates/moderator';
 import { DEFAULT_ANALYST_PROMPT } from './templates/analyst';
 import { VISIONARY_SYSTEM_PROMPT } from './templates/visionary';
@@ -21,25 +22,47 @@ const BOT_PROMPTS: Record<string, string> = {
 
 @Injectable()
 export class PromptBuilderService {
+  /**
+   * Build prompt from DB bot config (preferred path).
+   */
+  buildFromConfig(
+    botConfig: BotConfigEntity,
+    params: { sessionId: string; strategyOverride?: string },
+  ): string {
+    let prompt = botConfig.systemPrompt;
+
+    if (botConfig.personality) {
+      prompt += `\n\nТвоя личность: ${botConfig.personality}`;
+    }
+
+    if (params.strategyOverride) {
+      prompt += `\n\nТекущая стратегия поведения: ${params.strategyOverride}`;
+    }
+
+    prompt += `\n\nКонтекст текущего действия: Участник написал сообщение, требующее вашей реакции.`;
+    prompt += `\nID сессии: ${params.sessionId}`;
+
+    return prompt;
+  }
+
+  /**
+   * Fallback: build prompt from specialistId template.
+   */
   build(params: {
     botConfigId: string;
     sessionId: string;
     trigger: string;
     strategyOverride?: string;
   }): string {
-    // Determine which bot template to use based on botConfigId
-    // In production, fetch from DB; here use a mapping fallback
     const basePrompt =
       BOT_PROMPTS[params.botConfigId] || DEFAULT_MODERATOR_PROMPT;
 
     let prompt = basePrompt;
 
-    // Append strategy override if present
     if (params.strategyOverride) {
       prompt += `\n\nТекущая стратегия поведения: ${params.strategyOverride}`;
     }
 
-    // Append trigger context
     prompt += `\n\nКонтекст текущего действия: Участник написал сообщение, требующее вашей реакции.`;
     prompt += `\nID сессии: ${params.sessionId}`;
 

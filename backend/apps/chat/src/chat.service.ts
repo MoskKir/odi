@@ -8,6 +8,7 @@ import {
   SessionParticipantEntity,
 } from '@app/database';
 import { KAFKA_TOPICS } from '@app/common';
+import { IsNull, Not } from 'typeorm';
 
 @Injectable()
 export class ChatService implements OnModuleInit {
@@ -98,15 +99,11 @@ export class ChatService implements OnModuleInit {
 
     this.logger.log(`Emitted EVENTS.CHAT for session ${data.sessionId}`);
 
-    // If this is a human message, trigger AI generation for bots
+    // If this is a human message, trigger AI generation for each bot in session
     if (!data.isBot && data.userId) {
-      lastValueFrom(
-        this.kafkaClient.emit(KAFKA_TOPICS.AI.GENERATE, {
-          sessionId: data.sessionId,
-          trigger: data.text,
-          userId: data.userId,
-        }),
-      ).catch((err) => this.logger.error(`AI.GENERATE emit failed: ${err.message}`));
+      this.triggerBotResponses(data.sessionId, data.text).catch((err) =>
+        this.logger.error(`AI.GENERATE emit failed: ${err.message}`),
+      );
     }
 
     return {
@@ -119,6 +116,47 @@ export class ChatService implements OnModuleInit {
       isSystem: message.isSystem,
       createdAt: message.createdAt,
     };
+  }
+
+  private async triggerBotResponses(sessionId: string, trigger: string) {
+    const bots = await this.participantRepo.find({
+      where: { sessionId, botConfigId: Not(IsNull()) },
+      relations: ['botConfig'],
+    });
+
+    const enabledBots = bots.filter((b) => b.botConfig?.enabled);
+
+    // Check if message mentions specific bot(s) by @name, @specialistId or @role
+    const triggerLower = trigger.toLowerCase();
+    const mentionedBots = enabledBots.filter((b) => {
+      const name = b.botConfig?.name?.toLowerCase();
+      const specialistId = b.botConfig?.specialistId?.toLowerCase();
+      const role = b.role?.toLowerCase();
+      return (
+        (name && triggerLower.includes(`@${name}`)) ||
+        (specialistId && triggerLower.includes(`@${specialistId}`)) ||
+        (role && triggerLower.includes(`@${role}`))
+      );
+    });
+
+    const targetBots = mentionedBots.length > 0 ? mentionedBots : enabledBots;
+
+    this.logger.log(
+      `Triggering AI for ${targetBots.length}/${enabledBots.length} bot(s) in session ${sessionId}` +
+        (mentionedBots.length > 0
+          ? ` (mentioned: ${mentionedBots.map((b) => b.botConfig?.name).join(', ')})`
+          : ' (all bots)'),
+    );
+
+    for (const bot of targetBots) {
+      await lastValueFrom(
+        this.kafkaClient.emit(KAFKA_TOPICS.AI.GENERATE, {
+          sessionId,
+          botConfigId: bot.botConfigId,
+          trigger,
+        }),
+      );
+    }
   }
 
   async getHistory(sessionId: string, limit: number, offset: number) {

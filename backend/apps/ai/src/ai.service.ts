@@ -1,7 +1,14 @@
 import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { ClientKafka } from '@nestjs/microservices';
 import { lastValueFrom } from 'rxjs';
 import { KAFKA_TOPICS, GenerateDto } from '@app/common';
+import {
+  BotConfigEntity,
+  ChatMessageEntity,
+  SessionParticipantEntity,
+} from '@app/database';
 import { OpenRouterService } from './openrouter/openrouter.service';
 import { PromptBuilderService } from './prompts/prompt-builder.service';
 import { ContextBuilderService } from './prompts/context-builder.service';
@@ -15,6 +22,12 @@ export class AiService implements OnModuleInit {
 
   constructor(
     @Inject('KAFKA_SERVICE') private readonly kafkaClient: ClientKafka,
+    @InjectRepository(BotConfigEntity)
+    private readonly botConfigRepo: Repository<BotConfigEntity>,
+    @InjectRepository(ChatMessageEntity)
+    private readonly messageRepo: Repository<ChatMessageEntity>,
+    @InjectRepository(SessionParticipantEntity)
+    private readonly participantRepo: Repository<SessionParticipantEntity>,
     private readonly openRouterService: OpenRouterService,
     private readonly promptBuilder: PromptBuilderService,
     private readonly contextBuilder: ContextBuilderService,
@@ -26,26 +39,60 @@ export class AiService implements OnModuleInit {
   }
 
   async generate(dto: GenerateDto) {
+    const streamId = `${dto.sessionId}:${dto.botConfigId}:${Date.now()}`;
+    let streamStarted = false;
+
     try {
       this.logger.log(
         `Generating AI response for session ${dto.sessionId}, bot ${dto.botConfigId}`,
       );
 
-      // Build system prompt using bot config info
-      const systemPrompt = this.promptBuilder.build({
-        botConfigId: dto.botConfigId,
-        sessionId: dto.sessionId,
-        trigger: dto.trigger,
-        strategyOverride: this.strategyOverrides.get(dto.botConfigId),
+      // Load bot config from DB
+      const botConfig = await this.botConfigRepo.findOne({
+        where: { id: dto.botConfigId },
       });
 
-      // Build conversation context
+      if (!botConfig) {
+        this.logger.warn(`BotConfig not found: ${dto.botConfigId}`);
+        return this.emitBotError(dto, streamId, `Bot config not found: ${dto.botConfigId}`);
+      }
+
+      // Load recent messages for context
+      const recentDbMessages = await this.messageRepo.find({
+        where: { sessionId: dto.sessionId },
+        relations: ['participant', 'participant.user', 'participant.botConfig'],
+        order: { createdAt: 'DESC' },
+        take: 20,
+      });
+
+      const recentMessages = recentDbMessages.reverse().map((msg) => ({
+        role: msg.participant?.botConfigId ? 'bot' : 'user',
+        author:
+          msg.participant?.user?.name ||
+          msg.participant?.botConfig?.name ||
+          'Unknown',
+        text: msg.text,
+      }));
+
+      // Build system prompt — use DB systemPrompt if available, else fallback to template
+      const systemPrompt = botConfig.systemPrompt
+        ? this.promptBuilder.buildFromConfig(botConfig, {
+            sessionId: dto.sessionId,
+            strategyOverride: this.strategyOverrides.get(dto.botConfigId),
+          })
+        : this.promptBuilder.build({
+            botConfigId: botConfig.specialistId,
+            sessionId: dto.sessionId,
+            trigger: dto.trigger,
+            strategyOverride: this.strategyOverrides.get(dto.botConfigId),
+          });
+
+      // Build conversation context with history
       const messages = this.contextBuilder.build({
         systemPrompt,
         trigger: dto.trigger,
+        recentMessages,
       });
-
-      const streamId = `${dto.sessionId}:${dto.botConfigId}:${Date.now()}`;
 
       // Notify clients that streaming started
       await lastValueFrom(
@@ -56,14 +103,15 @@ export class AiService implements OnModuleInit {
           type: 'start',
         }),
       );
+      streamStarted = true;
 
-      // Stream response from OpenRouter
+      // Stream response from OpenRouter using bot's own model/params
       let fullText = '';
       const stream = this.openRouterService.completeStream({
-        model: 'google/gemini-2.0-flash-001',
+        model: botConfig.model || 'google/gemini-2.0-flash-001',
         messages,
-        temperature: 0.7,
-        maxTokens: 512,
+        temperature: Number(botConfig.temperature) || 0.7,
+        maxTokens: botConfig.maxTokens || 512,
       });
 
       for await (const chunk of stream) {
@@ -91,21 +139,64 @@ export class AiService implements OnModuleInit {
         }),
       );
 
-      // Save the complete message to DB via chat service
-      await lastValueFrom(
-        this.kafkaClient.emit(KAFKA_TOPICS.CHAT.SEND, {
-          sessionId: dto.sessionId,
-          botConfigId: dto.botConfigId,
-          text: fullText,
-          isBot: true,
-        }),
-      );
+      // Only save non-empty responses
+      if (fullText.trim()) {
+        await lastValueFrom(
+          this.kafkaClient.emit(KAFKA_TOPICS.CHAT.SEND, {
+            sessionId: dto.sessionId,
+            botConfigId: dto.botConfigId,
+            text: fullText,
+            isBot: true,
+          }),
+        );
+      }
 
       return { text: fullText };
     } catch (error) {
-      this.logger.error(`AI generation failed: ${error.message}`, error.stack);
-      throw error;
+      this.logger.error(
+        `AI generation failed for bot ${dto.botConfigId}: ${error.message}`,
+      );
+      return this.emitBotError(dto, streamId, error.message, streamStarted);
     }
+  }
+
+  private async emitBotError(
+    dto: GenerateDto,
+    streamId: string,
+    errorMessage: string,
+    streamStarted = false,
+  ) {
+    // If stream was already started, close it so the frontend doesn't hang
+    if (streamStarted) {
+      await lastValueFrom(
+        this.kafkaClient.emit(KAFKA_TOPICS.EVENTS.CHAT_STREAM, {
+          sessionId: dto.sessionId,
+          botConfigId: dto.botConfigId,
+          streamId,
+          type: 'end',
+          error: errorMessage,
+        }),
+      ).catch(() => {});
+    }
+
+    // Send error as a visible chat event so users see what happened
+    await lastValueFrom(
+      this.kafkaClient.emit(KAFKA_TOPICS.EVENTS.CHAT, {
+        sessionId: dto.sessionId,
+        message: {
+          id: `error-${streamId}`,
+          sessionId: dto.sessionId,
+          participantId: null,
+          author: 'System',
+          role: 'system',
+          text: `⚠ Ошибка бота: ${errorMessage}`,
+          isSystem: true,
+          createdAt: new Date().toISOString(),
+        },
+      }),
+    ).catch(() => {});
+
+    return { error: errorMessage };
   }
 
   async testChat(data: {

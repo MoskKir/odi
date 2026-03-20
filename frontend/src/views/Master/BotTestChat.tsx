@@ -25,12 +25,13 @@ export function BotTestChat({ botId, botName, systemPrompt, model, temperature, 
   } = useBotTestChat({ botId, systemPrompt, model, temperature, maxTokens })
 
   const [text, setText] = useState('')
-  const bottomRef = useRef<HTMLDivElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  // Auto-scroll to bottom on any change
+  // Auto-scroll within the messages container only
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const el = containerRef.current
+    if (el) el.scrollTop = el.scrollHeight
   }, [messages, streaming, waiting])
 
   const handleSend = useCallback(() => {
@@ -71,7 +72,7 @@ export function BotTestChat({ botId, botName, systemPrompt, model, temperature, 
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-3 min-h-0">
+      <div ref={containerRef} className="flex-1 overflow-y-auto p-3 space-y-3 min-h-0">
         {messages.length === 0 && !streaming && !waiting && (
           <div className="flex flex-col items-center justify-center h-full gap-2 text-odi-text-muted">
             <Icon icon="chat" size={24} className="opacity-30" />
@@ -122,8 +123,6 @@ export function BotTestChat({ botId, botName, systemPrompt, model, temperature, 
           </div>
         )}
 
-        {/* Scroll anchor */}
-        <div ref={bottomRef} />
       </div>
 
       {/* Input */}

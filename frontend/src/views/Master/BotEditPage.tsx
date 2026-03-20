@@ -227,6 +227,18 @@ export function BotEditPage() {
               />
             </FormGroup>
           </Card>
+
+          {/* Test chat */}
+          <Card className="!bg-odi-surface !border-odi-border !shadow-none !p-0 overflow-hidden" style={{ height: 480 }}>
+            <BotTestChat
+              botId={id!}
+              botName={name || 'Бот'}
+              systemPrompt={systemPrompt}
+              model={model}
+              temperature={temperature}
+              maxTokens={maxTokens}
+            />
+          </Card>
         </div>
 
         {/* Sidebar — right col */}
@@ -321,17 +333,6 @@ export function BotEditPage() {
             </div>
           </Card>
 
-          {/* Test chat */}
-          <Card className="!bg-odi-surface !border-odi-border !shadow-none !p-0 overflow-hidden" style={{ height: 420 }}>
-            <BotTestChat
-              botId={id!}
-              botName={name || 'Бот'}
-              systemPrompt={systemPrompt}
-              model={model}
-              temperature={temperature}
-              maxTokens={maxTokens}
-            />
-          </Card>
         </div>
       </div>
     </div>

@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from 'react'
 import { Card, Tag, Button } from '@blueprintjs/core'
 import { useAppSelector, useAppDispatch } from '@/store'
-import { setCards } from '@/store/appSlice'
+import { setCards, setBoardColumnWidths, syncPreferencesToServer } from '@/store/appSlice'
 import { getSocket } from '@/api/socket'
 import { useSearchParams } from 'react-router-dom'
 import { ChatAvatar } from '@/components/ChatAvatar'
@@ -38,6 +38,9 @@ export function BoardView() {
   const [dragOverCol, setDragOverCol] = useState<string | null>(null)
   const [dropTargetIdx, setDropTargetIdx] = useState<number | null>(null)
   const dragCardRef = useRef<BoardCard | null>(null)
+  const colWidths = useAppSelector((s) => s.app.boardColumnWidths)
+  const resizingRef = useRef(false)
+  const boardRef = useRef<HTMLDivElement>(null)
 
   const emit = useCallback((event: string, payload: Record<string, unknown>) => {
     const socket = getSocket()
@@ -181,6 +184,51 @@ export function BoardView() {
     setDropTargetIdx(null)
   }, [cards, dropTargetIdx, getColumnCards, dispatch, emit])
 
+  // Initialize pixel widths from actual rendered sizes on first interaction
+  const ensurePixelWidths = useCallback(() => {
+    if (colWidths) return colWidths
+    const container = boardRef.current
+    if (!container) return null
+    const colEls = container.querySelectorAll<HTMLElement>('[data-board-col]')
+    const widths = COLUMNS.map((_, i) => colEls[i]?.offsetWidth ?? 300)
+    dispatch(setBoardColumnWidths(widths))
+    return widths
+  }, [colWidths, dispatch])
+
+  const handleResizeStart = useCallback((e: React.MouseEvent, colIndex: number) => {
+    e.preventDefault()
+    resizingRef.current = true
+    const startX = e.clientX
+
+    const widths = ensurePixelWidths()
+    if (!widths) return
+    const startLeft = widths[colIndex]
+
+    const onMouseMove = (ev: MouseEvent) => {
+      if (!resizingRef.current) return
+      const dx = ev.clientX - startX
+      const newLeft = Math.max(200, startLeft + dx)
+      const next = [...(colWidths ?? widths)]
+      next[colIndex] = newLeft
+      dispatch(setBoardColumnWidths(next))
+    }
+
+    const onMouseUp = () => {
+      resizingRef.current = false
+      document.removeEventListener('mousemove', onMouseMove)
+      document.removeEventListener('mouseup', onMouseUp)
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+      // Sync to server after resize ends
+      dispatch(syncPreferencesToServer({ boardColumnWidths: colWidths }))
+    }
+
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+    document.addEventListener('mousemove', onMouseMove)
+    document.addEventListener('mouseup', onMouseUp)
+  }, [ensurePixelWidths, colWidths, dispatch])
+
   const openAdd = (columnId: string) => {
     setEditors((prev) => [...prev, { key: `new-${++editorKeyCounter}`, mode: 'add', column: columnId, text: '' }])
   }
@@ -199,20 +247,26 @@ export function BoardView() {
 
   return (
     <>
-      <div className="flex gap-4 p-4 h-full overflow-x-auto">
-        {COLUMNS.map((col) => {
+      <div ref={boardRef} className="flex p-4 h-full overflow-x-auto" data-board-columns>
+        {COLUMNS.map((col, colIndex) => {
           const colCards = getColumnCards(col.id)
           const isDragOver = dragOverCol === col.id
+          const w = colWidths?.[colIndex]
           return (
             <div
               key={col.id}
-              className={`flex-1 min-w-[280px] flex flex-col gap-2 rounded-lg p-1 transition-colors duration-150 ${
-                isDragOver ? 'bg-odi-accent/10' : ''
-              }`}
-              onDragOver={(e) => handleColumnDragOver(e, col.id)}
-              onDragLeave={(e) => handleColumnDragLeave(e, col.id)}
-              onDrop={(e) => handleDrop(e, col.id)}
+              className="flex shrink-0"
+              style={w ? { width: w } : { flex: 1, minWidth: 280 }}
             >
+              <div
+                data-board-col
+                className={`flex-1 min-w-0 flex flex-col gap-2 rounded-lg p-1 transition-colors duration-150 ${
+                  isDragOver ? 'bg-odi-accent/10' : ''
+                }`}
+                onDragOver={(e) => handleColumnDragOver(e, col.id)}
+                onDragLeave={(e) => handleColumnDragLeave(e, col.id)}
+                onDrop={(e) => handleDrop(e, col.id)}
+              >
               <div className="flex items-center justify-between mb-2 px-1">
                 <div className="flex items-center gap-2">
                   <span className={`text-sm font-bold uppercase tracking-wider ${col.color}`}>
@@ -302,6 +356,16 @@ export function BoardView() {
                 ))}
                 {isDragOver && dropTargetIdx !== null && dropTargetIdx >= colCards.length && dropIndicator}
               </div>
+              </div>
+              {/* Resize handle between columns */}
+              {colIndex < COLUMNS.length - 1 && (
+                <div
+                  onMouseDown={(e) => handleResizeStart(e, colIndex)}
+                  className="shrink-0 w-2 cursor-col-resize group/resize flex items-stretch justify-center"
+                >
+                  <div className="w-0.5 bg-transparent group-hover/resize:bg-odi-accent/40 group-active/resize:bg-odi-accent/60 transition-colors rounded-full" />
+                </div>
+              )}
             </div>
           )
         })}

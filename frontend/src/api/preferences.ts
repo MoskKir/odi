@@ -25,6 +25,7 @@ export interface UserPreferences {
   rightPanelSections?: RightPanelSections;
   masterHintsPanelCollapsed?: boolean;
   masterHintsPanelWidth?: number;
+  boardColumnWidths?: number[] | null;
 }
 
 export async function fetchPreferences(): Promise<UserPreferences> {

@@ -23,6 +23,7 @@ interface PersistedPrefs {
   rightPanelSections: RightPanelSections
   masterHintsPanelCollapsed: boolean
   masterHintsPanelWidth: number
+  boardColumnWidths: number[] | null
 }
 
 function loadFromLocalStorage(): Partial<PersistedPrefs> {
@@ -114,6 +115,7 @@ interface AppState {
   inputBarHeight: number
   masterHintsPanelCollapsed: boolean
   masterHintsPanelWidth: number
+  boardColumnWidths: number[] | null
   socketJoined: boolean
   inviteCode: string | null
   quickAddCard: boolean
@@ -145,6 +147,7 @@ const initialState: AppState = {
   inputBarHeight: saved.inputBarHeight ?? 36,
   masterHintsPanelCollapsed: saved.masterHintsPanelCollapsed ?? false,
   masterHintsPanelWidth: saved.masterHintsPanelWidth ?? 288,
+  boardColumnWidths: saved.boardColumnWidths ?? null,
   socketJoined: false,
   inviteCode: null,
   quickAddCard: false,
@@ -163,6 +166,7 @@ function getPersistedPrefs(state: AppState): PersistedPrefs {
     inputBarHeight: state.inputBarHeight,
     masterHintsPanelCollapsed: state.masterHintsPanelCollapsed,
     masterHintsPanelWidth: state.masterHintsPanelWidth,
+    boardColumnWidths: state.boardColumnWidths,
   }
 }
 
@@ -295,6 +299,10 @@ export const appSlice = createSlice({
     setQuickAddCard(state, action: PayloadAction<boolean>) {
       state.quickAddCard = action.payload
     },
+    setBoardColumnWidths(state, action: PayloadAction<number[] | null>) {
+      state.boardColumnWidths = action.payload
+      persistToLocalStorage(getPersistedPrefs(state))
+    },
     toggleRightPanel(state) {
       state.rightPanelCollapsed = !state.rightPanelCollapsed
       persistToLocalStorage(getPersistedPrefs(state))
@@ -371,6 +379,7 @@ export const {
   setSessionParticipants,
   setInviteCode,
   setQuickAddCard,
+  setBoardColumnWidths,
   toggleRightPanel,
   toggleRightPanelSection,
   setRightPanelWidth,

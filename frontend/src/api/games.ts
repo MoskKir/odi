@@ -72,6 +72,14 @@ export async function updateGameTitle(id: string, title: string): Promise<void> 
   if (!res.ok) throw new Error('Failed to update title')
 }
 
+export async function deleteGame(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  })
+  if (!res.ok) throw new Error('Failed to delete game')
+}
+
 export async function fetchGame(id: string): Promise<GameSessionResponse> {
   const res = await fetch(`${API_BASE}/${id}`, {
     headers: getAuthHeaders(),

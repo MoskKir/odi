@@ -1,10 +1,10 @@
-import { Button, Card, Tag, ProgressBar, NonIdealState, InputGroup, Spinner, EditableText } from '@blueprintjs/core'
+import { Button, Card, Tag, ProgressBar, NonIdealState, InputGroup, Spinner, EditableText, Popover } from '@blueprintjs/core'
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppSelector } from '@/store'
 import { SettingsMenu } from '@/components/SettingsMenu'
 import { AccountBadge } from '@/components/AccountBadge'
-import { fetchGames, updateGameTitle, type GameSessionResponse } from '@/api/games'
+import { fetchGames, updateGameTitle, deleteGame, type GameSessionResponse } from '@/api/games'
 import { success, error as toastError } from '@/utils/toaster'
 import type { GameStatus } from '@/types'
 
@@ -78,6 +78,17 @@ export function GameList() {
     }
   }
 
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteGame(id)
+      setGames((prev) => prev.filter((g) => g.id !== id))
+      setTotal((t) => t - 1)
+      success('Игра удалена')
+    } catch {
+      toastError('Не удалось удалить игру')
+    }
+  }
+
   return (
     <div className={`${theme === 'dark' ? 'bp5-dark' : ''} h-screen flex flex-col bg-odi-bg`}>
       {/* Header */}
@@ -148,6 +159,7 @@ export function GameList() {
                   game={game}
                   onOpen={() => goToGame(game)}
                   onTitleChange={(t) => handleTitleChange(game.id, t)}
+                  onDelete={() => handleDelete(game.id)}
                 />
               ))}
             </div>
@@ -162,10 +174,12 @@ function GameCard({
   game,
   onOpen,
   onTitleChange,
+  onDelete,
 }: {
   game: GameSessionResponse
   onOpen: () => void
   onTitleChange: (title: string) => void
+  onDelete: () => void
 }) {
   const navigate = useNavigate()
   const cfg = STATUS_CFG[game.status] ?? STATUS_CFG.draft
@@ -233,6 +247,20 @@ function GameCard({
             onClick={onOpen}
           />
         )}
+        <Popover
+          placement="bottom-end"
+          content={
+            <div className="p-3">
+              <p className="text-sm text-odi-text mb-2">Удалить <strong>{game.title}</strong>?</p>
+              <div className="flex gap-2 justify-end">
+                <Button small minimal text="Отмена" className="bp5-popover-dismiss" />
+                <Button small intent="danger" text="Удалить" onClick={onDelete} className="bp5-popover-dismiss" />
+              </div>
+            </div>
+          }
+        >
+          <Button small minimal icon="trash" intent="danger" title="Удалить игру" />
+        </Popover>
       </div>
     </Card>
   )

@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Inject,
   Param,
@@ -35,6 +36,7 @@ export class GameController {
     this.kafkaClient.subscribeToResponseOf(KAFKA_TOPICS.GAME.JOIN);
     this.kafkaClient.subscribeToResponseOf(KAFKA_TOPICS.GAME.LEAVE);
     this.kafkaClient.subscribeToResponseOf(KAFKA_TOPICS.GAME.PHASE_ADVANCE);
+    this.kafkaClient.subscribeToResponseOf(KAFKA_TOPICS.GAME.DELETE);
     await this.kafkaClient.connect();
   }
 
@@ -74,6 +76,13 @@ export class GameController {
   async getOne(@Param('id') id: string) {
     return lastValueFrom(
       this.kafkaClient.send('odi.game.get', { id }),
+    );
+  }
+
+  @Delete(':id')
+  async deleteGame(@Param('id') id: string) {
+    return lastValueFrom(
+      this.kafkaClient.send(KAFKA_TOPICS.GAME.DELETE, { sessionId: id }),
     );
   }
 

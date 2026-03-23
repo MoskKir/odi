@@ -13,6 +13,7 @@ export const KAFKA_TOPICS = {
     PHASE_ADVANCE: 'odi.game.phase-advance',
     JOIN: 'odi.game.join',
     LEAVE: 'odi.game.leave',
+    DELETE: 'odi.game.delete',
     LIST: 'odi.game.list',
     RESULT: 'odi.game.result',
     BOT_CONTEXT_LIST: 'odi.game.bot-context-list',

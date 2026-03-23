@@ -198,6 +198,11 @@ export class GameService implements OnModuleInit {
     });
   }
 
+  async deleteGame(sessionId: string) {
+    await this.sessionRepo.delete(sessionId);
+    return { ok: true };
+  }
+
   async updateTitle(sessionId: string, title: string) {
     await this.sessionRepo.update(sessionId, { title });
     return { ok: true };

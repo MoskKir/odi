@@ -1,7 +1,7 @@
 import { useRef, useCallback } from 'react'
 import { Button, ButtonGroup } from '@blueprintjs/core'
 import { useAppSelector, useAppDispatch } from '@/store'
-import { toggleLeftSidebar, setLeftSidebarWidth, syncPreferencesToServer } from '@/store/appSlice'
+import { toggleLeftSidebar, setLeftSidebarWidth, setQuickAddCard, syncPreferencesToServer } from '@/store/appSlice'
 import { useViewMode } from '@/hooks/useViewMode'
 import type { ViewMode } from '@/types'
 
@@ -112,19 +112,19 @@ export function Sidebar() {
         </div>
 
         {/* Quick actions */}
-        {!leftSidebarCollapsed && (
-          <div className="border-t border-odi-border pt-3 px-3 mt-auto mb-3">
+        <div className={`border-t border-odi-border pt-3 mt-auto mb-3 ${leftSidebarCollapsed ? 'px-2' : 'px-3'}`}>
+          {!leftSidebarCollapsed && (
             <div className="text-xs text-odi-text-muted uppercase tracking-wider mb-2 whitespace-nowrap overflow-hidden">
               Быстрые действия
             </div>
-            <ButtonGroup vertical minimal className="gap-1">
-              <Button icon="pin" text="На доску" alignText="left" className="!text-odi-text-muted hover:!text-odi-text" />
-              <Button icon="link" text="Связать" alignText="left" className="!text-odi-text-muted hover:!text-odi-text" />
-              <Button icon="lightbulb" text="Анализ AI" alignText="left" className="!text-odi-text-muted hover:!text-odi-text" />
-              <Button icon="heart" text="Атмосфера" alignText="left" className="!text-odi-text-muted hover:!text-odi-text" />
-            </ButtonGroup>
-          </div>
-        )}
+          )}
+          <ButtonGroup vertical minimal className="gap-1 w-full">
+            <Button icon="pin" text={leftSidebarCollapsed ? undefined : 'На доску'} alignText="left" className="!text-odi-text-muted hover:!text-odi-text" title={leftSidebarCollapsed ? 'На доску' : undefined} onClick={() => dispatch(setQuickAddCard(true))} />
+            <Button icon="link" text={leftSidebarCollapsed ? undefined : 'Связать'} alignText="left" className="!text-odi-text-muted hover:!text-odi-text" title={leftSidebarCollapsed ? 'Связать' : undefined} />
+            <Button icon="lightbulb" text={leftSidebarCollapsed ? undefined : 'Анализ AI'} alignText="left" className="!text-odi-text-muted hover:!text-odi-text" title={leftSidebarCollapsed ? 'Анализ AI' : undefined} />
+            <Button icon="heart" text={leftSidebarCollapsed ? undefined : 'Атмосфера'} alignText="left" className="!text-odi-text-muted hover:!text-odi-text" title={leftSidebarCollapsed ? 'Атмосфера' : undefined} />
+          </ButtonGroup>
+        </div>
       </div>
 
       {/* Resize handle */}

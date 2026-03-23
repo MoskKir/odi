@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react'
-import { Card, Tag, Button, TextArea } from '@blueprintjs/core'
+import { Card, Tag, Button } from '@blueprintjs/core'
 import { useAppSelector, useAppDispatch } from '@/store'
 import { setCards } from '@/store/appSlice'
 import { getSocket } from '@/api/socket'
@@ -7,6 +7,7 @@ import { useSearchParams } from 'react-router-dom'
 import { ChatAvatar } from '@/components/ChatAvatar'
 import { Markdown } from '@/components/Markdown'
 import { FloatingWindow } from '@/components/FloatingWindow'
+import { MarkdownTextArea } from '@/components/MarkdownTextArea'
 import type { BoardCard } from '@/types'
 
 const COLUMNS = [
@@ -324,11 +325,11 @@ export function BoardView() {
           offsetIndex={i}
         >
           <div className="flex flex-col h-full p-4">
-            <TextArea
+            <MarkdownTextArea
               fill
               autoFocus
               value={editor.text}
-              onChange={(e) => updateEditorText(editor.key, e.target.value)}
+              onValueChange={(v) => updateEditorText(editor.key, v)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                   e.preventDefault()

@@ -43,7 +43,7 @@ export class OpenRouterService {
       model: params.model,
       messages: params.messages,
       temperature: params.temperature ?? 0.7,
-      max_tokens: params.maxTokens ?? 512,
+      max_tokens: params.maxTokens ?? 4096,
     };
 
     for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
@@ -90,7 +90,7 @@ export class OpenRouterService {
       model: params.model,
       messages: params.messages,
       temperature: params.temperature ?? 0.7,
-      max_tokens: params.maxTokens ?? 512,
+      max_tokens: params.maxTokens ?? 4096,
       stream: true,
     };
 
@@ -143,6 +143,25 @@ export class OpenRouterService {
               }
             } catch {
               // skip malformed chunks
+            }
+          }
+        }
+
+        // Process any remaining data left in the buffer
+        if (buffer.trim()) {
+          const trimmed = buffer.trim();
+          if (trimmed.startsWith('data: ')) {
+            const jsonStr = trimmed.slice(6);
+            if (jsonStr !== '[DONE]') {
+              try {
+                const chunk: OpenRouterStreamChunk = JSON.parse(jsonStr);
+                const content = chunk.choices?.[0]?.delta?.content;
+                if (content) {
+                  yield content;
+                }
+              } catch {
+                // skip malformed chunk
+              }
             }
           }
         }

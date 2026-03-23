@@ -159,7 +159,7 @@ export class AiService implements OnModuleInit {
         model: botConfig.model || 'google/gemini-2.0-flash-001',
         messages,
         temperature: Number(botConfig.temperature) || 0.7,
-        maxTokens: botConfig.maxTokens || 512,
+        maxTokens: botConfig.maxTokens || 4096,
       });
 
       for await (const chunk of stream) {
@@ -302,7 +302,7 @@ export class AiService implements OnModuleInit {
         model: data.model,
         messages,
         temperature: Number(data.temperature) || 0.7,
-        maxTokens: Number(data.maxTokens) || 512,
+        maxTokens: Number(data.maxTokens) || 4096,
       });
 
       for await (const chunk of stream) {

@@ -111,8 +111,8 @@ export function useGameSocket() {
       if (mounted) dispatch(appendStreamChunk({ streamId: data.streamId, content: data.content }))
     })
 
-    socket.on('chat:stream-end', (data: { streamId: string }) => {
-      if (mounted) dispatch(endStream({ streamId: data.streamId }))
+    socket.on('chat:stream-end', (data: { streamId: string; stopped?: boolean }) => {
+      if (mounted) dispatch(endStream({ streamId: data.streamId, stopped: data.stopped }))
     })
 
     socket.on('emotion:update', () => {})

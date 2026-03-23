@@ -31,6 +31,7 @@ export const KAFKA_TOPICS = {
     TEST_CHAT: 'odi.ai.test-chat',
     ANALYZE_EMOTION: 'odi.ai.analyze-emotion',
     CHANGE_STRATEGY: 'odi.ai.change-strategy',
+    STOP_STREAM: 'odi.ai.stop-stream',
     RESULT: 'odi.ai.result',
   },
   EVENTS: {

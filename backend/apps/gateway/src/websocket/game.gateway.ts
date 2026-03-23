@@ -248,6 +248,26 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
   }
 
+  @SubscribeMessage('chat:stop-stream')
+  async handleStopStream(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { sessionId: string; streamId?: string },
+  ) {
+    const user = client.data?.user;
+    if (!user) return;
+
+    this.logger.log(`[STOP_STREAM] ${user.email} stopping stream in session ${data.sessionId}`);
+
+    lastValueFrom(
+      this.kafkaClient.emit(KAFKA_TOPICS.AI.STOP_STREAM, {
+        sessionId: data.sessionId,
+        streamId: data.streamId,
+      }),
+    ).catch((err) => {
+      this.logger.error(`chat:stop-stream failed: ${err.message}`);
+    });
+  }
+
   @SubscribeMessage('bot:speak')
   async handleBotSpeak(
     @ConnectedSocket() client: Socket,

@@ -85,6 +85,7 @@ export class OpenRouterService {
     messages: OpenRouterMessage[];
     temperature?: number;
     maxTokens?: number;
+    signal?: AbortSignal;
   }): AsyncGenerator<string, void, unknown> {
     const request: OpenRouterRequest & { stream: boolean } = {
       model: params.model,
@@ -103,6 +104,7 @@ export class OpenRouterService {
             responseType: 'stream',
             timeout: 60000,
             validateStatus: () => true, // don't throw on 4xx/5xx — we read the stream ourselves
+            signal: params.signal,
           },
         );
 
@@ -122,6 +124,7 @@ export class OpenRouterService {
         let buffer = '';
 
         for await (const rawChunk of response.data) {
+          if (params.signal?.aborted) return;
           buffer += rawChunk.toString();
 
           const lines = buffer.split('\n');

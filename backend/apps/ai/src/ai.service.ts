@@ -23,6 +23,10 @@ export class AiService implements OnModuleInit {
   private readonly logger = new Logger(AiService.name);
   private readonly strategyOverrides = new Map<string, string>();
   private readonly recentTestChats = new Map<string, number>();
+  private readonly activeStreams = new Map<string, AbortController>();
+  private readonly sessionStreams = new Map<string, Set<string>>();
+  /** Sessions where generation was stopped — skip new generate() calls for a short period */
+  private readonly stoppedSessions = new Map<string, number>();
 
   constructor(
     @Inject('KAFKA_SERVICE') private readonly kafkaClient: ClientKafka,
@@ -51,8 +55,16 @@ export class AiService implements OnModuleInit {
   }
 
   async generate(dto: GenerateDto) {
+    // Skip if session was recently stopped
+    const stoppedAt = this.stoppedSessions.get(dto.sessionId);
+    if (stoppedAt && Date.now() - stoppedAt < 5000) {
+      this.logger.log(`Skipping generate for session ${dto.sessionId} — recently stopped`);
+      return { text: '', skipped: true };
+    }
+
     const streamId = `${dto.sessionId}:${dto.botConfigId}:${Date.now()}`;
     let streamStarted = false;
+    let fullText = '';
 
     try {
       this.logger.log(
@@ -154,12 +166,20 @@ export class AiService implements OnModuleInit {
       streamStarted = true;
 
       // Stream response from OpenRouter using bot's own model/params
-      let fullText = '';
+      const abortController = new AbortController();
+      this.activeStreams.set(streamId, abortController);
+      // Track stream by session for stop-all
+      if (!this.sessionStreams.has(dto.sessionId)) {
+        this.sessionStreams.set(dto.sessionId, new Set());
+      }
+      this.sessionStreams.get(dto.sessionId)!.add(streamId);
+
       const stream = this.openRouterService.completeStream({
         model: botConfig.model || 'google/gemini-2.0-flash-001',
         messages,
         temperature: Number(botConfig.temperature) || 0.7,
         maxTokens: botConfig.maxTokens || 4096,
+        signal: abortController.signal,
       });
 
       for await (const chunk of stream) {
@@ -176,6 +196,9 @@ export class AiService implements OnModuleInit {
           }),
         );
       }
+
+      this.activeStreams.delete(streamId);
+      this.sessionStreams.get(dto.sessionId)?.delete(streamId);
 
       // Notify clients that streaming ended
       await lastValueFrom(
@@ -201,6 +224,28 @@ export class AiService implements OnModuleInit {
 
       return { text: fullText };
     } catch (error) {
+      this.activeStreams.delete(streamId);
+      this.sessionStreams.get(dto.sessionId)?.delete(streamId);
+
+      // If aborted by user, gracefully end the stream without saving
+      if (error.name === 'AbortError' || error.name === 'CanceledError' || error.code === 'ERR_CANCELED') {
+        this.logger.log(`Stream ${streamId} was stopped by user (${fullText.length} chars generated)`);
+
+        if (streamStarted) {
+          await lastValueFrom(
+            this.kafkaClient.emit(KAFKA_TOPICS.EVENTS.CHAT_STREAM, {
+              sessionId: dto.sessionId,
+              botConfigId: dto.botConfigId,
+              streamId,
+              type: 'end',
+              stopped: true,
+            }),
+          ).catch(() => {});
+        }
+
+        return { text: fullText, stopped: true };
+      }
+
       this.logger.error(
         `AI generation failed for bot ${dto.botConfigId}: ${error.message}`,
       );
@@ -359,6 +404,37 @@ export class AiService implements OnModuleInit {
     );
 
     return result;
+  }
+
+  stopStream(data: { sessionId: string; streamId?: string }) {
+    // Block new generations for this session for 5 seconds
+    this.stoppedSessions.set(data.sessionId, Date.now());
+    setTimeout(() => this.stoppedSessions.delete(data.sessionId), 6000);
+
+    if (data.streamId) {
+      const ctrl = this.activeStreams.get(data.streamId);
+      if (ctrl) {
+        ctrl.abort();
+        this.activeStreams.delete(data.streamId);
+        this.sessionStreams.get(data.sessionId)?.delete(data.streamId);
+        this.logger.log(`Stream ${data.streamId} aborted by user`);
+      }
+    } else {
+      // Stop all streams for the session
+      const streamIds = this.sessionStreams.get(data.sessionId);
+      if (streamIds) {
+        for (const sid of streamIds) {
+          const ctrl = this.activeStreams.get(sid);
+          if (ctrl) {
+            ctrl.abort();
+            this.activeStreams.delete(sid);
+          }
+        }
+        streamIds.clear();
+        this.logger.log(`All streams for session ${data.sessionId} aborted by user`);
+      }
+    }
+    return { ok: true };
   }
 
   async changeStrategy(data: { botConfigId: string; strategy: string }) {

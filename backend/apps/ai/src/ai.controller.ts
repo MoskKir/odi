@@ -32,6 +32,14 @@ export class AiController {
     return this.aiService.testChat(data);
   }
 
+  @EventPattern(KAFKA_TOPICS.AI.STOP_STREAM)
+  handleStopStream(
+    @Payload() data: { sessionId: string; streamId?: string },
+  ) {
+    this.logger.log(`[STOP_STREAM] session=${data.sessionId} streamId=${data.streamId ?? 'all'}`);
+    return this.aiService.stopStream(data);
+  }
+
   @MessagePattern(KAFKA_TOPICS.AI.ANALYZE_EMOTION)
   async analyzeEmotion(
     @Payload() data: { sessionId: string; messages: any[] },

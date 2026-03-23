@@ -19,6 +19,8 @@ export function InputBar() {
   const dispatch = useAppDispatch()
 
   const sessionBots = useAppSelector((s) => s.app.sessionBots)
+  const streamingMessages = useAppSelector((s) => s.app.streamingMessages)
+  const isStreaming = Object.keys(streamingMessages).length > 0
   const canSend = socketJoined && !!sessionId
 
   const handleSend = () => {
@@ -26,6 +28,12 @@ export function InputBar() {
     const socket = getSocket()
     socket?.emit('chat:send', { sessionId, text: text.trim() })
     setText('')
+  }
+
+  const handleStopStream = () => {
+    if (!sessionId) return
+    const socket = getSocket()
+    socket?.emit('chat:stop-stream', { sessionId })
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -94,7 +102,11 @@ export function InputBar() {
           />
           <Button icon="microphone" minimal title="Голос" />
           <Button icon="paperclip" minimal title="Файл" />
-          <Button icon="send-message" intent="primary" onClick={handleSend} disabled={!canSend} />
+          {isStreaming ? (
+            <Button icon="stop" intent="danger" onClick={handleStopStream} title="Остановить генерацию" />
+          ) : (
+            <Button icon="send-message" intent="primary" onClick={handleSend} disabled={!canSend} />
+          )}
         </div>
         <div className="flex items-center gap-2 mt-2">
           <ButtonGroup minimal>

@@ -201,7 +201,18 @@ export const appSlice = createSlice({
         stream.text += action.payload.content
       }
     },
-    endStream(state, action: PayloadAction<{ streamId: string }>) {
+    endStream(state, action: PayloadAction<{ streamId: string; stopped?: boolean }>) {
+      const stream = state.streamingMessages[action.payload.streamId]
+      if (stream && action.payload.stopped && stream.text.trim()) {
+        const bot = state.sessionBots.find((b) => b.id === stream.botConfigId)
+        state.messages.push({
+          id: `stopped-${action.payload.streamId}`,
+          author: bot?.name ?? 'Bot',
+          role: 'bot',
+          text: stream.text,
+          timestamp: Date.now(),
+        })
+      }
       delete state.streamingMessages[action.payload.streamId]
     },
     addCard(state, action: PayloadAction<BoardCard>) {

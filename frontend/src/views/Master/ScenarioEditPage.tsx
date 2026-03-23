@@ -19,6 +19,7 @@ import {
   updateScenario,
   type CreateScenarioDto,
 } from '@/api/scenarios'
+import { success, error as toastError } from '@/utils/toaster'
 import { fetchBots, type BotResponse } from '@/api/bots'
 
 const ICONS = [
@@ -129,9 +130,12 @@ export function ScenarioEditPage() {
 
     try {
       await updateScenario(id, dto)
+      success('Сценарий сохранён')
       navigate('/master/scenarios')
     } catch (e: any) {
-      setError(e.message || 'Ошибка при сохранении')
+      const msg = e.message || 'Ошибка при сохранении'
+      setError(msg)
+      toastError(msg)
     } finally {
       setSaving(false)
     }

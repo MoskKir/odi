@@ -24,6 +24,7 @@ import {
   type BotStageContext,
   type StageSharedContext,
 } from '@/api/bot-contexts'
+import { success, error as toastError } from '@/utils/toaster'
 
 const DEFAULT_STAGES = [
   'Знакомство',
@@ -412,8 +413,11 @@ export function BotContextPage() {
       setDirtyShared(new Set())
       setDirtyBot(new Set())
       setSaveSuccess(true)
+      success('Контексты сохранены')
     } catch (e: any) {
-      setError(e.message || 'Ошибка при сохранении')
+      const msg = e.message || 'Ошибка при сохранении'
+      setError(msg)
+      toastError(msg)
     } finally {
       setSaving(false)
     }

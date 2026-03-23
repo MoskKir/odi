@@ -2,6 +2,7 @@ import { Button, Card, FormGroup, InputGroup, TextArea, Switch, NumericInput } f
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createBot, type CreateBotDto } from '@/api/bots'
+import { success, error as toastError } from '@/utils/toaster'
 
 const MODEL_SUGGESTIONS = [
   'google/gemini-2.0-flash-001',
@@ -53,9 +54,12 @@ export function BotCreatePage() {
 
     try {
       await createBot(dto)
+      success('Бот создан')
       navigate('/master/bots')
     } catch (e: any) {
-      setError(e.message || 'Ошибка при создании бота')
+      const msg = e.message || 'Ошибка при создании бота'
+      setError(msg)
+      toastError(msg)
     } finally {
       setSaving(false)
     }

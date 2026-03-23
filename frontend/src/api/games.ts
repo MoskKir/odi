@@ -21,7 +21,7 @@ export interface GameSessionResponse {
   startedAt: string | null
   completedAt: string | null
   createdAt: string
-  scenario?: { title: string; subtitle: string; icon: string }
+  scenario?: { title: string; subtitle: string; description: string; icon: string }
   participants?: {
     id: string
     role: string

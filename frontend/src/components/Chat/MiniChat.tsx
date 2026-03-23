@@ -13,29 +13,30 @@ export function MiniChat() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [lastMessages, streams])
 
+  if (lastMessages.length === 0 && streams.length === 0) {
+    return (
+      <p className="text-xs text-odi-text-muted italic">Нет сообщений</p>
+    )
+  }
+
   return (
-    <div className="flex flex-col h-full min-h-0">
-      <div className="text-xs text-odi-text-muted uppercase tracking-wider mb-2 shrink-0">
-        Мини-чат
-      </div>
-      <div className="space-y-1 flex-1 min-h-0 overflow-y-auto">
-        {lastMessages.map((msg) => (
-          <div key={msg.id} className="text-xs p-1.5 rounded bg-odi-surface-hover">
-            <span className="text-odi-accent font-medium">{msg.author}:</span>{' '}
-            <span className="text-odi-text-muted break-words"><Markdown>{msg.text}</Markdown></span>
+    <div className="space-y-1.5">
+      {lastMessages.map((msg) => (
+        <div key={msg.id} className="text-xs px-2.5 py-2 rounded-md bg-odi-bg/50 border border-odi-border/50">
+          <span className="text-odi-accent font-semibold">{msg.author}</span>
+          <div className="text-odi-text mt-0.5 break-words leading-relaxed"><Markdown>{msg.text}</Markdown></div>
+        </div>
+      ))}
+      {streams.map((stream) => (
+        <div key={stream.streamId} className="text-xs px-2.5 py-2 rounded-md bg-odi-bg/50 border border-odi-accent/20">
+          <span className="text-odi-accent font-semibold">{stream.botConfigId}</span>
+          <div className="text-odi-text mt-0.5 break-words leading-relaxed">
+            <Markdown>{stream.text}</Markdown>
+            <span className="inline-block w-1 h-3 ml-0.5 bg-odi-accent animate-pulse rounded-sm align-text-bottom" />
           </div>
-        ))}
-        {streams.map((stream) => (
-          <div key={stream.streamId} className="text-xs p-1.5 rounded bg-odi-surface-hover">
-            <span className="text-odi-accent font-medium">{stream.botConfigId}:</span>{' '}
-            <span className="text-odi-text-muted break-words">
-              <Markdown>{stream.text}</Markdown>
-              <span className="inline-block w-1 h-3 ml-0.5 bg-odi-accent animate-pulse rounded-sm align-text-bottom" />
-            </span>
-          </div>
-        ))}
-        <div ref={bottomRef} />
-      </div>
+        </div>
+      ))}
+      <div ref={bottomRef} />
     </div>
   )
 }

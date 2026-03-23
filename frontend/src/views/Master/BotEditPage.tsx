@@ -13,6 +13,7 @@ import {
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { fetchBots, updateBot, type CreateBotDto } from '@/api/bots'
+import { success, error as toastError } from '@/utils/toaster'
 import { BotTestChat } from './BotTestChat'
 
 const MODEL_SUGGESTIONS = [
@@ -118,9 +119,12 @@ export function BotEditPage() {
 
     try {
       await updateBot(id, dto)
+      success('Бот сохранён')
       navigate('/master/bots')
     } catch (e: any) {
-      setError(e.message || 'Ошибка при сохранении')
+      const msg = e.message || 'Ошибка при сохранении'
+      setError(msg)
+      toastError(msg)
     } finally {
       setSaving(false)
     }

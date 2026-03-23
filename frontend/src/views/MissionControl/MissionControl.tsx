@@ -11,6 +11,7 @@ import { SessionSettings } from './SessionSettings'
 import { EfficiencyForecast } from './EfficiencyForecast'
 import { loadScenarios, setTitle } from '@/store/missionSlice'
 import { createGame } from '@/api/games'
+import { error as toastError } from '@/utils/toaster'
 
 export function MissionControl() {
   const navigate = useNavigate()
@@ -53,7 +54,9 @@ export function MissionControl() {
 
       navigate(`/game/board?session=${game.id}`)
     } catch (e: any) {
-      setError(e.message || 'Ошибка создания игры')
+      const msg = e.message || 'Ошибка создания игры'
+      setError(msg)
+      toastError(msg)
     } finally {
       setLaunching(false)
     }

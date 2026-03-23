@@ -27,28 +27,23 @@ export function EmotionCompass() {
   }
 
   return (
-    <div>
-      <div className="text-xs text-odi-text-muted uppercase tracking-wider mb-2">
-        Эмоции
-      </div>
-      <ButtonGroup className="gap-1">
-        {EMOTIONS.map(({ emotion, emoji, label }) => (
-          <Button
-            key={emotion}
-            minimal
-            active={currentEmotion === emotion}
-            onClick={() => handleEmotion(emotion)}
-            title={label}
-            className={
-              currentEmotion === emotion
-                ? '!bg-odi-accent/20'
-                : 'hover:!bg-odi-surface-hover'
-            }
-          >
-            <span className="text-xl">{emoji}</span>
-          </Button>
-        ))}
-      </ButtonGroup>
-    </div>
+    <ButtonGroup className="gap-1 w-full flex">
+      {EMOTIONS.map(({ emotion, emoji, label }) => (
+        <Button
+          key={emotion}
+          minimal
+          active={currentEmotion === emotion}
+          onClick={() => handleEmotion(emotion)}
+          title={label}
+          className={`flex-1 ${
+            currentEmotion === emotion
+              ? '!bg-odi-accent/20'
+              : 'hover:!bg-odi-surface-hover'
+          }`}
+        >
+          <span className="text-lg">{emoji}</span>
+        </Button>
+      ))}
+    </ButtonGroup>
   )
 }

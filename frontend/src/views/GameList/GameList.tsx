@@ -5,6 +5,7 @@ import { useAppSelector } from '@/store'
 import { SettingsMenu } from '@/components/SettingsMenu'
 import { AccountBadge } from '@/components/AccountBadge'
 import { fetchGames, updateGameTitle, type GameSessionResponse } from '@/api/games'
+import { success, error as toastError } from '@/utils/toaster'
 import type { GameStatus } from '@/types'
 
 const STATUS_CFG: Record<string, { label: string; intent: 'success' | 'warning' | 'primary' | 'none' }> = {
@@ -71,7 +72,10 @@ export function GameList() {
     try {
       await updateGameTitle(id, trimmed)
       setGames((prev) => prev.map((g) => g.id === id ? { ...g, title: trimmed } : g))
-    } catch { /* ignore */ }
+      success('Название обновлено')
+    } catch {
+      toastError('Не удалось обновить название')
+    }
   }
 
   return (

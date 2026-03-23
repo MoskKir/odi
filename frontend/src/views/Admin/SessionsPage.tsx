@@ -17,6 +17,7 @@ import {
   updateSessionStatus,
   type AdminSessionResponse,
 } from '@/api/admin-sessions'
+import { success, error as toastError } from '@/utils/toaster'
 
 const STATUS_MAP: Record<string, { label: string; intent: 'success' | 'warning' | 'primary' | 'none' }> = {
   active: { label: 'Активна', intent: 'success' },
@@ -80,8 +81,9 @@ export function SessionsPage() {
     try {
       await updateSessionStatus(id, newStatus)
       setSessions((prev) => prev.map((s) => s.id === id ? { ...s, status: newStatus } : s))
+      success('Статус обновлён')
     } catch {
-      setError('Не удалось обновить статус')
+      toastError('Не удалось обновить статус')
     } finally {
       setUpdating(null)
     }

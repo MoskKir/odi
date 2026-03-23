@@ -2,6 +2,7 @@ import { Card, Tag, Button, Icon, Spinner, NonIdealState, Popover, Switch, Input
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { fetchBots, createBot, deleteBot, updateBot, type BotResponse } from '@/api/bots'
+import { success, error as toastError } from '@/utils/toaster'
 
 const ROLE_META: Record<string, { icon: string; color: string; label: string }> = {
   moderator:   { icon: 'shield',       color: 'bg-blue-600',   label: 'Модератор' },
@@ -77,8 +78,9 @@ export function BotsPage() {
     try {
       await deleteBot(id)
       setBots((prev) => prev.filter((b) => b.id !== id))
+      success('Бот удалён')
     } catch {
-      setError('Не удалось удалить бота')
+      toastError('Не удалось удалить бота')
     } finally {
       setDeleting(null)
     }
@@ -101,8 +103,9 @@ export function BotsPage() {
         maxTokens: bot.maxTokens ?? 4096,
       })
       setBots((prev) => [copy, ...prev])
+      success('Бот дублирован')
     } catch {
-      setError('Не удалось дублировать бота')
+      toastError('Не удалось дублировать бота')
     } finally {
       setDuplicating(null)
     }
@@ -113,8 +116,9 @@ export function BotsPage() {
     try {
       const updated = await updateBot(bot.id, { enabled: !bot.enabled })
       setBots((prev) => prev.map((b) => b.id === bot.id ? { ...b, enabled: updated.enabled } : b))
+      success(updated.enabled ? 'Бот включён' : 'Бот выключен')
     } catch {
-      setError('Не удалось изменить статус')
+      toastError('Не удалось изменить статус')
     } finally {
       setToggling(null)
     }

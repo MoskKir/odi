@@ -2,6 +2,7 @@ import { Button, Card, FormGroup, InputGroup, TextArea, HTMLSelect, Switch, TagI
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createScenario, type CreateScenarioDto } from '@/api/scenarios'
+import { success, error as toastError } from '@/utils/toaster'
 
 const ICONS = [
   { value: '\u{1F3E2}', label: '\u{1F3E2} Бизнес' },
@@ -60,9 +61,12 @@ export function ScenarioCreatePage() {
 
     try {
       await createScenario(dto)
+      success('Сценарий создан')
       navigate('/master/scenarios')
     } catch (e: any) {
-      setError(e.message || 'Ошибка при создании сценария')
+      const msg = e.message || 'Ошибка при создании сценария'
+      setError(msg)
+      toastError(msg)
     } finally {
       setSaving(false)
     }

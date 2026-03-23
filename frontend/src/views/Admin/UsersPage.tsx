@@ -19,6 +19,7 @@ import {
   updateUser,
   type UserResponse,
 } from '@/api/users'
+import { success, error as toastError } from '@/utils/toaster'
 
 const ROLE_CONFIG: Record<string, { label: string; intent: 'danger' | 'warning' | 'none' }> = {
   admin: { label: 'Админ', intent: 'danger' },
@@ -90,8 +91,9 @@ export function UsersPage() {
     try {
       const updated = await updateUser(userId, { role: newRole })
       setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, ...updated } : u))
+      success('Роль изменена')
     } catch {
-      setError('Не удалось изменить роль')
+      toastError('Не удалось изменить роль')
     } finally {
       setUpdatingRole(null)
     }
@@ -110,6 +112,7 @@ export function UsersPage() {
       })
       setUsers((prev) => [user, ...prev])
       setTotal((t) => t + 1)
+      success('Пользователь создан')
       setCreateOpen(false)
       setNewName('')
       setNewEmail('')

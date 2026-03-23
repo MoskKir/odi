@@ -5,6 +5,14 @@ function getAuthHeaders(): HeadersInit {
   return token ? { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
 }
 
+export interface RightPanelSections {
+  scenario?: boolean;
+  emotion?: boolean;
+  meta?: boolean;
+  bots?: boolean;
+  chat?: boolean;
+}
+
 export interface UserPreferences {
   theme?: 'dark' | 'light';
   fontSize?: number;
@@ -14,6 +22,7 @@ export interface UserPreferences {
   rightPanelCollapsed?: boolean;
   rightPanelWidth?: number;
   inputBarHeight?: number;
+  rightPanelSections?: RightPanelSections;
 }
 
 export async function fetchPreferences(): Promise<UserPreferences> {

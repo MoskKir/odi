@@ -4,6 +4,7 @@ import {
   fetchPreferences,
   savePreferences,
   type UserPreferences,
+  type RightPanelSections,
 } from '@/api/preferences'
 
 // ── localStorage helpers ──
@@ -19,6 +20,7 @@ interface PersistedPrefs {
   rightPanelCollapsed: boolean
   rightPanelWidth: number
   inputBarHeight: number
+  rightPanelSections: RightPanelSections
 }
 
 function loadFromLocalStorage(): Partial<PersistedPrefs> {
@@ -87,6 +89,7 @@ interface AppState {
   theme: Theme
   fontSize: FontSize
   sessionTitle: string
+  scenarioInfo: { title: string; subtitle: string; description: string; icon: string } | null
   elapsed: string
   teamOnline: number
   teamSize: number
@@ -99,6 +102,7 @@ interface AppState {
   sessionParticipants: SessionParticipant[]
   rightPanelCollapsed: boolean
   rightPanelWidth: number
+  rightPanelSections: RightPanelSections
   leftSidebarCollapsed: boolean
   leftSidebarWidth: number
   inputBarHeight: number
@@ -110,6 +114,7 @@ const initialState: AppState = {
   theme: saved.theme ?? 'dark',
   fontSize: saved.fontSize ?? 16,
   sessionTitle: 'Стратегия 2026',
+  scenarioInfo: null,
   elapsed: '00:00',
   teamOnline: 4,
   teamSize: 6,
@@ -122,6 +127,7 @@ const initialState: AppState = {
   sessionParticipants: [],
   rightPanelCollapsed: saved.rightPanelCollapsed ?? false,
   rightPanelWidth: saved.rightPanelWidth ?? 256,
+  rightPanelSections: saved.rightPanelSections ?? { scenario: true, emotion: true, meta: true, bots: true, chat: true },
   leftSidebarCollapsed: saved.leftSidebarCollapsed ?? false,
   leftSidebarWidth: saved.leftSidebarWidth ?? 208,
   inputBarHeight: saved.inputBarHeight ?? 36,
@@ -137,6 +143,7 @@ function getPersistedPrefs(state: AppState): PersistedPrefs {
     leftSidebarWidth: state.leftSidebarWidth,
     rightPanelCollapsed: state.rightPanelCollapsed,
     rightPanelWidth: state.rightPanelWidth,
+    rightPanelSections: state.rightPanelSections,
     inputBarHeight: state.inputBarHeight,
   }
 }
@@ -204,6 +211,9 @@ export const appSlice = createSlice({
     setSessionTitle(state, action: PayloadAction<string>) {
       state.sessionTitle = action.payload
     },
+    setScenarioInfo(state, action: PayloadAction<AppState['scenarioInfo']>) {
+      state.scenarioInfo = action.payload
+    },
     setSessionBots(state, action: PayloadAction<SessionBot[]>) {
       state.sessionBots = action.payload
     },
@@ -215,6 +225,11 @@ export const appSlice = createSlice({
     },
     toggleRightPanel(state) {
       state.rightPanelCollapsed = !state.rightPanelCollapsed
+      persistToLocalStorage(getPersistedPrefs(state))
+    },
+    toggleRightPanelSection(state, action: PayloadAction<keyof RightPanelSections>) {
+      const key = action.payload
+      state.rightPanelSections[key] = !state.rightPanelSections[key]
       persistToLocalStorage(getPersistedPrefs(state))
     },
     setRightPanelWidth(state, action: PayloadAction<number>) {
@@ -244,6 +259,7 @@ export const appSlice = createSlice({
       if (prefs.leftSidebarWidth) state.leftSidebarWidth = prefs.leftSidebarWidth
       if (prefs.rightPanelCollapsed !== undefined) state.rightPanelCollapsed = prefs.rightPanelCollapsed
       if (prefs.rightPanelWidth) state.rightPanelWidth = prefs.rightPanelWidth
+      if (prefs.rightPanelSections) state.rightPanelSections = { ...state.rightPanelSections, ...prefs.rightPanelSections }
       if (prefs.inputBarHeight) state.inputBarHeight = prefs.inputBarHeight
       persistToLocalStorage(getPersistedPrefs(state))
     })
@@ -265,9 +281,11 @@ export const {
   updatePhase,
   setSocketJoined,
   setSessionTitle,
+  setScenarioInfo,
   setSessionBots,
   setSessionParticipants,
   toggleRightPanel,
+  toggleRightPanelSection,
   setRightPanelWidth,
   toggleLeftSidebar,
   setLeftSidebarWidth,

@@ -62,3 +62,20 @@ body {
 .bp5-dark {
   --pt-app-background-color: var(--odi-bg);
 }
+
+/* Prevent Blueprint Toaster portal from causing scrollbars */
+.bp5-overlay-container {
+  position: fixed;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.bp5-toast-container {
+  position: fixed !important;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.bp5-toast {
+  pointer-events: auto;
+}

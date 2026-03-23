@@ -2,6 +2,7 @@ import { Card, Tag, Button, Icon, Spinner, NonIdealState, Popover } from '@bluep
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { fetchScenarios, createScenario, deleteScenario, type ScenarioResponse } from '@/api/scenarios'
+import { success, error as toastError } from '@/utils/toaster'
 
 const DIFF_CONFIG: Record<string, { label: string; intent: 'success' | 'warning' | 'danger' }> = {
   easy: { label: 'Лёгкий', intent: 'success' },
@@ -46,8 +47,9 @@ export function ScenariosPage() {
       await deleteScenario(id)
       setScenarios((prev) => prev.filter((s) => s.id !== id))
       if (expandedId === id) setExpandedId(null)
+      success('Сценарий удалён')
     } catch {
-      setError('Не удалось удалить сценарий')
+      toastError('Не удалось удалить сценарий')
     } finally {
       setDeleting(null)
     }
@@ -69,8 +71,9 @@ export function ScenariosPage() {
         avgDurationMinutes: scenario.avgDurationMinutes,
       })
       setScenarios((prev) => [copy, ...prev])
+      success('Сценарий дублирован')
     } catch {
-      setError('Не удалось дублировать сценарий')
+      toastError('Не удалось дублировать сценарий')
     } finally {
       setDuplicating(null)
     }

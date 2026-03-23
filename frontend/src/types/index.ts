@@ -40,6 +40,7 @@ export interface BoardCard {
   text: string
   author: string
   votes: number
+  orderIndex: number
 }
 
 export interface RightPanelWidget {

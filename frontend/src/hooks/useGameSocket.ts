@@ -1,9 +1,9 @@
 import { useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAppDispatch } from '@/store'
-import { setMessages, addMessage, addCard, updateSession, updatePhase, setSocketJoined, setSessionTitle, setScenarioInfo, setSessionBots, setSessionParticipants, setInviteCode, startStream, appendStreamChunk, endStream } from '@/store/appSlice'
+import { setMessages, addMessage, setCards, addCard, updateCard, removeCard, updateSession, updatePhase, setSocketJoined, setSessionTitle, setScenarioInfo, setSessionBots, setSessionParticipants, setInviteCode, startStream, appendStreamChunk, endStream } from '@/store/appSlice'
 import { connectSocket, disconnectSocket } from '@/api/socket'
-import { fetchGame } from '@/api/games'
+import { fetchGame, fetchBoardCards } from '@/api/games'
 import type { ChatMessage, BoardCard } from '@/types'
 
 interface ServerChatMessage {
@@ -52,12 +52,14 @@ export function useGameSocket() {
 
     const joinSession = async () => {
       socket.emit('session:join', { sessionId })
-      const [history, game] = await Promise.all([
+      const [history, game, cards] = await Promise.all([
         loadHistory(sessionId),
         fetchGame(sessionId).catch(() => null),
+        fetchBoardCards(sessionId).catch(() => []),
       ])
       if (mounted) {
         dispatch(setMessages(history))
+        dispatch(setCards(cards))
         if (game?.title) {
           dispatch(setSessionTitle(game.title))
           document.title = game.title
@@ -120,8 +122,17 @@ export function useGameSocket() {
 
     socket.on('emotion:update', () => {})
 
-    socket.on('board:update', (data: BoardCard) => {
-      if (mounted) dispatch(addCard(data))
+    socket.on('board:update', (data: { type: string; card?: BoardCard; cardId?: string; cards?: BoardCard[] }) => {
+      if (!mounted) return
+      if (data.type === 'board-cards-sync' && data.cards) {
+        dispatch(setCards(data.cards))
+      } else if (data.type === 'board-card-added' && data.card) {
+        dispatch(addCard(data.card))
+      } else if ((data.type === 'board-card-voted' || data.type === 'board-card-edited') && data.card) {
+        dispatch(updateCard(data.card))
+      } else if (data.type === 'board-card-deleted' && data.cardId) {
+        dispatch(removeCard(data.cardId))
+      }
     })
 
     socket.on('connect', joinSession)
@@ -131,11 +142,28 @@ export function useGameSocket() {
       joinSession()
     }
 
+    // Sync board cards on window focus and periodically
+    const syncCards = () => {
+      if (!mounted) return
+      fetchBoardCards(sessionId).then((cards) => {
+        if (mounted) dispatch(setCards(cards))
+      }).catch(() => {})
+    }
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') syncCards()
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+
+    const syncInterval = setInterval(syncCards, 15000)
+
     return () => {
       mounted = false
       socket.emit('session:leave', { sessionId })
       dispatch(setSocketJoined(false))
       disconnectSocket()
+      document.removeEventListener('visibilitychange', handleVisibility)
+      clearInterval(syncInterval)
     }
   }, [sessionId, dispatch])
 

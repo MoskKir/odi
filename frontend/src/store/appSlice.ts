@@ -250,8 +250,18 @@ export const appSlice = createSlice({
       }
       state.streamingMessages = {}
     },
+    setCards(state, action: PayloadAction<BoardCard[]>) {
+      state.cards = action.payload
+    },
     addCard(state, action: PayloadAction<BoardCard>) {
       state.cards.push(action.payload)
+    },
+    updateCard(state, action: PayloadAction<BoardCard>) {
+      const idx = state.cards.findIndex((c) => c.id === action.payload.id)
+      if (idx !== -1) state.cards[idx] = action.payload
+    },
+    removeCard(state, action: PayloadAction<string>) {
+      state.cards = state.cards.filter((c) => c.id !== action.payload)
     },
     updateSession(state, action: PayloadAction<{ teamOnline?: number; energy?: number }>) {
       const { teamOnline, energy } = action.payload
@@ -343,7 +353,10 @@ export const {
   startStream,
   appendStreamChunk,
   endStream,
+  setCards,
   addCard,
+  updateCard,
+  removeCard,
   updateSession,
   updatePhase,
   setSocketJoined,

@@ -30,6 +30,9 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.kafkaClient.subscribeToResponseOf('odi.game.emotion-set');
     this.kafkaClient.subscribeToResponseOf('odi.game.board-add');
     this.kafkaClient.subscribeToResponseOf('odi.game.board-vote');
+    this.kafkaClient.subscribeToResponseOf('odi.game.board-move');
+    this.kafkaClient.subscribeToResponseOf('odi.game.board-edit');
+    this.kafkaClient.subscribeToResponseOf('odi.game.board-delete');
     this.kafkaClient.subscribeToResponseOf(KAFKA_TOPICS.AI.CHANGE_STRATEGY);
   }
 
@@ -225,6 +228,60 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }),
     ).catch((err) => {
       this.logger.error(`board:vote failed: ${err.message}`);
+    });
+  }
+
+  @SubscribeMessage('board:move')
+  async handleBoardMove(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { sessionId: string; cardId: string; column: string; orderIndex: number },
+  ) {
+    const user = client.data?.user;
+    if (!user) return;
+
+    lastValueFrom(
+      this.kafkaClient.send('odi.game.board-move', {
+        cardId: data.cardId,
+        column: data.column,
+        orderIndex: data.orderIndex,
+      }),
+    ).catch((err) => {
+      this.logger.error(`board:move failed: ${err.message}`);
+    });
+  }
+
+  @SubscribeMessage('board:edit')
+  async handleBoardEdit(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { sessionId: string; cardId: string; text: string },
+  ) {
+    const user = client.data?.user;
+    if (!user) return;
+
+    lastValueFrom(
+      this.kafkaClient.send('odi.game.board-edit', {
+        cardId: data.cardId,
+        text: data.text,
+      }),
+    ).catch((err) => {
+      this.logger.error(`board:edit failed: ${err.message}`);
+    });
+  }
+
+  @SubscribeMessage('board:delete')
+  async handleBoardDelete(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { sessionId: string; cardId: string },
+  ) {
+    const user = client.data?.user;
+    if (!user) return;
+
+    lastValueFrom(
+      this.kafkaClient.send('odi.game.board-delete', {
+        cardId: data.cardId,
+      }),
+    ).catch((err) => {
+      this.logger.error(`board:delete failed: ${err.message}`);
     });
   }
 

@@ -29,6 +29,9 @@ export class BoardCardEntity {
   @Column({ type: 'int', default: 0 })
   votes: number;
 
+  @Column({ type: 'int', default: 0 })
+  orderIndex: number;
+
   @CreateDateColumn()
   createdAt: Date;
 

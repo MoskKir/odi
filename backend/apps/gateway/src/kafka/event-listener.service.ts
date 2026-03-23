@@ -10,11 +10,18 @@ export class EventListenerService {
   constructor(private readonly gameGateway: GameGateway) {}
 
   @EventPattern(KAFKA_TOPICS.EVENTS.SESSION)
-  handleSessionEvent(@Payload() data: { sessionId: string; [key: string]: any }) {
+  handleSessionEvent(@Payload() data: { sessionId: string; type?: string; [key: string]: any }) {
     this.logger.log(`session event: ${JSON.stringify(data).slice(0, 200)}`);
-    this.gameGateway.server
-      .to(data.sessionId)
-      .emit('session:update', data);
+
+    if (data.type?.startsWith('board-card-')) {
+      this.gameGateway.server
+        .to(data.sessionId)
+        .emit('board:update', data);
+    } else {
+      this.gameGateway.server
+        .to(data.sessionId)
+        .emit('session:update', data);
+    }
   }
 
   @EventPattern(KAFKA_TOPICS.EVENTS.CHAT)

@@ -123,6 +123,11 @@ export class GameController {
 
   // --- Board ---
 
+  @MessagePattern(KAFKA_TOPICS.GAME.BOARD_LIST)
+  async listBoardCards(@Payload() data: { sessionId: string }) {
+    return this.boardService.getCards(data.sessionId);
+  }
+
   @MessagePattern('odi.game.board-add')
   async addBoardCard(@Payload() data: any) {
     return this.boardService.addCard(data);
@@ -131,6 +136,21 @@ export class GameController {
   @MessagePattern('odi.game.board-vote')
   async voteBoardCard(@Payload() data: any) {
     return this.boardService.vote(data.cardId);
+  }
+
+  @MessagePattern('odi.game.board-move')
+  async moveBoardCard(@Payload() data: { cardId: string; column: string; orderIndex: number }) {
+    return this.boardService.moveCard(data.cardId, data.column, data.orderIndex);
+  }
+
+  @MessagePattern('odi.game.board-edit')
+  async editBoardCard(@Payload() data: { cardId: string; text: string }) {
+    return this.boardService.editCard(data.cardId, data.text);
+  }
+
+  @MessagePattern('odi.game.board-delete')
+  async deleteBoardCard(@Payload() data: { cardId: string }) {
+    return this.boardService.deleteCard(data.cardId);
   }
 
   // --- Emotion ---

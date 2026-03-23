@@ -357,18 +357,18 @@ export function BoardView() {
                 {isDragOver && dropTargetIdx !== null && dropTargetIdx >= colCards.length && dropIndicator}
               </div>
               </div>
-              {/* Resize handle between columns */}
-              {colIndex < COLUMNS.length - 1 && (
-                <div
-                  onMouseDown={(e) => handleResizeStart(e, colIndex)}
-                  className="shrink-0 w-2 cursor-col-resize group/resize flex items-stretch justify-center"
-                >
-                  <div className="w-0.5 bg-transparent group-hover/resize:bg-odi-accent/40 group-active/resize:bg-odi-accent/60 transition-colors rounded-full" />
-                </div>
-              )}
+              {/* Resize handle */}
+              <div
+                onMouseDown={(e) => handleResizeStart(e, colIndex)}
+                className="shrink-0 w-2 cursor-col-resize group/resize flex items-stretch justify-center"
+              >
+                <div className="w-0.5 bg-transparent group-hover/resize:bg-odi-accent/40 group-active/resize:bg-odi-accent/60 transition-colors rounded-full" />
+              </div>
             </div>
           )
         })}
+        {/* Trailing space for scrolling past last column */}
+        <div className="shrink-0 w-16" />
       </div>
 
       {/* Editor floating windows */}

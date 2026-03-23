@@ -46,9 +46,68 @@ const components: Components = {
       <table className="text-xs border-collapse w-full">{children}</table>
     </div>
   ),
+  thead: ({ children }) => <thead>{children}</thead>,
+  tbody: ({ children }) => <tbody>{children}</tbody>,
+  tr: ({ children }) => <tr>{children}</tr>,
   th: ({ children }) => <th className="border border-odi-border px-2 py-1 text-left font-semibold bg-black/10">{children}</th>,
   td: ({ children }) => <td className="border border-odi-border px-2 py-1">{children}</td>,
   hr: () => <hr className="border-odi-border my-2" />,
+}
+
+/**
+ * Adds soft line breaks (two trailing spaces) to single newlines
+ * while preserving table rows, code blocks, and blank lines.
+ */
+function prepareMd(text: string): string {
+  const lines = text.split('\n')
+  const result: string[] = []
+  let inCodeBlock = false
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]
+
+    // Toggle code fences
+    if (line.trimStart().startsWith('```')) {
+      inCodeBlock = !inCodeBlock
+      result.push(line)
+      continue
+    }
+
+    // Don't touch code blocks
+    if (inCodeBlock) {
+      result.push(line)
+      continue
+    }
+
+    // Don't touch table rows (start with |)
+    if (line.trimStart().startsWith('|')) {
+      result.push(line)
+      continue
+    }
+
+    // Don't touch blank lines (they already create paragraph breaks)
+    if (line.trim() === '') {
+      result.push(line)
+      continue
+    }
+
+    // Don't touch headings, HRs, list items
+    const trimmed = line.trimStart()
+    if (/^#{1,6}\s/.test(trimmed) || /^[-*>+]\s/.test(trimmed) || /^\d+\.\s/.test(trimmed) || /^---+$/.test(trimmed)) {
+      result.push(line)
+      continue
+    }
+
+    // If next line is non-empty plain text, add soft break (two trailing spaces)
+    const nextLine = lines[i + 1]
+    if (nextLine !== undefined && nextLine.trim() !== '' && !nextLine.trimStart().startsWith('|') && !nextLine.trimStart().startsWith('```')) {
+      result.push(line.replace(/\s*$/, '') + '  ')
+    } else {
+      result.push(line)
+    }
+  }
+
+  return result.join('\n')
 }
 
 interface MarkdownProps {
@@ -63,7 +122,7 @@ export function Markdown({ children, className }: MarkdownProps) {
         remarkPlugins={[remarkGfm]}
         components={components}
       >
-        {children}
+        {prepareMd(children)}
       </ReactMarkdown>
     </div>
   )

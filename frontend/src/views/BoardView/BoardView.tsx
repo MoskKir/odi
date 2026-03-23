@@ -1,11 +1,12 @@
 import { useState, useCallback, useRef } from 'react'
-import { Card, Tag, Button, Dialog, TextArea } from '@blueprintjs/core'
+import { Card, Tag, Button, TextArea } from '@blueprintjs/core'
 import { useAppSelector, useAppDispatch } from '@/store'
 import { setCards } from '@/store/appSlice'
 import { getSocket } from '@/api/socket'
 import { useSearchParams } from 'react-router-dom'
 import { ChatAvatar } from '@/components/ChatAvatar'
 import { Markdown } from '@/components/Markdown'
+import { FloatingWindow } from '@/components/FloatingWindow'
 import type { BoardCard } from '@/types'
 
 const COLUMNS = [
@@ -14,12 +15,15 @@ const COLUMNS = [
   { id: 'creative', title: 'Креатив', color: 'text-odi-energy', accent: 'border-t-amber-500' },
 ]
 
-interface CardDialogState {
+interface CardEditor {
+  key: string
   mode: 'add' | 'edit'
   column: string
   cardId?: string
   text: string
 }
+
+let editorKeyCounter = 0
 
 export function BoardView() {
   const cards = useAppSelector((s) => s.app.cards)
@@ -28,7 +32,7 @@ export function BoardView() {
   const [searchParams] = useSearchParams()
   const sessionId = searchParams.get('session')
 
-  const [dialog, setDialog] = useState<CardDialogState | null>(null)
+  const [editors, setEditors] = useState<CardEditor[]>([])
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
   const [dragOverCol, setDragOverCol] = useState<string | null>(null)
   const [dropTargetIdx, setDropTargetIdx] = useState<number | null>(null)
@@ -39,15 +43,23 @@ export function BoardView() {
     if (socket && sessionId) socket.emit(event, { sessionId, ...payload })
   }, [sessionId])
 
-  const handleSubmit = useCallback(() => {
-    if (!dialog || !dialog.text.trim()) return
-    if (dialog.mode === 'add') {
-      emit('board:add', { column: dialog.column, text: dialog.text.trim() })
-    } else if (dialog.cardId) {
-      emit('board:edit', { cardId: dialog.cardId, text: dialog.text.trim() })
+  const handleSubmit = useCallback((editor: CardEditor) => {
+    if (!editor.text.trim()) return
+    if (editor.mode === 'add') {
+      emit('board:add', { column: editor.column, text: editor.text.trim() })
+    } else if (editor.cardId) {
+      emit('board:edit', { cardId: editor.cardId, text: editor.text.trim() })
     }
-    setDialog(null)
-  }, [dialog, emit])
+    setEditors((prev) => prev.filter((e) => e.key !== editor.key))
+  }, [emit])
+
+  const closeEditor = useCallback((key: string) => {
+    setEditors((prev) => prev.filter((e) => e.key !== key))
+  }, [])
+
+  const updateEditorText = useCallback((key: string, text: string) => {
+    setEditors((prev) => prev.map((e) => e.key === key ? { ...e, text } : e))
+  }, [])
 
   const handleDelete = useCallback((cardId: string) => {
     emit('board:delete', { cardId })
@@ -70,13 +82,13 @@ export function BoardView() {
     dragCardRef.current = card
     e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.setData('text/plain', card.id)
-    requestAnimationFrame(() => {
-      ;(e.target as HTMLElement).style.opacity = '0.4'
-    })
+    const cardEl = (e.currentTarget as HTMLElement).closest('.bp5-card') as HTMLElement | null
+    if (cardEl) requestAnimationFrame(() => { cardEl.style.opacity = '0.4' })
   }, [])
 
   const handleDragEnd = useCallback((e: React.DragEvent) => {
-    ;(e.target as HTMLElement).style.opacity = '1'
+    const cardEl = (e.currentTarget as HTMLElement).closest('.bp5-card') as HTMLElement | null
+    if (cardEl) cardEl.style.opacity = '1'
     dragCardRef.current = null
     setDragOverCol(null)
     setDropTargetIdx(null)
@@ -168,8 +180,16 @@ export function BoardView() {
     setDropTargetIdx(null)
   }, [cards, dropTargetIdx, getColumnCards, dispatch, emit])
 
-  const openAdd = (columnId: string) => setDialog({ mode: 'add', column: columnId, text: '' })
-  const openEdit = (card: BoardCard) => setDialog({ mode: 'edit', column: card.column, cardId: card.id, text: card.text })
+  const openAdd = (columnId: string) => {
+    setEditors((prev) => [...prev, { key: `new-${++editorKeyCounter}`, mode: 'add', column: columnId, text: '' }])
+  }
+  const openEdit = (card: BoardCard) => {
+    // Don't open duplicate editor for same card
+    setEditors((prev) => {
+      if (prev.some((e) => e.cardId === card.id)) return prev
+      return [...prev, { key: `edit-${card.id}`, mode: 'edit', column: card.column, cardId: card.id, text: card.text }]
+    })
+  }
   const isOwner = (card: BoardCard) => currentUser?.name === card.author
 
   const dropIndicator = (
@@ -211,50 +231,70 @@ export function BoardView() {
               </div>
               <div className="flex flex-col gap-2 flex-1 overflow-y-auto px-1">
                 {colCards.map((card, index) => (
-                  <div key={card.id}>
+                  <div
+                    key={card.id}
+                    onDragOver={(e) => handleCardDragOver(e, col.id, index)}
+                  >
                     {isDragOver && dropTargetIdx === index && dragCardRef.current?.id !== card.id && dropIndicator}
                     <Card
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, card)}
-                      onDragEnd={handleDragEnd}
-                      onDragOver={(e) => handleCardDragOver(e, col.id, index)}
-                      className={`!bg-odi-surface-hover !border-odi-border !shadow-none border-t-2 ${col.accent} group relative cursor-grab active:cursor-grabbing`}
+                      className={`!bg-odi-surface-hover !border-odi-border !shadow-none !p-0 overflow-hidden group relative`}
                     >
-                      {isOwner(card) && (
-                        <div className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity flex gap-0.5">
-                          <Button
-                            icon="edit"
-                            minimal
-                            small
-                            className="!text-odi-text-muted hover:!text-odi-accent !h-6 !min-h-0 !min-w-0 !w-6 !p-0"
-                            onClick={() => openEdit(card)}
-                          />
-                          <Button
-                            icon="trash"
-                            minimal
-                            small
-                            className="!text-odi-text-muted hover:!text-red-500 !h-6 !min-h-0 !min-w-0 !w-6 !p-0"
-                            onClick={() => setDeleteConfirm(card.id)}
-                          />
-                        </div>
-                      )}
-                      <div className="text-sm text-odi-text mb-3 leading-relaxed">
-                        <Markdown>{card.text}</Markdown>
+                      {/* Drag handle — top bar */}
+                      <div
+                        draggable
+                        onDragStart={(e) => {
+                          const cardEl = e.currentTarget.closest('.bp5-card') as HTMLElement
+                          if (cardEl) e.dataTransfer.setDragImage(cardEl, 20, 20)
+                          handleDragStart(e, card)
+                        }}
+                        onDragEnd={handleDragEnd}
+                        className={`flex items-center justify-center h-5 cursor-grab active:cursor-grabbing ${col.accent} bg-odi-surface-hover hover:bg-odi-border/50 transition-colors border-t-2`}
+                      >
+                        <svg width="20" height="4" viewBox="0 0 20 4" className="text-odi-text-muted/40 group-hover:text-odi-text-muted transition-colors" fill="currentColor">
+                          <circle cx="4" cy="2" r="1" />
+                          <circle cx="8" cy="2" r="1" />
+                          <circle cx="12" cy="2" r="1" />
+                          <circle cx="16" cy="2" r="1" />
+                        </svg>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5">
-                          <ChatAvatar name={card.author} size="sm" />
-                          <span className="text-xs text-odi-text-muted">{card.author}</span>
+                      {/* Card content */}
+                      <div className="px-3 py-2">
+                        {isOwner(card) && (
+                          <div className="absolute top-6 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity flex gap-0.5">
+                            <Button
+                              icon="edit"
+                              minimal
+                              small
+                              className="!text-odi-text-muted hover:!text-odi-accent !h-6 !min-h-0 !min-w-0 !w-6 !p-0"
+                              onClick={() => openEdit(card)}
+                            />
+                            <Button
+                              icon="trash"
+                              minimal
+                              small
+                              className="!text-odi-text-muted hover:!text-red-500 !h-6 !min-h-0 !min-w-0 !w-6 !p-0"
+                              onClick={() => setDeleteConfirm(card.id)}
+                            />
+                          </div>
+                        )}
+                        <div className="text-sm text-odi-text mb-3 leading-relaxed select-text">
+                          <Markdown>{card.text}</Markdown>
                         </div>
-                        <Button
-                          icon="thumbs-up"
-                          minimal
-                          small
-                          className={`!text-odi-text-muted hover:!text-odi-accent ${card.votes > 0 ? '!text-odi-accent' : ''}`}
-                          onClick={() => handleVote(card.id)}
-                        >
-                          {card.votes > 0 ? card.votes : ''}
-                        </Button>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5">
+                            <ChatAvatar name={card.author} size="sm" />
+                            <span className="text-xs text-odi-text-muted">{card.author}</span>
+                          </div>
+                          <Button
+                            icon="thumbs-up"
+                            minimal
+                            small
+                            className={`!text-odi-text-muted hover:!text-odi-accent ${card.votes > 0 ? '!text-odi-accent' : ''}`}
+                            onClick={() => handleVote(card.id)}
+                          >
+                            {card.votes > 0 ? card.votes : ''}
+                          </Button>
+                        </div>
                       </div>
                     </Card>
                   </div>
@@ -266,53 +306,64 @@ export function BoardView() {
         })}
       </div>
 
-      {/* Add / Edit dialog */}
-      <Dialog
-        isOpen={!!dialog}
-        onClose={() => setDialog(null)}
-        title={dialog?.mode === 'edit'
-          ? 'Редактировать карточку'
-          : `Новая карточка — ${COLUMNS.find((c) => c.id === dialog?.column)?.title || ''}`
-        }
-        className="!bg-odi-surface !text-odi-text"
-      >
-        <div className="p-4">
-          <TextArea
-            fill
-            autoFocus
-            rows={4}
-            value={dialog?.text ?? ''}
-            onChange={(e) => setDialog((d) => d ? { ...d, text: e.target.value } : d)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                e.preventDefault()
-                handleSubmit()
-              }
-            }}
-            placeholder="Поддерживается **markdown**..."
-            className="!bg-odi-bg !text-odi-text !border-odi-border"
-          />
-          <div className="flex justify-between items-center mt-3">
-            <span className="text-xs text-odi-text-muted">Ctrl+Enter для отправки</span>
-            <div className="flex gap-2">
-              <Button text="Отмена" minimal onClick={() => setDialog(null)} />
-              <Button
-                text={dialog?.mode === 'edit' ? 'Сохранить' : 'Добавить'}
-                intent="primary"
-                disabled={!dialog?.text.trim()}
-                onClick={handleSubmit}
-              />
+      {/* Editor floating windows */}
+      {editors.map((editor, i) => (
+        <FloatingWindow
+          key={editor.key}
+          isOpen
+          onClose={() => closeEditor(editor.key)}
+          title={editor.mode === 'edit'
+            ? 'Редактировать карточку'
+            : `Новая карточка — ${COLUMNS.find((c) => c.id === editor.column)?.title || ''}`
+          }
+          icon={editor.mode === 'edit' ? 'edit' : 'plus'}
+          initialWidth={460}
+          initialHeight={300}
+          minWidth={320}
+          minHeight={220}
+          offsetIndex={i}
+        >
+          <div className="flex flex-col h-full p-4">
+            <TextArea
+              fill
+              autoFocus
+              value={editor.text}
+              onChange={(e) => updateEditorText(editor.key, e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                  e.preventDefault()
+                  handleSubmit(editor)
+                }
+              }}
+              placeholder="Поддерживается **markdown**..."
+              className="!bg-odi-bg !text-odi-text !border-odi-border flex-1 !resize-none"
+            />
+            <div className="flex justify-between items-center mt-3 shrink-0">
+              <span className="text-xs text-odi-text-muted">Ctrl+Enter для отправки</span>
+              <div className="flex gap-2">
+                <Button text="Отмена" minimal onClick={() => closeEditor(editor.key)} />
+                <Button
+                  text={editor.mode === 'edit' ? 'Сохранить' : 'Добавить'}
+                  intent="primary"
+                  disabled={!editor.text.trim()}
+                  onClick={() => handleSubmit(editor)}
+                />
+              </div>
             </div>
           </div>
-        </div>
-      </Dialog>
+        </FloatingWindow>
+      ))}
 
       {/* Delete confirmation */}
-      <Dialog
+      <FloatingWindow
         isOpen={!!deleteConfirm}
         onClose={() => setDeleteConfirm(null)}
         title="Удалить карточку?"
-        className="!bg-odi-surface !text-odi-text"
+        icon="trash"
+        initialWidth={340}
+        initialHeight={160}
+        minWidth={280}
+        minHeight={140}
       >
         <div className="p-4">
           <p className="text-sm text-odi-text-muted mb-4">Это действие нельзя отменить.</p>
@@ -325,7 +376,7 @@ export function BoardView() {
             />
           </div>
         </div>
-      </Dialog>
+      </FloatingWindow>
     </>
   )
 }

@@ -13,7 +13,7 @@ export class EventListenerService {
   handleSessionEvent(@Payload() data: { sessionId: string; type?: string; [key: string]: any }) {
     this.logger.log(`session event: ${JSON.stringify(data).slice(0, 200)}`);
 
-    if (data.type?.startsWith('board-card-')) {
+    if (data.type?.startsWith('board-card') || data.type?.startsWith('board-cards')) {
       this.gameGateway.server
         .to(data.sessionId)
         .emit('board:update', data);

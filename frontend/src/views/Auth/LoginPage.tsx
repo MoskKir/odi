@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { FormGroup, InputGroup, Button, Callout } from '@blueprintjs/core'
+import { Callout } from '@blueprintjs/core'
 import { useAppDispatch, useAppSelector } from '@/store'
 import { loginAsync, clearError } from '@/store/authSlice'
 import { loadPreferencesFromServer } from '@/store/appSlice'
@@ -35,56 +35,80 @@ export function LoginPage() {
 
   return (
     <AuthLayout>
-      <h2 className="text-lg font-bold text-odi-text mb-4">Вход</h2>
+      <h2 className="text-2xl font-bold text-odi-text">Вход в аккаунт</h2>
+      <p className="text-sm text-odi-text-muted mt-1 mb-6">
+        Введите свои данные для входа
+      </p>
 
       {displayError && (
-        <Callout intent="danger" className="mb-4 !text-sm">
+        <Callout intent="danger" className="mb-4 !text-sm !rounded-lg">
           {displayError}
         </Callout>
       )}
 
-      <form onSubmit={handleSubmit}>
-        <FormGroup label="Email" labelFor="email" className="[&_.bp5-label]:!text-odi-text-muted">
-          <InputGroup
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label htmlFor="email" className="block text-sm font-medium text-odi-text mb-1.5">
+            Email
+          </label>
+          <input
             id="email"
             type="email"
-            placeholder="user@example.com"
-            leftIcon="envelope"
+            placeholder="m@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            large
+            className="w-full h-10 px-3 rounded-lg border border-odi-border bg-odi-bg text-odi-text text-sm placeholder:text-odi-text-muted/50 focus:outline-none focus:ring-2 focus:ring-odi-accent/40 focus:border-odi-accent transition-colors"
           />
-        </FormGroup>
+        </div>
 
-        <FormGroup label="Пароль" labelFor="password" className="[&_.bp5-label]:!text-odi-text-muted">
-          <InputGroup
+        <div>
+          <label htmlFor="password" className="block text-sm font-medium text-odi-text mb-1.5">
+            Пароль
+          </label>
+          <input
             id="password"
             type="password"
             placeholder="Введите пароль"
-            leftIcon="lock"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            large
+            className="w-full h-10 px-3 rounded-lg border border-odi-border bg-odi-bg text-odi-text text-sm placeholder:text-odi-text-muted/50 focus:outline-none focus:ring-2 focus:ring-odi-accent/40 focus:border-odi-accent transition-colors"
           />
-        </FormGroup>
+        </div>
 
-        <Button
+        <button
           type="submit"
-          intent="primary"
-          large
-          fill
-          loading={loading}
-          text="Войти"
-          className="mt-2"
-        />
+          disabled={loading}
+          className="w-full h-10 rounded-lg bg-odi-text text-odi-bg text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
+        >
+          {loading ? 'Вход...' : 'Войти'}
+        </button>
       </form>
 
-      <div className="text-center mt-4 text-sm text-odi-text-muted">
+      <div className="relative my-6">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-odi-border" />
+        </div>
+        <div className="relative flex justify-center text-xs">
+          <span className="bg-odi-bg px-3 text-odi-text-muted">Или</span>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        className="w-full h-10 rounded-lg border border-odi-border bg-odi-bg text-odi-text text-sm font-medium hover:bg-odi-surface-hover transition-colors flex items-center justify-center gap-2"
+      >
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+          <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+        </svg>
+        Войти через GitHub
+      </button>
+
+      <p className="text-center mt-6 text-sm text-odi-text-muted">
         Нет аккаунта?{' '}
-        <Link to="/register" className="text-odi-accent hover:underline">
+        <Link to="/register" className="text-odi-text font-medium underline underline-offset-2 hover:text-odi-accent">
           Зарегистрироваться
         </Link>
-      </div>
+      </p>
     </AuthLayout>
   )
 }

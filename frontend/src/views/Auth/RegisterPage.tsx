@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { FormGroup, InputGroup, Button, Callout } from '@blueprintjs/core'
+import { Callout } from '@blueprintjs/core'
 import { useAppDispatch, useAppSelector } from '@/store'
 import { registerAsync, clearError } from '@/store/authSlice'
 import { loadPreferencesFromServer } from '@/store/appSlice'
@@ -51,79 +51,89 @@ export function RegisterPage() {
 
   return (
     <AuthLayout>
-      <h2 className="text-lg font-bold text-odi-text mb-4">Регистрация</h2>
+      <h2 className="text-2xl font-bold text-odi-text">Создать аккаунт</h2>
+      <p className="text-sm text-odi-text-muted mt-1 mb-6">
+        Заполните данные для регистрации
+      </p>
 
       {displayError && (
-        <Callout intent="danger" className="mb-4 !text-sm">
+        <Callout intent="danger" className="mb-4 !text-sm !rounded-lg">
           {displayError}
         </Callout>
       )}
 
-      <form onSubmit={handleSubmit}>
-        <FormGroup label="Имя" labelFor="name" className="[&_.bp5-label]:!text-odi-text-muted">
-          <InputGroup
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label htmlFor="name" className="block text-sm font-medium text-odi-text mb-1.5">
+            Имя
+          </label>
+          <input
             id="name"
+            type="text"
             placeholder="Как вас зовут?"
-            leftIcon="person"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            large
+            className="w-full h-10 px-3 rounded-lg border border-odi-border bg-odi-bg text-odi-text text-sm placeholder:text-odi-text-muted/50 focus:outline-none focus:ring-2 focus:ring-odi-accent/40 focus:border-odi-accent transition-colors"
           />
-        </FormGroup>
+        </div>
 
-        <FormGroup label="Email" labelFor="email" className="[&_.bp5-label]:!text-odi-text-muted">
-          <InputGroup
+        <div>
+          <label htmlFor="email" className="block text-sm font-medium text-odi-text mb-1.5">
+            Email
+          </label>
+          <input
             id="email"
             type="email"
-            placeholder="user@example.com"
-            leftIcon="envelope"
+            placeholder="m@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            large
+            className="w-full h-10 px-3 rounded-lg border border-odi-border bg-odi-bg text-odi-text text-sm placeholder:text-odi-text-muted/50 focus:outline-none focus:ring-2 focus:ring-odi-accent/40 focus:border-odi-accent transition-colors"
           />
-        </FormGroup>
+        </div>
 
-        <FormGroup label="Пароль" labelFor="password" className="[&_.bp5-label]:!text-odi-text-muted">
-          <InputGroup
+        <div>
+          <label htmlFor="password" className="block text-sm font-medium text-odi-text mb-1.5">
+            Пароль
+          </label>
+          <input
             id="password"
             type="password"
             placeholder="Минимум 6 символов"
-            leftIcon="lock"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            large
+            className="w-full h-10 px-3 rounded-lg border border-odi-border bg-odi-bg text-odi-text text-sm placeholder:text-odi-text-muted/50 focus:outline-none focus:ring-2 focus:ring-odi-accent/40 focus:border-odi-accent transition-colors"
           />
-        </FormGroup>
+        </div>
 
-        <FormGroup label="Повторите пароль" labelFor="confirm" className="[&_.bp5-label]:!text-odi-text-muted">
-          <InputGroup
+        <div>
+          <label htmlFor="confirm" className="block text-sm font-medium text-odi-text mb-1.5">
+            Повторите пароль
+          </label>
+          <input
             id="confirm"
             type="password"
             placeholder="Ещё раз"
-            leftIcon="lock"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            large
+            className="w-full h-10 px-3 rounded-lg border border-odi-border bg-odi-bg text-odi-text text-sm placeholder:text-odi-text-muted/50 focus:outline-none focus:ring-2 focus:ring-odi-accent/40 focus:border-odi-accent transition-colors"
           />
-        </FormGroup>
+        </div>
 
-        <Button
+        <button
           type="submit"
-          intent="primary"
-          large
-          fill
-          loading={loading}
-          text="Создать аккаунт"
-          className="mt-2"
-        />
+          disabled={loading}
+          className="w-full h-10 rounded-lg bg-odi-text text-odi-bg text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
+        >
+          {loading ? 'Создание...' : 'Создать аккаунт'}
+        </button>
       </form>
 
-      <div className="text-center mt-4 text-sm text-odi-text-muted">
+      <p className="text-center mt-6 text-sm text-odi-text-muted">
         Уже есть аккаунт?{' '}
-        <Link to="/login" className="text-odi-accent hover:underline">
+        <Link to="/login" className="text-odi-text font-medium underline underline-offset-2 hover:text-odi-accent">
           Войти
         </Link>
-      </div>
+      </p>
     </AuthLayout>
   )
 }

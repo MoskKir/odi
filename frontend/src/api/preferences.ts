@@ -23,6 +23,8 @@ export interface UserPreferences {
   rightPanelWidth?: number;
   inputBarHeight?: number;
   rightPanelSections?: RightPanelSections;
+  masterHintsPanelCollapsed?: boolean;
+  masterHintsPanelWidth?: number;
 }
 
 export async function fetchPreferences(): Promise<UserPreferences> {

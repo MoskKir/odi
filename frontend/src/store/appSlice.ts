@@ -21,6 +21,8 @@ interface PersistedPrefs {
   rightPanelWidth: number
   inputBarHeight: number
   rightPanelSections: RightPanelSections
+  masterHintsPanelCollapsed: boolean
+  masterHintsPanelWidth: number
 }
 
 function loadFromLocalStorage(): Partial<PersistedPrefs> {
@@ -106,6 +108,8 @@ interface AppState {
   leftSidebarCollapsed: boolean
   leftSidebarWidth: number
   inputBarHeight: number
+  masterHintsPanelCollapsed: boolean
+  masterHintsPanelWidth: number
   socketJoined: boolean
 }
 
@@ -131,6 +135,8 @@ const initialState: AppState = {
   leftSidebarCollapsed: saved.leftSidebarCollapsed ?? false,
   leftSidebarWidth: saved.leftSidebarWidth ?? 208,
   inputBarHeight: saved.inputBarHeight ?? 36,
+  masterHintsPanelCollapsed: saved.masterHintsPanelCollapsed ?? false,
+  masterHintsPanelWidth: saved.masterHintsPanelWidth ?? 288,
   socketJoined: false,
 }
 
@@ -145,6 +151,8 @@ function getPersistedPrefs(state: AppState): PersistedPrefs {
     rightPanelWidth: state.rightPanelWidth,
     rightPanelSections: state.rightPanelSections,
     inputBarHeight: state.inputBarHeight,
+    masterHintsPanelCollapsed: state.masterHintsPanelCollapsed,
+    masterHintsPanelWidth: state.masterHintsPanelWidth,
   }
 }
 
@@ -248,6 +256,14 @@ export const appSlice = createSlice({
       state.inputBarHeight = action.payload
       persistToLocalStorage(getPersistedPrefs(state))
     },
+    toggleMasterHintsPanel(state) {
+      state.masterHintsPanelCollapsed = !state.masterHintsPanelCollapsed
+      persistToLocalStorage(getPersistedPrefs(state))
+    },
+    setMasterHintsPanelWidth(state, action: PayloadAction<number>) {
+      state.masterHintsPanelWidth = action.payload
+      persistToLocalStorage(getPersistedPrefs(state))
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(loadPreferencesFromServer.fulfilled, (state, action) => {
@@ -261,6 +277,8 @@ export const appSlice = createSlice({
       if (prefs.rightPanelWidth) state.rightPanelWidth = prefs.rightPanelWidth
       if (prefs.rightPanelSections) state.rightPanelSections = { ...state.rightPanelSections, ...prefs.rightPanelSections }
       if (prefs.inputBarHeight) state.inputBarHeight = prefs.inputBarHeight
+      if (prefs.masterHintsPanelCollapsed !== undefined) state.masterHintsPanelCollapsed = prefs.masterHintsPanelCollapsed
+      if (prefs.masterHintsPanelWidth) state.masterHintsPanelWidth = prefs.masterHintsPanelWidth
       persistToLocalStorage(getPersistedPrefs(state))
     })
   },
@@ -290,4 +308,6 @@ export const {
   toggleLeftSidebar,
   setLeftSidebarWidth,
   setInputBarHeight,
+  toggleMasterHintsPanel,
+  setMasterHintsPanelWidth,
 } = appSlice.actions

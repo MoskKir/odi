@@ -2,7 +2,13 @@ import type { Middleware } from '@reduxjs/toolkit'
 import { syncPreferencesToServer } from './appSlice'
 import type { RootState } from '.'
 
-const SYNCED_ACTIONS = ['app/setTheme', 'app/setFontSize', 'app/toggleDevMode']
+const SYNCED_ACTIONS = [
+  'app/setTheme',
+  'app/setFontSize',
+  'app/toggleDevMode',
+  'app/toggleMasterHintsPanel',
+  'app/setMasterHintsPanelWidth',
+]
 
 export const preferencesMiddleware: Middleware = (store) => (next) => (action: any) => {
   const result = next(action)
@@ -15,6 +21,8 @@ export const preferencesMiddleware: Middleware = (store) => (next) => (action: a
           theme: state.app.theme,
           fontSize: state.app.fontSize,
           devMode: state.app.devMode,
+          masterHintsPanelCollapsed: state.app.masterHintsPanelCollapsed,
+          masterHintsPanelWidth: state.app.masterHintsPanelWidth,
         }) as any,
       )
     }

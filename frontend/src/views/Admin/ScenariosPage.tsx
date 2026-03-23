@@ -1,6 +1,7 @@
 import { Card, Tag, Button, Icon, Spinner, NonIdealState, Popover } from '@blueprintjs/core'
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Markdown } from '@/components/Markdown'
 import { fetchScenarios, createScenario, deleteScenario, type ScenarioResponse } from '@/api/scenarios'
 import { success, error as toastError } from '@/utils/toaster'
 
@@ -120,8 +121,8 @@ export function ScenariosPage() {
                         {diff && <Tag intent={diff.intent} minimal round className="text-[10px]">{diff.label}</Tag>}
                         {!scenario.published && <Tag minimal intent="warning" className="text-[10px]">Черновик</Tag>}
                       </div>
-                      <div className={`text-sm text-odi-text-muted whitespace-pre-line ${isOpen ? '' : 'line-clamp-2'}`}>
-                        {scenario.description}
+                      <div className={`text-sm text-odi-text-muted ${isOpen ? '' : 'line-clamp-2'}`}>
+                        <Markdown>{scenario.description}</Markdown>
                       </div>
                       <div className="flex items-center gap-4 text-xs text-odi-text-muted mt-2">
                         <span>Боты: {scenario.requiredBots.join(', ')}</span>

@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
-import { Button, Tag, InputGroup } from '@blueprintjs/core'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
+import { Button, Tag, InputGroup, Icon } from '@blueprintjs/core'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAppSelector, useAppDispatch } from '@/store'
 import { SettingsMenu } from '@/components/SettingsMenu'
 import { ScenarioSelector } from './ScenarioSelector'
@@ -9,12 +9,15 @@ import { RecommendedCrew } from './RecommendedCrew'
 import { SpecialistGrid } from './SpecialistGrid'
 import { SessionSettings } from './SessionSettings'
 import { EfficiencyForecast } from './EfficiencyForecast'
-import { loadScenarios, setTitle } from '@/store/missionSlice'
+import { loadScenarios, loadSession, setTitle } from '@/store/missionSlice'
 import { createGame } from '@/api/games'
+import { Markdown } from '@/components/Markdown'
 import { error as toastError } from '@/utils/toaster'
 
 export function MissionControl() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const sessionId = searchParams.get('session')
   const dispatch = useAppDispatch()
   const mission = useAppSelector((s) => s.mission)
   const theme = useAppSelector((s) => s.app.theme)
@@ -27,9 +30,22 @@ export function MissionControl() {
     }
   }, [dispatch, mission.scenarios.length])
 
+  useEffect(() => {
+    if (sessionId) {
+      dispatch(loadSession(sessionId))
+    }
+  }, [dispatch, sessionId])
+
+  const selectedScenarioObj = mission.scenarios.find((s) => s.slug === mission.selectedScenario)
   const canLaunch = mission.title.trim() && mission.selectedScenario && mission.crewSlots.some(Boolean)
 
   const handleLaunch = async () => {
+    // If editing an existing session, just navigate to it
+    if (sessionId) {
+      navigate(`/game/board?session=${sessionId}`)
+      return
+    }
+
     if (!mission.selectedScenario) return
 
     const scenario = mission.scenarios.find((s) => s.slug === mission.selectedScenario)
@@ -95,6 +111,7 @@ export function MissionControl() {
               />
               <div className="border-t border-odi-border" />
               <ScenarioSelector />
+              {selectedScenarioObj && <ScenarioDescription scenario={selectedScenarioObj} />}
               <div className="border-t border-odi-border" />
               <CrewBuilder />
               <div className="border-t border-odi-border" />
@@ -132,6 +149,32 @@ export function MissionControl() {
           />
         </div>
       </footer>
+    </div>
+  )
+}
+
+function ScenarioDescription({ scenario }: { scenario: { subtitle: string; description: string } }) {
+  const [expanded, setExpanded] = useState(false)
+  const LINE_HEIGHT = 20
+  const VISIBLE_LINES = 6
+  const collapsedHeight = LINE_HEIGHT * VISIBLE_LINES
+
+  return (
+    <div className="bg-odi-bg rounded px-4 py-3">
+      <div className="text-xs text-odi-accent font-medium mb-1">{scenario.subtitle}</div>
+      <div
+        className="text-sm text-odi-text leading-relaxed overflow-hidden transition-all duration-200"
+        style={{ maxHeight: expanded ? undefined : collapsedHeight }}
+      >
+        <Markdown>{scenario.description}</Markdown>
+      </div>
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-center gap-1 mt-1 text-xs text-odi-text-muted hover:text-odi-text transition-colors"
+      >
+        <Icon icon={expanded ? 'chevron-up' : 'chevron-down'} size={12} />
+        {expanded ? 'Свернуть' : 'Показать полностью'}
+      </button>
     </div>
   )
 }

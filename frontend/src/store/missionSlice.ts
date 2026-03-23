@@ -8,6 +8,7 @@ import type {
   Specialist,
 } from '@/types'
 import { fetchScenarios, type ScenarioResponse } from '@/api/scenarios'
+import { fetchGame, type GameSessionResponse } from '@/api/games'
 
 export const SPECIALISTS: Specialist[] = [
   { id: 'moderator', name: 'Модератор', description: 'Ведущий', stars: 5, tag: 'популярный' },
@@ -24,6 +25,13 @@ export const loadScenarios = createAsyncThunk(
   'mission/loadScenarios',
   async () => {
     return await fetchScenarios()
+  },
+)
+
+export const loadSession = createAsyncThunk(
+  'mission/loadSession',
+  async (sessionId: string) => {
+    return await fetchGame(sessionId)
   },
 )
 
@@ -120,6 +128,24 @@ export const missionSlice = createSlice({
     })
     builder.addCase(loadScenarios.rejected, (state) => {
       state.scenariosLoading = false
+    })
+    builder.addCase(loadSession.fulfilled, (state, action) => {
+      const game = action.payload
+      if (!game) return
+      state.title = game.title || ''
+      state.selectedScenario = game.scenario?.slug ?? null
+      state.difficulty = (game.difficulty as Difficulty) || 'easy'
+      state.duration = (game.durationMinutes as Duration) || 90
+      state.interfaceMode = (game.interfaceMode as InterfaceMode) || 'chameleon'
+      state.aiVisibility = (game.aiVisibility as AiVisibility) || 'captain'
+      // Restore crew from participants
+      const botSlots = (game.participants ?? [])
+        .filter((p) => p.botConfig)
+        .sort((a, b) => a.slotIndex - b.slotIndex)
+        .map((p) => p.botConfig!.specialistId as SpecialistId)
+      const crewSize = Math.max(botSlots.length, 1)
+      state.crewSize = crewSize
+      state.crewSlots = Array(crewSize).fill(null).map((_, i) => botSlots[i] ?? null)
     })
   },
 })

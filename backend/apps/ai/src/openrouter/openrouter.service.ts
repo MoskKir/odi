@@ -121,6 +121,13 @@ export class OpenRouterService {
           throw err;
         }
 
+        // When abort signal fires, destroy the underlying stream immediately
+        if (params.signal) {
+          const nodeStream = response.data;
+          const onAbort = () => nodeStream.destroy();
+          params.signal.addEventListener('abort', onAbort, { once: true });
+        }
+
         let buffer = '';
 
         for await (const rawChunk of response.data) {

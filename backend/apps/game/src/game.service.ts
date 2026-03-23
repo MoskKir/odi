@@ -40,9 +40,13 @@ export class GameService implements OnModuleInit {
 
   async create(dto: any, hostId: string) {
     // Resolve scenario by UUID or slug
-    let scenario = await this.scenarioRepo.findOne({
-      where: { id: dto.scenarioId },
-    }).catch(() => null);
+    let scenario: any = null;
+
+    if (dto.scenarioId) {
+      scenario = await this.scenarioRepo.findOne({
+        where: { id: dto.scenarioId },
+      }).catch(() => null);
+    }
 
     if (!scenario && dto.scenarioSlug) {
       scenario = await this.scenarioRepo.findOne({

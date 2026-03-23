@@ -99,9 +99,9 @@ export class ChatService implements OnModuleInit {
 
     this.logger.log(`Emitted EVENTS.CHAT for session ${data.sessionId}`);
 
-    // If this is a human message, trigger AI generation for each bot in session
-    if (!data.isBot && data.userId) {
-      this.triggerBotResponses(data.sessionId, data.text).catch((err) =>
+    // Trigger bots only on direct @mention, not on every message
+    if (!data.isBot && data.userId && data.text.includes('@')) {
+      this.triggerMentionedBots(data.sessionId, data.text).catch((err) =>
         this.logger.error(`AI.GENERATE emit failed: ${err.message}`),
       );
     }
@@ -149,6 +149,41 @@ export class ChatService implements OnModuleInit {
     );
 
     for (const bot of targetBots) {
+      await lastValueFrom(
+        this.kafkaClient.emit(KAFKA_TOPICS.AI.GENERATE, {
+          sessionId,
+          botConfigId: bot.botConfigId,
+          trigger,
+        }),
+      );
+    }
+  }
+
+  private async triggerMentionedBots(sessionId: string, trigger: string) {
+    const bots = await this.participantRepo.find({
+      where: { sessionId, botConfigId: Not(IsNull()) },
+      relations: ['botConfig'],
+    });
+
+    const enabledBots = bots.filter((b) => b.botConfig?.enabled);
+    const triggerLower = trigger.toLowerCase();
+
+    const mentionedBots = enabledBots.filter((b) => {
+      const name = b.botConfig?.name?.toLowerCase();
+      const specialistId = b.botConfig?.specialistId?.toLowerCase();
+      return (
+        (name && triggerLower.includes(`@${name}`)) ||
+        (specialistId && triggerLower.includes(`@${specialistId}`))
+      );
+    });
+
+    if (mentionedBots.length === 0) return;
+
+    this.logger.log(
+      `Triggering AI for ${mentionedBots.length} mentioned bot(s) in session ${sessionId}: ${mentionedBots.map((b) => b.botConfig?.name).join(', ')}`,
+    );
+
+    for (const bot of mentionedBots) {
       await lastValueFrom(
         this.kafkaClient.emit(KAFKA_TOPICS.AI.GENERATE, {
           sessionId,

@@ -99,6 +99,10 @@ interface AppState {
   currentEmotion: Emotion | null
   messages: ChatMessage[]
   streamingMessages: Record<string, StreamingMessage>
+  /** StreamIds to ignore (after user stopped generation) */
+  ignoredStreamIds: Record<string, true>
+  /** Timestamp until which new streams are blocked */
+  _stopGenerationUntil: number
   cards: BoardCard[]
   sessionBots: SessionBot[]
   sessionParticipants: SessionParticipant[]
@@ -126,6 +130,8 @@ const initialState: AppState = {
   currentEmotion: null,
   messages: [],
   streamingMessages: {},
+  ignoredStreamIds: {},
+  _stopGenerationUntil: 0,
   cards: [],
   sessionBots: [],
   sessionParticipants: [],
@@ -189,6 +195,12 @@ export const appSlice = createSlice({
       state.messages.push(action.payload)
     },
     startStream(state, action: PayloadAction<{ streamId: string; botConfigId: string }>) {
+      if (state.ignoredStreamIds[action.payload.streamId]) return
+      // Block new streams that arrive after stopAllStreams for 5s
+      if (state._stopGenerationUntil && Date.now() < state._stopGenerationUntil) {
+        state.ignoredStreamIds[action.payload.streamId] = true
+        return
+      }
       state.streamingMessages[action.payload.streamId] = {
         streamId: action.payload.streamId,
         botConfigId: action.payload.botConfigId,
@@ -196,12 +208,14 @@ export const appSlice = createSlice({
       }
     },
     appendStreamChunk(state, action: PayloadAction<{ streamId: string; content: string }>) {
+      if (state.ignoredStreamIds[action.payload.streamId]) return
       const stream = state.streamingMessages[action.payload.streamId]
       if (stream) {
         stream.text += action.payload.content
       }
     },
     endStream(state, action: PayloadAction<{ streamId: string; stopped?: boolean }>) {
+      delete state.ignoredStreamIds[action.payload.streamId]
       const stream = state.streamingMessages[action.payload.streamId]
       if (stream && action.payload.stopped && stream.text.trim()) {
         const bot = state.sessionBots.find((b) => b.id === stream.botConfigId)
@@ -214,6 +228,25 @@ export const appSlice = createSlice({
         })
       }
       delete state.streamingMessages[action.payload.streamId]
+    },
+    /** Immediately stop all active streams on the frontend */
+    stopAllStreams(state) {
+      // Block new streams for 5 seconds
+      state._stopGenerationUntil = Date.now() + 5000
+      for (const [streamId, stream] of Object.entries(state.streamingMessages)) {
+        state.ignoredStreamIds[streamId] = true
+        if (stream.text.trim()) {
+          const bot = state.sessionBots.find((b) => b.id === stream.botConfigId)
+          state.messages.push({
+            id: `stopped-${streamId}`,
+            author: bot?.name ?? 'Bot',
+            role: 'bot',
+            text: stream.text,
+            timestamp: Date.now(),
+          })
+        }
+      }
+      state.streamingMessages = {}
     },
     addCard(state, action: PayloadAction<BoardCard>) {
       state.cards.push(action.payload)
@@ -321,4 +354,5 @@ export const {
   setInputBarHeight,
   toggleMasterHintsPanel,
   setMasterHintsPanelWidth,
+  stopAllStreams,
 } = appSlice.actions

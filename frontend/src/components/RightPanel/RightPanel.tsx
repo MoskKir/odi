@@ -3,6 +3,7 @@ import { Button, Collapse, Icon, type IconName } from '@blueprintjs/core'
 import { useAppSelector, useAppDispatch } from '@/store'
 import { toggleRightPanel, toggleRightPanelSection, setRightPanelWidth, syncPreferencesToServer } from '@/store/appSlice'
 import type { RightPanelSections } from '@/api/preferences'
+import { Markdown } from '../Markdown'
 import { BotsList } from './BotsList'
 import { MiniChat } from '../Chat/MiniChat'
 
@@ -175,9 +176,9 @@ export function RightPanel() {
               {scenarioInfo.subtitle && (
                 <p className="text-xs text-odi-accent mb-2 font-medium">{scenarioInfo.subtitle}</p>
               )}
-              <p className="text-sm text-odi-text leading-relaxed whitespace-pre-wrap">
-                {scenarioInfo.description}
-              </p>
+              <div className="text-sm text-odi-text leading-relaxed">
+                <Markdown>{scenarioInfo.description}</Markdown>
+              </div>
             </Section>
           )}
 

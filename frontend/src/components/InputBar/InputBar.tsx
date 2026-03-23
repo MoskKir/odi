@@ -2,7 +2,7 @@ import { useRef, useCallback, useState } from 'react'
 import { Button, ButtonGroup, Tag } from '@blueprintjs/core'
 import { useSearchParams } from 'react-router-dom'
 import { useAppSelector, useAppDispatch } from '@/store'
-import { setInputBarHeight, syncPreferencesToServer } from '@/store/appSlice'
+import { setInputBarHeight, syncPreferencesToServer, stopAllStreams } from '@/store/appSlice'
 import { getSocket } from '@/api/socket'
 
 const MIN_HEIGHT = 36
@@ -31,9 +31,13 @@ export function InputBar() {
   }
 
   const handleStopStream = () => {
-    if (!sessionId) return
-    const socket = getSocket()
-    socket?.emit('chat:stop-stream', { sessionId })
+    // Immediately stop on frontend — no lag
+    dispatch(stopAllStreams())
+    // Best-effort: tell backend to abort streams and block new ones
+    if (sessionId) {
+      const socket = getSocket()
+      socket?.emit('chat:stop-stream', { sessionId })
+    }
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

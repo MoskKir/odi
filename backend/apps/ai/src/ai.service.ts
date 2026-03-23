@@ -228,7 +228,12 @@ export class AiService implements OnModuleInit {
       this.sessionStreams.get(dto.sessionId)?.delete(streamId);
 
       // If aborted by user, gracefully end the stream without saving
-      if (error.name === 'AbortError' || error.name === 'CanceledError' || error.code === 'ERR_CANCELED') {
+      const isAborted = error.name === 'AbortError'
+        || error.name === 'CanceledError'
+        || error.code === 'ERR_CANCELED'
+        || error.code === 'ERR_STREAM_PREMATURE_CLOSE'
+        || (error.code === 'ERR_STREAM_DESTROYED');
+      if (isAborted) {
         this.logger.log(`Stream ${streamId} was stopped by user (${fullText.length} chars generated)`);
 
         if (streamStarted) {

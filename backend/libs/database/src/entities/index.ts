@@ -14,3 +14,5 @@ export { BoardCardEntity } from './board-card.entity';
 export { EmotionSnapshotEntity } from './emotion-snapshot.entity';
 export { ActivityLogEntity, LogType } from './activity-log.entity';
 export { SystemSettingEntity } from './system-setting.entity';
+export { BotStageContextEntity } from './bot-stage-context.entity';
+export { StageSharedContextEntity } from './stage-shared-context.entity';

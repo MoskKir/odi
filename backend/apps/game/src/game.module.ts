@@ -13,6 +13,8 @@ import {
   BotConfigEntity,
   EmotionSnapshotEntity,
   SystemSettingEntity,
+  BotStageContextEntity,
+  StageSharedContextEntity,
 } from '@app/database';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { GameController } from './game.controller';
@@ -21,6 +23,7 @@ import { PhaseService } from './phase.service';
 import { ScenarioService } from './scenario.service';
 import { ParticipantService } from './participant.service';
 import { BoardService } from './board.service';
+import { BotContextService } from './bot-context.service';
 import { SerializeInterceptor } from './serialize.interceptor';
 
 @Module({
@@ -37,6 +40,8 @@ import { SerializeInterceptor } from './serialize.interceptor';
       BotConfigEntity,
       EmotionSnapshotEntity,
       SystemSettingEntity,
+      BotStageContextEntity,
+      StageSharedContextEntity,
     ]),
     ClientsModule.registerAsync([
       {
@@ -65,6 +70,7 @@ import { SerializeInterceptor } from './serialize.interceptor';
     ScenarioService,
     ParticipantService,
     BoardService,
+    BotContextService,
   ],
 })
 export class GameModule {}

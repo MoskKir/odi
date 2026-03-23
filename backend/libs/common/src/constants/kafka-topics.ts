@@ -15,6 +15,11 @@ export const KAFKA_TOPICS = {
     LEAVE: 'odi.game.leave',
     LIST: 'odi.game.list',
     RESULT: 'odi.game.result',
+    BOT_CONTEXT_LIST: 'odi.game.bot-context-list',
+    BOT_CONTEXT_UPSERT: 'odi.game.bot-context-upsert',
+    BOT_CONTEXT_DELETE: 'odi.game.bot-context-delete',
+    SHARED_CONTEXT_UPSERT: 'odi.game.shared-context-upsert',
+    SHARED_CONTEXT_DELETE: 'odi.game.shared-context-delete',
   },
   CHAT: {
     SEND: 'odi.chat.send',

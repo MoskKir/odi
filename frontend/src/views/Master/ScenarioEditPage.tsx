@@ -179,6 +179,12 @@ export function ScenarioEditPage() {
             className="!mb-0"
           />
           <Button
+            icon="settings"
+            text="Контексты ботов"
+            onClick={() => navigate(`/master/scenarios/${id}/bot-context`)}
+            className="!text-odi-accent"
+          />
+          <Button
             intent="primary"
             icon="floppy-disk"
             text="Сохранить"

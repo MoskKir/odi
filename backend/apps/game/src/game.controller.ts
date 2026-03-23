@@ -6,6 +6,7 @@ import { PhaseService } from './phase.service';
 import { ScenarioService } from './scenario.service';
 import { ParticipantService } from './participant.service';
 import { BoardService } from './board.service';
+import { BotContextService } from './bot-context.service';
 
 @Controller()
 export class GameController {
@@ -15,6 +16,7 @@ export class GameController {
     private readonly scenarioService: ScenarioService,
     private readonly participantService: ParticipantService,
     private readonly boardService: BoardService,
+    private readonly botContextService: BotContextService,
   ) {}
 
   // --- Game Session ---
@@ -153,5 +155,32 @@ export class GameController {
   @MessagePattern('odi.game.settings-update')
   async updateSettings(@Payload() data: any) {
     return this.gameService.updateSettings(data);
+  }
+
+  // --- Bot Stage Contexts ---
+
+  @MessagePattern(KAFKA_TOPICS.GAME.BOT_CONTEXT_LIST)
+  async listBotContexts(@Payload() data: { scenarioId: string }) {
+    return this.botContextService.findAllByScenario(data.scenarioId);
+  }
+
+  @MessagePattern(KAFKA_TOPICS.GAME.BOT_CONTEXT_UPSERT)
+  async upsertBotContext(@Payload() data: any) {
+    return this.botContextService.upsertBotContext(data);
+  }
+
+  @MessagePattern(KAFKA_TOPICS.GAME.BOT_CONTEXT_DELETE)
+  async deleteBotContext(@Payload() data: { id: string }) {
+    return this.botContextService.deleteBotContext(data.id);
+  }
+
+  @MessagePattern(KAFKA_TOPICS.GAME.SHARED_CONTEXT_UPSERT)
+  async upsertSharedContext(@Payload() data: any) {
+    return this.botContextService.upsertSharedContext(data);
+  }
+
+  @MessagePattern(KAFKA_TOPICS.GAME.SHARED_CONTEXT_DELETE)
+  async deleteSharedContext(@Payload() data: { id: string }) {
+    return this.botContextService.deleteSharedContext(data.id);
   }
 }

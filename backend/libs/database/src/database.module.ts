@@ -13,6 +13,8 @@ import {
   EmotionSnapshotEntity,
   ActivityLogEntity,
   SystemSettingEntity,
+  BotStageContextEntity,
+  StageSharedContextEntity,
 } from './entities';
 
 const ALL_ENTITIES = [
@@ -27,6 +29,8 @@ const ALL_ENTITIES = [
   EmotionSnapshotEntity,
   ActivityLogEntity,
   SystemSettingEntity,
+  BotStageContextEntity,
+  StageSharedContextEntity,
 ];
 
 @Module({

@@ -8,6 +8,10 @@ import {
   BotConfigEntity,
   ChatMessageEntity,
   SessionParticipantEntity,
+  GameSessionEntity,
+  SessionPhaseEntity,
+  BotStageContextEntity,
+  StageSharedContextEntity,
 } from '@app/database';
 import { OpenRouterService } from './openrouter/openrouter.service';
 import { PromptBuilderService } from './prompts/prompt-builder.service';
@@ -28,6 +32,14 @@ export class AiService implements OnModuleInit {
     private readonly messageRepo: Repository<ChatMessageEntity>,
     @InjectRepository(SessionParticipantEntity)
     private readonly participantRepo: Repository<SessionParticipantEntity>,
+    @InjectRepository(GameSessionEntity)
+    private readonly sessionRepo: Repository<GameSessionEntity>,
+    @InjectRepository(SessionPhaseEntity)
+    private readonly phaseRepo: Repository<SessionPhaseEntity>,
+    @InjectRepository(BotStageContextEntity)
+    private readonly botStageCtxRepo: Repository<BotStageContextEntity>,
+    @InjectRepository(StageSharedContextEntity)
+    private readonly sharedCtxRepo: Repository<StageSharedContextEntity>,
     private readonly openRouterService: OpenRouterService,
     private readonly promptBuilder: PromptBuilderService,
     private readonly contextBuilder: ContextBuilderService,
@@ -74,11 +86,47 @@ export class AiService implements OnModuleInit {
         text: msg.text,
       }));
 
+      // Load stage-specific context if available
+      let stageContext: BotStageContextEntity | null = null;
+      let sharedContext: StageSharedContextEntity | null = null;
+      try {
+        const session = await this.sessionRepo.findOne({
+          where: { id: dto.sessionId },
+        });
+        if (session?.scenarioId) {
+          const activePhase = await this.phaseRepo.findOne({
+            where: { sessionId: dto.sessionId, status: 'active' as any },
+          });
+          if (activePhase) {
+            [stageContext, sharedContext] = await Promise.all([
+              this.botStageCtxRepo.findOne({
+                where: {
+                  scenarioId: session.scenarioId,
+                  stageName: activePhase.name,
+                  botConfigId: dto.botConfigId,
+                  active: true,
+                },
+              }),
+              this.sharedCtxRepo.findOne({
+                where: {
+                  scenarioId: session.scenarioId,
+                  stageName: activePhase.name,
+                },
+              }),
+            ]);
+          }
+        }
+      } catch (e) {
+        this.logger.warn(`Failed to load stage context: ${e.message}`);
+      }
+
       // Build system prompt — use DB systemPrompt if available, else fallback to template
       const systemPrompt = botConfig.systemPrompt
         ? this.promptBuilder.buildFromConfig(botConfig, {
             sessionId: dto.sessionId,
             strategyOverride: this.strategyOverrides.get(dto.botConfigId),
+            stageContext,
+            sharedContext,
           })
         : this.promptBuilder.build({
             botConfigId: botConfig.specialistId,

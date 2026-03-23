@@ -20,6 +20,7 @@ import { ScenarioCreatePage } from '@/views/Master/ScenarioCreatePage'
 import { ScenarioEditPage } from '@/views/Master/ScenarioEditPage'
 import { BotCreatePage } from '@/views/Master/BotCreatePage'
 import { BotEditPage } from '@/views/Master/BotEditPage'
+import { BotContextPage } from '@/views/Master/BotContextPage'
 
 function GameRedirect() {
   const { search } = useLocation()
@@ -43,6 +44,7 @@ function App() {
             <Route path="scenarios" element={<ScenariosPage />} />
             <Route path="scenarios/new" element={<ScenarioCreatePage />} />
             <Route path="scenarios/:id/edit" element={<ScenarioEditPage />} />
+            <Route path="scenarios/:id/bot-context" element={<BotContextPage />} />
             <Route path="bots" element={<BotsPage />} />
             <Route path="bots/new" element={<BotCreatePage />} />
             <Route path="bots/:id/edit" element={<BotEditPage />} />

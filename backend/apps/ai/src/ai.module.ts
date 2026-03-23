@@ -7,6 +7,10 @@ import {
   BotConfigEntity,
   ChatMessageEntity,
   SessionParticipantEntity,
+  GameSessionEntity,
+  SessionPhaseEntity,
+  BotStageContextEntity,
+  StageSharedContextEntity,
 } from '@app/database';
 import { AiController } from './ai.controller';
 import { AiService } from './ai.service';
@@ -23,6 +27,10 @@ import { EmotionAnalyzerService } from './emotion/emotion-analyzer.service';
       BotConfigEntity,
       ChatMessageEntity,
       SessionParticipantEntity,
+      GameSessionEntity,
+      SessionPhaseEntity,
+      BotStageContextEntity,
+      StageSharedContextEntity,
     ]),
     ClientsModule.registerAsync([
       {

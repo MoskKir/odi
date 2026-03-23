@@ -11,6 +11,7 @@ import { ScenarioController } from './controllers/scenario.controller';
 import { BotController } from './controllers/bot.controller';
 import { AdminController } from './controllers/admin.controller';
 import { ChatController } from './controllers/chat.controller';
+import { BotContextController } from './controllers/bot-context.controller';
 import { EventListenerService } from './kafka/event-listener.service';
 
 @Module({
@@ -33,6 +34,7 @@ import { EventListenerService } from './kafka/event-listener.service';
     BotController,
     AdminController,
     ChatController,
+    BotContextController,
     EventListenerService,
   ],
   providers: [KafkaInitService],

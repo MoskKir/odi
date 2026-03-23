@@ -5,12 +5,6 @@ import { useAppSelector, useAppDispatch } from '@/store'
 import { setInputBarHeight, syncPreferencesToServer } from '@/store/appSlice'
 import { getSocket } from '@/api/socket'
 
-const BOT_TARGETS = [
-  { role: 'moderator' as const, label: '@Модератор' },
-  { role: 'critic' as const, label: '@Критик' },
-  { role: 'visionary' as const, label: '@Визионер' },
-]
-
 const MIN_HEIGHT = 36
 const MAX_HEIGHT = 300
 
@@ -24,6 +18,7 @@ export function InputBar() {
   const inputBarHeight = useAppSelector((s) => s.app.inputBarHeight)
   const dispatch = useAppDispatch()
 
+  const sessionBots = useAppSelector((s) => s.app.sessionBots)
   const canSend = socketJoined && !!sessionId
 
   const handleSend = () => {
@@ -103,16 +98,16 @@ export function InputBar() {
         </div>
         <div className="flex items-center gap-2 mt-2">
           <ButtonGroup minimal>
-            {BOT_TARGETS.map(({ role, label }) => (
+            {sessionBots.map((bot) => (
               <Tag
-                key={role}
+                key={bot.id}
                 interactive
                 minimal
                 intent="primary"
                 className="cursor-pointer"
-                onClick={() => setText((t) => `${t} ${label} `)}
+                onClick={() => setText((t) => `${t} @${bot.name} `)}
               >
-                {label}
+                @{bot.name}
               </Tag>
             ))}
           </ButtonGroup>

@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAppDispatch } from '@/store'
-import { setMessages, addMessage, addCard, updateSession, updatePhase, setSocketJoined, setSessionTitle, setScenarioInfo, setSessionBots, setSessionParticipants, startStream, appendStreamChunk, endStream } from '@/store/appSlice'
+import { setMessages, addMessage, addCard, updateSession, updatePhase, setSocketJoined, setSessionTitle, setScenarioInfo, setSessionBots, setSessionParticipants, setInviteCode, startStream, appendStreamChunk, endStream } from '@/store/appSlice'
 import { connectSocket, disconnectSocket } from '@/api/socket'
 import { fetchGame } from '@/api/games'
 import type { ChatMessage, BoardCard } from '@/types'
@@ -61,6 +61,9 @@ export function useGameSocket() {
         if (game?.title) {
           dispatch(setSessionTitle(game.title))
           document.title = game.title
+        }
+        if (game?.inviteCode) {
+          dispatch(setInviteCode(game.inviteCode))
         }
         if (game?.scenario) {
           dispatch(setScenarioInfo(game.scenario))

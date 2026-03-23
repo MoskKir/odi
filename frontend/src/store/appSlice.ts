@@ -115,6 +115,7 @@ interface AppState {
   masterHintsPanelCollapsed: boolean
   masterHintsPanelWidth: number
   socketJoined: boolean
+  inviteCode: string | null
 }
 
 const initialState: AppState = {
@@ -144,6 +145,7 @@ const initialState: AppState = {
   masterHintsPanelCollapsed: saved.masterHintsPanelCollapsed ?? false,
   masterHintsPanelWidth: saved.masterHintsPanelWidth ?? 288,
   socketJoined: false,
+  inviteCode: null,
 }
 
 function getPersistedPrefs(state: AppState): PersistedPrefs {
@@ -275,6 +277,9 @@ export const appSlice = createSlice({
     setSocketJoined(state, action: PayloadAction<boolean>) {
       state.socketJoined = action.payload
     },
+    setInviteCode(state, action: PayloadAction<string | null>) {
+      state.inviteCode = action.payload
+    },
     toggleRightPanel(state) {
       state.rightPanelCollapsed = !state.rightPanelCollapsed
       persistToLocalStorage(getPersistedPrefs(state))
@@ -346,6 +351,7 @@ export const {
   setScenarioInfo,
   setSessionBots,
   setSessionParticipants,
+  setInviteCode,
   toggleRightPanel,
   toggleRightPanelSection,
   setRightPanelWidth,

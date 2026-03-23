@@ -2,6 +2,7 @@ import { useRef, useEffect, useState, useCallback } from 'react'
 import { Button, Icon } from '@blueprintjs/core'
 import { useBotTestChat, type TestChatMessage } from '@/hooks/useBotTestChat'
 import { Markdown } from '@/components/Markdown'
+import { ChatAvatar } from '@/components/ChatAvatar'
 
 interface BotTestChatProps {
   botId: string
@@ -89,7 +90,7 @@ export function BotTestChat({ botId, botName, systemPrompt, model, temperature, 
         {/* Waiting indicator — sent message, waiting for stream to start */}
         {waiting && !streaming && (
           <div className="flex gap-2">
-            <BotAvatar />
+            <ChatAvatar name={botName} size="sm" />
             <div className="min-w-0">
               <div className="text-[10px] text-odi-text-muted mb-1">{botName}</div>
               <div className="px-3 py-2 rounded-2xl rounded-bl-md bg-odi-surface-hover">
@@ -102,7 +103,7 @@ export function BotTestChat({ botId, botName, systemPrompt, model, temperature, 
         {/* Streaming — text arriving */}
         {streaming && (
           <div className="flex gap-2">
-            <BotAvatar />
+            <ChatAvatar name={botName} size="sm" />
             <div className="min-w-0">
               <div className="text-[10px] text-odi-text-muted mb-1">{botName}</div>
               <div className="px-3 py-2 rounded-2xl rounded-bl-md text-sm leading-relaxed break-words bg-odi-surface-hover text-odi-text">
@@ -154,14 +155,6 @@ export function BotTestChat({ botId, botName, systemPrompt, model, temperature, 
 
 /* ── Sub-components ── */
 
-function BotAvatar() {
-  return (
-    <div className="shrink-0 w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center mt-4">
-      <Icon icon="cube" size={12} className="text-white" />
-    </div>
-  )
-}
-
 function TypingDots() {
   return (
     <span className="inline-flex gap-1 items-center h-5">
@@ -177,13 +170,7 @@ function MessageBubble({ msg, botName }: { msg: TestChatMessage; botName: string
 
   return (
     <div className={`flex gap-2 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
-      {isUser ? (
-        <div className="shrink-0 w-6 h-6 rounded-full bg-odi-accent flex items-center justify-center mt-4">
-          <Icon icon="person" size={12} className="text-white" />
-        </div>
-      ) : (
-        <BotAvatar />
-      )}
+      <ChatAvatar name={isUser ? 'Вы' : botName} isMine={isUser} size="sm" />
       <div className="min-w-0 max-w-[85%]">
         {!isUser && (
           <div className="text-[10px] text-odi-text-muted mb-1">{botName}</div>

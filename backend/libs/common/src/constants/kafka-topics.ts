@@ -14,6 +14,7 @@ export const KAFKA_TOPICS = {
     JOIN: 'odi.game.join',
     LEAVE: 'odi.game.leave',
     DELETE: 'odi.game.delete',
+    RESOLVE_INVITE: 'odi.game.resolve-invite',
     LIST: 'odi.game.list',
     RESULT: 'odi.game.result',
     BOT_CONTEXT_LIST: 'odi.game.bot-context-list',

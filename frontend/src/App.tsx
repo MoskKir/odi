@@ -21,6 +21,7 @@ import { ScenarioEditPage } from '@/views/Master/ScenarioEditPage'
 import { BotCreatePage } from '@/views/Master/BotCreatePage'
 import { BotEditPage } from '@/views/Master/BotEditPage'
 import { BotContextPage } from '@/views/Master/BotContextPage'
+import { InvitePage } from '@/views/Invite/InvitePage'
 
 function GameRedirect() {
   const { search } = useLocation()
@@ -37,6 +38,7 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/dashboard" element={<ProtectedRoute><GameList /></ProtectedRoute>} />
           <Route path="/mission" element={<ProtectedRoute><MissionControl /></ProtectedRoute>} />
+          <Route path="/invite/:code" element={<ProtectedRoute><InvitePage /></ProtectedRoute>} />
           <Route path="/game" element={<ProtectedRoute><GameRedirect /></ProtectedRoute>} />
           <Route path="/game/:viewMode" element={<ProtectedRoute><GameLayout /></ProtectedRoute>} />
           <Route path="/master" element={<ProtectedRoute><MasterLayout /></ProtectedRoute>}>

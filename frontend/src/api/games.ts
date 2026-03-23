@@ -20,6 +20,7 @@ export interface GameSessionResponse {
   energy: number
   startedAt: string | null
   completedAt: string | null
+  inviteCode?: string
   createdAt: string
   scenario?: { slug: string; title: string; subtitle: string; description: string; icon: string; difficulty: string }
   participants?: {
@@ -86,6 +87,22 @@ export async function fetchGame(id: string): Promise<GameSessionResponse> {
   })
   if (!res.ok) throw new Error('Failed to fetch game')
   return res.json()
+}
+
+export async function resolveInvite(code: string): Promise<{ id: string; title: string; status: string }> {
+  const res = await fetch(`${API_BASE}/invite/${encodeURIComponent(code)}`, {
+    headers: getAuthHeaders(),
+  })
+  if (!res.ok) throw new Error('Invalid invite code')
+  return res.json()
+}
+
+export async function joinGame(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/${id}/join`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  })
+  if (!res.ok) throw new Error('Failed to join game')
 }
 
 export async function fetchGames(params?: {

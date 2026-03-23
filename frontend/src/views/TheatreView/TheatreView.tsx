@@ -1,42 +1,8 @@
 import { useRef, useEffect, useCallback, useState } from 'react'
-import { Button, Icon } from '@blueprintjs/core'
+import { Button } from '@blueprintjs/core'
 import { useAppSelector } from '@/store'
 import { Markdown } from '@/components/Markdown'
-
-function getInitials(name: string) {
-  return name
-    .split(' ')
-    .map((w) => w[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
-}
-
-function getRoleColor(role: string) {
-  switch (role) {
-    case 'moderator':
-      return 'bg-blue-600'
-    case 'critic':
-      return 'bg-red-600'
-    case 'visionary':
-      return 'bg-purple-600'
-    default:
-      return 'bg-odi-accent'
-  }
-}
-
-function getRoleIcon(role: string): string | null {
-  switch (role) {
-    case 'moderator':
-      return 'shield'
-    case 'critic':
-      return 'eye-open'
-    case 'visionary':
-      return 'lightbulb'
-    default:
-      return null
-  }
-}
+import { ChatAvatar } from '@/components/ChatAvatar'
 
 function formatTime(ts: number) {
   const d = new Date(ts)
@@ -86,27 +52,13 @@ export function TheatreView() {
       >
         {messages.map((msg) => {
           const isMine = currentUser?.name === msg.author
-          const isBot = msg.role === 'bot'
-          const roleIcon = getRoleIcon(msg.role)
 
           return (
             <div
               key={msg.id}
               className={`flex items-end gap-2 ${isMine ? 'flex-row-reverse' : 'flex-row'}`}
             >
-              {/* Avatar at the bottom of the message */}
-              <div
-                className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold ${
-                  isMine ? 'bg-odi-accent' : getRoleColor(msg.role)
-                }`}
-                title={msg.author}
-              >
-                {isBot && roleIcon ? (
-                  <Icon icon={roleIcon as any} size={14} className="text-white" />
-                ) : (
-                  getInitials(msg.author)
-                )}
-              </div>
+              <ChatAvatar name={msg.author} role={msg.role} isMine={isMine} />
 
               {/* Message bubble */}
               <div className={`max-w-[70%] min-w-[120px]`}>
@@ -122,7 +74,7 @@ export function TheatreView() {
                       : 'bg-odi-surface-hover text-odi-text rounded-bl-md'
                   }`}
                 >
-                  {isBot ? <Markdown>{msg.text}</Markdown> : msg.text}
+                  {msg.role === 'bot' ? <Markdown>{msg.text}</Markdown> : msg.text}
                 </div>
                 <div className={`text-[10px] text-odi-text-muted mt-1 ${isMine ? 'text-right' : 'text-left'}`}>
                   {formatTime(msg.timestamp)}
@@ -137,20 +89,10 @@ export function TheatreView() {
           const bot = sessionBots.find((b) => b.id === stream.botConfigId || b.specialistId === stream.botConfigId)
           const botName = bot?.name || stream.botConfigId
           const role = bot?.specialistId || 'moderator'
-          const roleIcon = getRoleIcon(role)
 
           return (
             <div key={stream.streamId} className="flex items-end gap-2 flex-row">
-              <div
-                className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold ${getRoleColor(role)}`}
-                title={botName}
-              >
-                {roleIcon ? (
-                  <Icon icon={roleIcon as any} size={14} className="text-white" />
-                ) : (
-                  getInitials(botName)
-                )}
-              </div>
+              <ChatAvatar name={botName} role={role} />
               <div className="max-w-[70%] min-w-[120px]">
                 <div className="text-xs font-medium mb-1 text-odi-text-muted">
                   {botName}

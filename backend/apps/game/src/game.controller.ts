@@ -41,6 +41,11 @@ export class GameController {
     return this.gameService.deleteGame(data.sessionId);
   }
 
+  @MessagePattern(KAFKA_TOPICS.GAME.RESOLVE_INVITE)
+  async resolveInvite(@Payload() data: { code: string }) {
+    return this.gameService.findByInviteCode(data.code);
+  }
+
   @MessagePattern('odi.game.update-title')
   async updateTitle(@Payload() data: { sessionId: string; title: string }) {
     return this.gameService.updateTitle(data.sessionId, data.title);

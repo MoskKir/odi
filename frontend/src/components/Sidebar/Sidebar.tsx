@@ -16,6 +16,7 @@ const VIEW_MODES: { mode: ViewMode; icon: string; label: string }[] = [
 
 const MIN_WIDTH = 160
 const MAX_WIDTH = 400
+const COLLAPSED_WIDTH = 48
 
 export function Sidebar() {
   const { leftSidebarCollapsed, leftSidebarWidth } = useAppSelector((s) => s.app)
@@ -30,6 +31,7 @@ export function Sidebar() {
   }
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (leftSidebarCollapsed) return
     e.preventDefault()
     isResizing.current = true
 
@@ -48,7 +50,6 @@ export function Sidebar() {
       document.removeEventListener('mouseup', onMouseUp)
       document.body.style.cursor = ''
       document.body.style.userSelect = ''
-      // sync final width to server
       const el = document.querySelector('[data-sidebar]')
       if (el) {
         const w = (el as HTMLElement).offsetWidth
@@ -60,90 +61,79 @@ export function Sidebar() {
     document.body.style.userSelect = 'none'
     document.addEventListener('mousemove', onMouseMove)
     document.addEventListener('mouseup', onMouseUp)
-  }, [leftSidebarWidth, dispatch])
+  }, [leftSidebarWidth, leftSidebarCollapsed, dispatch])
 
-  if (leftSidebarCollapsed) {
-    return (
-      <aside className="bg-odi-surface border-r border-odi-border p-2 flex flex-col items-center shrink-0">
-        <Button
-          icon="menu-open"
-          minimal
-          className="!text-odi-text-muted hover:!text-odi-text mb-3"
-          onClick={handleToggle}
-          title="Развернуть панель"
-        />
-        <ButtonGroup vertical minimal className="gap-1">
-          {VIEW_MODES.map(({ mode, icon, label }) => (
-            <Button
-              key={mode}
-              icon={icon as any}
-              active={viewMode === mode}
-              onClick={() => setViewMode(mode)}
-              className={
-                viewMode === mode
-                  ? '!bg-odi-accent/20 !text-odi-accent'
-                  : '!text-odi-text-muted hover:!text-odi-text hover:!bg-odi-surface-hover'
-              }
-              title={label}
-            />
-          ))}
-        </ButtonGroup>
-      </aside>
-    )
-  }
+  const currentWidth = leftSidebarCollapsed ? COLLAPSED_WIDTH : leftSidebarWidth
 
   return (
-    <aside className="flex shrink-0" style={{ width: leftSidebarWidth }} data-sidebar>
-      <div className="flex-1 bg-odi-surface border-r border-odi-border p-3 flex flex-col gap-4 overflow-hidden">
-        <div className="flex items-center justify-between">
-          <div className="text-xs text-odi-text-muted uppercase tracking-wider">
-            Режим обзора
-          </div>
+    <aside
+      className="flex shrink-0 h-full transition-[width] duration-300 ease-in-out"
+      style={{ width: currentWidth }}
+      data-sidebar
+    >
+      <div className="flex-1 bg-odi-surface border-r border-odi-border flex flex-col overflow-hidden">
+        {/* Header */}
+        <div className={`flex items-center shrink-0 ${leftSidebarCollapsed ? 'justify-center p-2' : 'justify-between p-3'}`}>
+          {!leftSidebarCollapsed && (
+            <div className="text-xs text-odi-text-muted uppercase tracking-wider whitespace-nowrap overflow-hidden">
+              Режим обзора
+            </div>
+          )}
           <Button
-            icon="menu-closed"
+            icon={leftSidebarCollapsed ? 'menu-open' : 'menu-closed'}
             minimal
             small
-            className="!text-odi-text-muted hover:!text-odi-text"
+            className="!text-odi-text-muted hover:!text-odi-text shrink-0"
             onClick={handleToggle}
-            title="Свернуть панель"
+            title={leftSidebarCollapsed ? 'Развернуть панель' : 'Свернуть панель'}
           />
         </div>
-        <ButtonGroup vertical minimal className="gap-1">
-          {VIEW_MODES.map(({ mode, icon, label }) => (
-            <Button
-              key={mode}
-              icon={icon as any}
-              text={label}
-              active={viewMode === mode}
-              onClick={() => setViewMode(mode)}
-              className={
-                viewMode === mode
-                  ? '!bg-odi-accent/20 !text-odi-accent'
-                  : '!text-odi-text-muted hover:!text-odi-text hover:!bg-odi-surface-hover'
-              }
-              alignText="left"
-            />
-          ))}
-        </ButtonGroup>
 
-        <div className="border-t border-odi-border pt-3 mt-auto">
-          <div className="text-xs text-odi-text-muted uppercase tracking-wider mb-2">
-            Быстрые действия
-          </div>
-          <ButtonGroup vertical minimal className="gap-1">
-            <Button icon="pin" text="На доску" alignText="left" className="!text-odi-text-muted hover:!text-odi-text" />
-            <Button icon="link" text="Связать" alignText="left" className="!text-odi-text-muted hover:!text-odi-text" />
-            <Button icon="lightbulb" text="Анализ AI" alignText="left" className="!text-odi-text-muted hover:!text-odi-text" />
-            <Button icon="heart" text="Атмосфера" alignText="left" className="!text-odi-text-muted hover:!text-odi-text" />
+        {/* View modes */}
+        <div className={`${leftSidebarCollapsed ? 'px-2' : 'px-3'}`}>
+          <ButtonGroup vertical minimal className="gap-1 w-full">
+            {VIEW_MODES.map(({ mode, icon, label }) => (
+              <Button
+                key={mode}
+                icon={icon as any}
+                text={leftSidebarCollapsed ? undefined : label}
+                active={viewMode === mode}
+                onClick={() => setViewMode(mode)}
+                className={
+                  viewMode === mode
+                    ? '!bg-odi-accent/20 !text-odi-accent'
+                    : '!text-odi-text-muted hover:!text-odi-text hover:!bg-odi-surface-hover'
+                }
+                alignText="left"
+                title={leftSidebarCollapsed ? label : undefined}
+              />
+            ))}
           </ButtonGroup>
         </div>
+
+        {/* Quick actions */}
+        {!leftSidebarCollapsed && (
+          <div className="border-t border-odi-border pt-3 px-3 mt-auto mb-3">
+            <div className="text-xs text-odi-text-muted uppercase tracking-wider mb-2 whitespace-nowrap overflow-hidden">
+              Быстрые действия
+            </div>
+            <ButtonGroup vertical minimal className="gap-1">
+              <Button icon="pin" text="На доску" alignText="left" className="!text-odi-text-muted hover:!text-odi-text" />
+              <Button icon="link" text="Связать" alignText="left" className="!text-odi-text-muted hover:!text-odi-text" />
+              <Button icon="lightbulb" text="Анализ AI" alignText="left" className="!text-odi-text-muted hover:!text-odi-text" />
+              <Button icon="heart" text="Атмосфера" alignText="left" className="!text-odi-text-muted hover:!text-odi-text" />
+            </ButtonGroup>
+          </div>
+        )}
       </div>
 
       {/* Resize handle */}
-      <div
-        onMouseDown={handleMouseDown}
-        className="w-1 cursor-col-resize hover:bg-odi-accent/40 active:bg-odi-accent/60 transition-colors"
-      />
+      {!leftSidebarCollapsed && (
+        <div
+          onMouseDown={handleMouseDown}
+          className="w-1 cursor-col-resize hover:bg-odi-accent/40 active:bg-odi-accent/60 transition-colors"
+        />
+      )}
     </aside>
   )
 }

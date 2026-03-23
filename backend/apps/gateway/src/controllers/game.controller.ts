@@ -37,6 +37,7 @@ export class GameController {
     this.kafkaClient.subscribeToResponseOf(KAFKA_TOPICS.GAME.LEAVE);
     this.kafkaClient.subscribeToResponseOf(KAFKA_TOPICS.GAME.PHASE_ADVANCE);
     this.kafkaClient.subscribeToResponseOf(KAFKA_TOPICS.GAME.DELETE);
+    this.kafkaClient.subscribeToResponseOf(KAFKA_TOPICS.GAME.RESOLVE_INVITE);
     await this.kafkaClient.connect();
   }
 
@@ -69,6 +70,13 @@ export class GameController {
         ...dto,
         hostId: user.id,
       }),
+    );
+  }
+
+  @Get('invite/:code')
+  async resolveInvite(@Param('code') code: string) {
+    return lastValueFrom(
+      this.kafkaClient.send(KAFKA_TOPICS.GAME.RESOLVE_INVITE, { code }),
     );
   }
 

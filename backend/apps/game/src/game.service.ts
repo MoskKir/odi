@@ -59,6 +59,7 @@ export class GameService implements OnModuleInit {
     }
 
     // Create game session
+    const inviteCode = this.generateInviteCode();
     const session = this.sessionRepo.create({
       title: dto.title,
       scenarioId: scenario.id,
@@ -68,6 +69,7 @@ export class GameService implements OnModuleInit {
       interfaceMode: dto.interfaceMode,
       aiVisibility: dto.aiVisibility,
       crewSize: dto.crewSize,
+      inviteCode,
     });
 
     await this.sessionRepo.save(session);
@@ -290,5 +292,25 @@ export class GameService implements OnModuleInit {
       await this.settingsRepo.upsert({ key, value }, ['key']);
     }
     return this.getSettings();
+  }
+
+  async findByInviteCode(code: string) {
+    const session = await this.sessionRepo.findOne({
+      where: { inviteCode: code },
+      select: ['id', 'title', 'status', 'inviteCode'],
+    });
+    if (!session) {
+      throw new RpcException('Invalid invite code');
+    }
+    return session;
+  }
+
+  private generateInviteCode(): string {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    for (let i = 0; i < 6; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
   }
 }

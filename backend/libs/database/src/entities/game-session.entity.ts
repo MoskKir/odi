@@ -65,6 +65,9 @@ export class GameSessionEntity {
   @Column({ type: 'int' })
   crewSize: number;
 
+  @Column({ type: 'varchar', length: 8, unique: true })
+  inviteCode: string;
+
   @Column({ type: 'int', default: 0 })
   progress: number;
 

@@ -1,51 +1,81 @@
-import { Button, Card, Tag } from '@blueprintjs/core'
 import { useNavigate } from 'react-router-dom'
 import { useAppSelector } from '@/store'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
+import {
+  ArrowRight,
+  Play,
+  Layers,
+  Bot,
+  BarChart3,
+  Target,
+  Gamepad2,
+  Eye,
+  ClipboardList,
+  Users,
+  Rocket,
+  Trophy,
+  Building2,
+  Lightbulb,
+  Handshake,
+  Sparkles,
+  Zap,
+  Shield,
+} from 'lucide-react'
 
 const FEATURES = [
   {
-    icon: '\u{1F3AD}',
+    icon: Layers,
     title: '6 режимов обзора',
     text: 'Доска, Театр, Граф, Штаб, Аквариум, Терминал. Переключайтесь между представлениями одним кликом.',
   },
   {
-    icon: '\u{1F916}',
+    icon: Bot,
     title: 'AI-боты с характером',
     text: 'Модератор, Критик, Визионер, Провокатор и другие. Каждый со своей стратегией и личностью.',
   },
   {
-    icon: '\u{1F4CA}',
+    icon: BarChart3,
     title: 'Эмоциональный мониторинг',
     text: 'Отслеживание вовлечённости, напряжения и энергии команды в реальном времени.',
   },
   {
-    icon: '\u{1F3AF}',
+    icon: Target,
     title: 'Готовые сценарии',
     text: 'Бизнес-стратегия, Креативный штурм, Командообразование. Или создайте свой.',
   },
   {
-    icon: '\u{1F3AE}',
+    icon: Gamepad2,
     title: 'Геймификация',
     text: 'XP, уровни, достижения. Превращаем серьёзные обсуждения в увлекательную игру.',
   },
   {
-    icon: '\u{1F52D}',
+    icon: Eye,
     title: 'Аквариум AI',
     text: 'Уникальная возможность наблюдать за мыслительным процессом AI-ботов в реальном времени.',
   },
 ]
 
+const STEPS = [
+  { icon: ClipboardList, title: 'Выберите сценарий', text: 'Бизнес-стратегия, мозговой штурм или свой сценарий' },
+  { icon: Users, title: 'Соберите экипаж', text: 'Подберите AI-ботов под задачу или используйте автоподбор' },
+  { icon: Rocket, title: 'Запустите миссию', text: 'Ваша команда и AI работают вместе в реальном времени' },
+  { icon: Trophy, title: 'Получите результат', text: 'Карта идей, план действий и аналитика сессии' },
+]
+
 const SCENARIOS = [
-  { icon: '\u{1F3E2}', name: 'Бизнес-стратегия', desc: 'Стратегические решения совета директоров' },
-  { icon: '\u{1F4A1}', name: 'Креативный штурм', desc: 'Генерация и проработка инновационных идей' },
-  { icon: '\u{1F91D}', name: 'Командообразование', desc: 'Работа с конфликтами и укрепление команды' },
+  { icon: Building2, name: 'Бизнес-стратегия', desc: 'Стратегические решения совета директоров', badge: 'Популярный' },
+  { icon: Lightbulb, name: 'Креативный штурм', desc: 'Генерация и проработка инновационных идей', badge: 'Новый' },
+  { icon: Handshake, name: 'Командообразование', desc: 'Работа с конфликтами и укрепление команды', badge: null },
 ]
 
 const STATS = [
-  { value: '1 200+', label: 'Пользователей' },
-  { value: '8', label: 'AI-ботов' },
-  { value: '15', label: 'Сценариев' },
-  { value: '4.8', label: 'Средний рейтинг' },
+  { value: '1 200+', label: 'Пользователей', icon: Users },
+  { value: '8', label: 'AI-ботов', icon: Bot },
+  { value: '15', label: 'Сценариев', icon: Target },
+  { value: '4.8', label: 'Средний рейтинг', icon: Sparkles },
 ]
 
 export function LandingPage() {
@@ -54,114 +84,133 @@ export function LandingPage() {
   const navigate = useNavigate()
 
   return (
-    <div className={`${theme === 'dark' ? 'bp5-dark' : ''} min-h-screen bg-odi-bg`}>
+    <div className={`${theme === 'dark' ? 'bp5-dark' : ''} landing-bw min-h-screen bg-[var(--lbw-bg)]`}>
       {/* Navbar */}
-      <nav className="bg-odi-surface/80 backdrop-blur border-b border-odi-border sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">{'\u{1F3AE}'}</span>
-            <span className="font-bold text-odi-text text-lg">ODI</span>
+      <nav className="bg-[var(--lbw-bg)]/80 backdrop-blur-md border-b border-[var(--lbw-border)] sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-[var(--lbw-fg)]/10 flex items-center justify-center">
+              <Gamepad2 className="w-4.5 h-4.5 text-[var(--lbw-fg)]" />
+            </div>
+            <span className="font-bold text-[var(--lbw-fg)] text-lg tracking-tight">ODI</span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {isAuthenticated ? (
-              <Button intent="primary" text="Мои игры" onClick={() => navigate('/dashboard')} />
+              <Button size="sm" className="bg-[var(--lbw-fg)] text-[var(--lbw-bg)] hover:bg-[var(--lbw-fg)]/85" onClick={() => navigate('/dashboard')}>
+                Мои игры <ArrowRight className="w-4 h-4" />
+              </Button>
             ) : (
               <>
-                <Button minimal text="Войти" onClick={() => navigate('/login')} className="!text-odi-text-muted" />
-                <Button intent="primary" text="Начать бесплатно" onClick={() => navigate('/register')} />
+                <Button variant="ghost" size="sm" className="text-[var(--lbw-muted)] hover:text-[var(--lbw-fg)] hover:bg-[var(--lbw-fg)]/5" onClick={() => navigate('/login')}>
+                  Войти
+                </Button>
+                <Button size="sm" className="bg-[var(--lbw-fg)] text-[var(--lbw-bg)] hover:bg-[var(--lbw-fg)]/85" onClick={() => navigate('/register')}>
+                  Начать бесплатно
+                </Button>
               </>
             )}
           </div>
         </div>
       </nav>
 
-      <div className="overflow-y-auto" style={{ height: 'calc(100vh - 50px)' }}>
+      <div className="overflow-y-auto" style={{ height: 'calc(100vh - 56px)' }}>
         {/* Hero */}
-        <section className="max-w-6xl mx-auto px-6 py-20 text-center">
-          <Tag intent="primary" large minimal className="mb-6">
-            Организационно-деятельностные игры нового поколения
-          </Tag>
-          <h1 className="text-5xl font-bold text-odi-text leading-tight mb-6">
-            Принимайте решения
-            <br />
-            <span className="text-odi-accent">вместе с AI</span>
-          </h1>
-          <p className="text-xl text-odi-text-muted max-w-2xl mx-auto mb-10">
-            Платформа для проведения стратегических сессий, где AI-боты с уникальными
-            характерами помогают вашей команде находить неожиданные решения.
-          </p>
-          <div className="flex items-center justify-center gap-4">
-            <Button
-              intent="primary"
-              large
-              text="Начать бесплатно"
-              rightIcon="arrow-right"
-              onClick={() => navigate('/register')}
-            />
-            <Button
-              large
-              minimal
-              text="Как это работает?"
-              icon="play"
-              className="!text-odi-text-muted"
-            />
+        <section className="max-w-6xl mx-auto px-6 pt-24 pb-20">
+          <div className="max-w-3xl mx-auto text-center">
+            <Badge className="mb-6 border-[var(--lbw-border)] bg-[var(--lbw-fg)]/5 text-[var(--lbw-muted)]">
+              <Zap className="w-3 h-3 mr-1" />
+              Организационно-деятельностные игры нового поколения
+            </Badge>
+            <h1 className="text-5xl md:text-6xl font-bold text-[var(--lbw-fg)] tracking-tight leading-[1.1] mb-6">
+              Принимайте решения{' '}
+              <span className="text-[var(--lbw-muted)]">
+                вместе с AI
+              </span>
+            </h1>
+            <p className="text-lg text-[var(--lbw-muted)] max-w-2xl mx-auto mb-10 leading-relaxed">
+              Платформа для проведения стратегических сессий, где AI-боты с уникальными
+              характерами помогают вашей команде находить неожиданные решения.
+            </p>
+            <div className="flex items-center justify-center gap-3">
+              <Button size="lg" className="bg-[var(--lbw-fg)] text-[var(--lbw-bg)] hover:bg-[var(--lbw-fg)]/85" onClick={() => navigate('/register')}>
+                Начать бесплатно <ArrowRight className="w-4 h-4" />
+              </Button>
+              <Button variant="outline" size="lg" className="border-[var(--lbw-border)] text-[var(--lbw-fg)] hover:bg-[var(--lbw-fg)]/5">
+                <Play className="w-4 h-4" /> Как это работает?
+              </Button>
+            </div>
           </div>
         </section>
 
         {/* Stats */}
-        <section className="border-y border-odi-border bg-odi-surface/50">
-          <div className="max-w-6xl mx-auto px-6 py-10 grid grid-cols-2 md:grid-cols-4 gap-8">
+        <section className="border-y border-[var(--lbw-border)] bg-[var(--lbw-fg)]/[0.02]">
+          <div className="max-w-6xl mx-auto px-6 py-12 grid grid-cols-2 md:grid-cols-4 gap-8">
             {STATS.map((stat) => (
-              <div key={stat.label} className="text-center">
-                <div className="text-3xl font-bold text-odi-accent">{stat.value}</div>
-                <div className="text-sm text-odi-text-muted mt-1">{stat.label}</div>
+              <div key={stat.label} className="flex flex-col items-center gap-2">
+                <div className="w-10 h-10 rounded-lg bg-[var(--lbw-fg)]/[0.06] flex items-center justify-center mb-1">
+                  <stat.icon className="w-5 h-5 text-[var(--lbw-muted)]" />
+                </div>
+                <div className="text-3xl font-bold text-[var(--lbw-fg)] tracking-tight">{stat.value}</div>
+                <div className="text-sm text-[var(--lbw-muted)]">{stat.label}</div>
               </div>
             ))}
           </div>
         </section>
 
         {/* Features */}
-        <section className="max-w-6xl mx-auto px-6 py-20">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-odi-text mb-3">Возможности платформы</h2>
-            <p className="text-odi-text-muted max-w-xl mx-auto">
-              Всё необходимое для проведения эффективных стратегических сессий
+        <section className="max-w-6xl mx-auto px-6 py-24">
+          <div className="text-center mb-14">
+            <Badge variant="secondary" className="mb-4 bg-[var(--lbw-fg)]/[0.06] text-[var(--lbw-muted)] border-transparent">Возможности</Badge>
+            <h2 className="text-3xl md:text-4xl font-bold text-[var(--lbw-fg)] tracking-tight mb-3">
+              Всё для эффективных сессий
+            </h2>
+            <p className="text-[var(--lbw-muted)] max-w-xl mx-auto">
+              Инструменты, которые превращают обсуждения в результаты
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {FEATURES.map((feature) => (
               <Card
                 key={feature.title}
-                className="!bg-odi-surface !border-odi-border !shadow-none hover:!border-odi-accent/40 transition-colors"
+                className="group border-[var(--lbw-border)] bg-[var(--lbw-surface)] hover:border-[var(--lbw-fg)]/25 transition-all duration-200 hover:shadow-md hover:shadow-black/5"
               >
-                <div className="text-3xl mb-3">{feature.icon}</div>
-                <h3 className="font-bold text-odi-text mb-2">{feature.title}</h3>
-                <p className="text-sm text-odi-text-muted">{feature.text}</p>
+                <CardHeader>
+                  <div className="w-10 h-10 rounded-lg bg-[var(--lbw-fg)]/[0.06] flex items-center justify-center mb-2 group-hover:bg-[var(--lbw-fg)]/10 transition-colors">
+                    <feature.icon className="w-5 h-5 text-[var(--lbw-fg)]/70" />
+                  </div>
+                  <CardTitle className="text-base text-[var(--lbw-fg)]">{feature.title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription className="text-[var(--lbw-muted)]">{feature.text}</CardDescription>
+                </CardContent>
               </Card>
             ))}
           </div>
         </section>
 
         {/* How it works */}
-        <section className="bg-odi-surface/50 border-y border-odi-border">
-          <div className="max-w-6xl mx-auto px-6 py-20">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-odi-text mb-3">Как это работает</h2>
+        <section className="bg-[var(--lbw-fg)]/[0.02] border-y border-[var(--lbw-border)]">
+          <div className="max-w-6xl mx-auto px-6 py-24">
+            <div className="text-center mb-14">
+              <Badge variant="secondary" className="mb-4 bg-[var(--lbw-fg)]/[0.06] text-[var(--lbw-muted)] border-transparent">Процесс</Badge>
+              <h2 className="text-3xl md:text-4xl font-bold text-[var(--lbw-fg)] tracking-tight">
+                Как это работает
+              </h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              {[
-                { step: '1', icon: '\u{1F4CB}', title: 'Выберите сценарий', text: 'Бизнес-стратегия, мозговой штурм или свой сценарий' },
-                { step: '2', icon: '\u{1F916}', title: 'Соберите экипаж', text: 'Подберите AI-ботов под задачу или используйте автоподбор' },
-                { step: '3', icon: '\u{1F680}', title: 'Запустите миссию', text: 'Ваша команда и AI работают вместе в реальном времени' },
-                { step: '4', icon: '\u{1F3C6}', title: 'Получите результат', text: 'Карта идей, план действий и аналитика сессии' },
-              ].map((item) => (
-                <div key={item.step} className="text-center">
-                  <div className="w-12 h-12 rounded-full bg-odi-accent/20 text-odi-accent flex items-center justify-center text-xl font-bold mx-auto mb-3">
-                    {item.step}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+              {STEPS.map((item, i) => (
+                <div key={i} className="relative text-center group">
+                  {i < STEPS.length - 1 && (
+                    <div className="hidden md:block absolute top-8 left-[60%] w-[80%] h-[1px] bg-[var(--lbw-border)]" />
+                  )}
+                  <div className="relative z-10">
+                    <div className="w-16 h-16 rounded-2xl bg-[var(--lbw-fg)]/[0.06] flex items-center justify-center mx-auto mb-4 group-hover:bg-[var(--lbw-fg)]/10 transition-colors">
+                      <item.icon className="w-7 h-7 text-[var(--lbw-fg)]/60" />
+                    </div>
+                    <div className="text-xs font-medium text-[var(--lbw-muted)] mb-2">Шаг {i + 1}</div>
+                    <h3 className="font-semibold text-[var(--lbw-fg)] mb-1.5">{item.title}</h3>
+                    <p className="text-sm text-[var(--lbw-muted)] leading-relaxed">{item.text}</p>
                   </div>
-                  <div className="text-2xl mb-2">{item.icon}</div>
-                  <h3 className="font-bold text-odi-text mb-1">{item.title}</h3>
-                  <p className="text-sm text-odi-text-muted">{item.text}</p>
                 </div>
               ))}
             </div>
@@ -169,55 +218,73 @@ export function LandingPage() {
         </section>
 
         {/* Scenarios */}
-        <section className="max-w-6xl mx-auto px-6 py-20">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-odi-text mb-3">Готовые сценарии</h2>
-            <p className="text-odi-text-muted">Начните за минуту или создайте свой</p>
+        <section className="max-w-6xl mx-auto px-6 py-24">
+          <div className="text-center mb-14">
+            <Badge variant="secondary" className="mb-4 bg-[var(--lbw-fg)]/[0.06] text-[var(--lbw-muted)] border-transparent">Шаблоны</Badge>
+            <h2 className="text-3xl md:text-4xl font-bold text-[var(--lbw-fg)] tracking-tight mb-3">
+              Готовые сценарии
+            </h2>
+            <p className="text-[var(--lbw-muted)]">Начните за минуту или создайте свой</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {SCENARIOS.map((s) => (
               <Card
                 key={s.name}
-                interactive
-                className="!bg-odi-surface !border-odi-border !shadow-none text-center hover:!border-odi-accent/40 transition-colors"
+                className="group cursor-pointer border-[var(--lbw-border)] bg-[var(--lbw-surface)] hover:border-[var(--lbw-fg)]/25 transition-all duration-200 hover:shadow-md hover:shadow-black/5"
               >
-                <div className="text-5xl mb-4">{s.icon}</div>
-                <h3 className="font-bold text-odi-text text-lg mb-1">{s.name}</h3>
-                <p className="text-sm text-odi-text-muted">{s.desc}</p>
+                <CardHeader className="items-center text-center pb-2">
+                  <div className="w-14 h-14 rounded-2xl bg-[var(--lbw-fg)]/[0.06] flex items-center justify-center mb-2 group-hover:bg-[var(--lbw-fg)]/10 transition-colors">
+                    <s.icon className="w-7 h-7 text-[var(--lbw-fg)]/60" />
+                  </div>
+                  {s.badge && <Badge className="text-[10px] bg-[var(--lbw-fg)]/[0.06] text-[var(--lbw-muted)] border-[var(--lbw-border)]">{s.badge}</Badge>}
+                  <CardTitle className="text-lg text-[var(--lbw-fg)]">{s.name}</CardTitle>
+                </CardHeader>
+                <CardContent className="text-center">
+                  <CardDescription className="text-[var(--lbw-muted)]">{s.desc}</CardDescription>
+                </CardContent>
               </Card>
             ))}
           </div>
         </section>
 
         {/* CTA */}
-        <section className="border-t border-odi-border bg-odi-surface/50">
-          <div className="max-w-3xl mx-auto px-6 py-20 text-center">
-            <h2 className="text-3xl font-bold text-odi-text mb-4">
-              Готовы начать?
-            </h2>
-            <p className="text-lg text-odi-text-muted mb-8">
-              Присоединяйтесь к командам, которые уже используют ODI
-              для принятия стратегических решений.
-            </p>
-            <Button
-              intent="primary"
-              large
-              text="Создать аккаунт"
-              rightIcon="arrow-right"
-              onClick={() => navigate('/register')}
-            />
+        <section className="border-t border-[var(--lbw-border)]">
+          <div className="max-w-6xl mx-auto px-6 py-24">
+            <Card className="relative overflow-hidden border-[var(--lbw-fg)]/10 bg-[var(--lbw-fg)]/[0.03]">
+              <CardContent className="relative p-12 md:p-16 text-center">
+                <div className="w-14 h-14 rounded-2xl bg-[var(--lbw-fg)]/[0.08] flex items-center justify-center mx-auto mb-6">
+                  <Shield className="w-7 h-7 text-[var(--lbw-fg)]/60" />
+                </div>
+                <h2 className="text-3xl md:text-4xl font-bold text-[var(--lbw-fg)] tracking-tight mb-4">
+                  Готовы начать?
+                </h2>
+                <p className="text-lg text-[var(--lbw-muted)] mb-8 max-w-lg mx-auto">
+                  Присоединяйтесь к командам, которые уже используют ODI
+                  для принятия стратегических решений.
+                </p>
+                <div className="flex items-center justify-center gap-3">
+                  <Button size="lg" className="bg-[var(--lbw-fg)] text-[var(--lbw-bg)] hover:bg-[var(--lbw-fg)]/85" onClick={() => navigate('/register')}>
+                    Создать аккаунт <ArrowRight className="w-4 h-4" />
+                  </Button>
+                  <Button variant="outline" size="lg" className="border-[var(--lbw-border)] text-[var(--lbw-fg)] hover:bg-[var(--lbw-fg)]/5" onClick={() => navigate('/login')}>
+                    Войти
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </section>
 
         {/* Footer */}
-        <footer className="border-t border-odi-border">
-          <div className="max-w-6xl mx-auto px-6 py-8 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span>{'\u{1F3AE}'}</span>
-              <span className="text-sm text-odi-text-muted">ODI Platform</span>
+        <Separator className="bg-[var(--lbw-border)]" />
+        <footer className="max-w-6xl mx-auto px-6 py-8 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-6 h-6 rounded bg-[var(--lbw-fg)]/10 flex items-center justify-center">
+              <Gamepad2 className="w-3.5 h-3.5 text-[var(--lbw-fg)]/60" />
             </div>
-            <span className="text-xs text-odi-text-muted">2026. Организационно-деятельностные игры.</span>
+            <span className="text-sm text-[var(--lbw-muted)]">ODI Platform</span>
           </div>
+          <span className="text-xs text-[var(--lbw-muted)]">2026. Организационно-деятельностные игры.</span>
         </footer>
       </div>
     </div>

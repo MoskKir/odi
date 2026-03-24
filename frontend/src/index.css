@@ -80,6 +80,23 @@ body {
   pointer-events: auto;
 }
 
+/* Landing B&W palette — scoped via .landing-bw */
+.landing-bw {
+  --lbw-bg: #000000;
+  --lbw-surface: #0a0a0a;
+  --lbw-fg: #ffffff;
+  --lbw-muted: #a1a1a1;
+  --lbw-border: #262626;
+}
+
+[data-theme="light"] .landing-bw {
+  --lbw-bg: #ffffff;
+  --lbw-surface: #fafafa;
+  --lbw-fg: #0a0a0a;
+  --lbw-muted: #737373;
+  --lbw-border: #e5e5e5;
+}
+
 /* Aquarium animations */
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(8px); }

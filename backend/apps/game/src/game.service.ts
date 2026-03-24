@@ -259,7 +259,7 @@ export class GameService implements OnModuleInit {
   async listBots() {
     return this.botConfigRepo.find({
       where: { enabled: true },
-      order: { stars: 'DESC' },
+      order: { stars: 'DESC', createdAt: 'ASC' },
     });
   }
 

@@ -26,6 +26,8 @@ interface PersistedPrefs {
   boardColumnWidths: number[] | null
   aquariumFocusedBotId: string | null
   aquariumBotTabs: Record<string, string>
+  activeViewMode: string | null
+  dashboardView: string
 }
 
 function loadFromLocalStorage(): Partial<PersistedPrefs> {
@@ -69,6 +71,7 @@ export interface SessionBot {
   description: string
   stars: number
   tag?: string | null
+  reflectionPrompt?: string | null
 }
 
 export interface SessionParticipant {
@@ -124,6 +127,8 @@ interface AppState {
   editingMessage: { id: string; text: string } | null
   aquariumFocusedBotId: string | null
   aquariumBotTabs: Record<string, string>
+  activeViewMode: string | null
+  dashboardView: string
 }
 
 const initialState: AppState = {
@@ -159,6 +164,8 @@ const initialState: AppState = {
   editingMessage: null,
   aquariumFocusedBotId: saved.aquariumFocusedBotId ?? null,
   aquariumBotTabs: saved.aquariumBotTabs ?? {},
+  activeViewMode: saved.activeViewMode ?? null,
+  dashboardView: saved.dashboardView ?? 'table',
 }
 
 function getPersistedPrefs(state: AppState): PersistedPrefs {
@@ -177,6 +184,8 @@ function getPersistedPrefs(state: AppState): PersistedPrefs {
     boardColumnWidths: state.boardColumnWidths,
     aquariumFocusedBotId: state.aquariumFocusedBotId,
     aquariumBotTabs: state.aquariumBotTabs,
+    activeViewMode: state.activeViewMode,
+    dashboardView: state.dashboardView,
   }
 }
 
@@ -333,6 +342,14 @@ export const appSlice = createSlice({
       state.aquariumBotTabs[action.payload.botId] = action.payload.tab
       persistToLocalStorage(getPersistedPrefs(state))
     },
+    setActiveViewMode(state, action: PayloadAction<string>) {
+      state.activeViewMode = action.payload
+      persistToLocalStorage(getPersistedPrefs(state))
+    },
+    setDashboardView(state, action: PayloadAction<string>) {
+      state.dashboardView = action.payload
+      persistToLocalStorage(getPersistedPrefs(state))
+    },
     setBoardColumnWidths(state, action: PayloadAction<number[] | null>) {
       state.boardColumnWidths = action.payload
       persistToLocalStorage(getPersistedPrefs(state))
@@ -429,4 +446,6 @@ export const {
   clearEditingMessage,
   setAquariumFocusedBotId,
   setAquariumBotTab,
+  setActiveViewMode,
+  setDashboardView,
 } = appSlice.actions

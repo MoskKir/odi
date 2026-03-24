@@ -126,13 +126,26 @@ interface BotCardProps {
   onTabChange: (tab: string) => void
 }
 
+async function saveReflectionPrompt(botId: string, prompt: string) {
+  const token = localStorage.getItem('odi_token')
+  await fetch(`/api/bots/${botId}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ reflectionPrompt: prompt }),
+  })
+}
+
 function BotCard({
   bot, isOnline, totalMessages, lastMessages, activeStream,
   botReflections, activeReflectionStream, sessionId, isAdmin,
   expanded, onToggleExpand, tab, onTabChange,
 }: BotCardProps) {
-  const [reflectionPrompt, setReflectionPrompt] = useState(DEFAULT_REFLECTION_PROMPT)
+  const [reflectionPrompt, setReflectionPrompt] = useState(bot.reflectionPrompt || DEFAULT_REFLECTION_PROMPT)
   const [isEditingPrompt, setIsEditingPrompt] = useState(false)
+  const [saving, setSaving] = useState(false)
   const socketJoined = useAppSelector((s) => s.app.socketJoined)
 
   const handleReflect = useCallback(() => {
@@ -239,7 +252,25 @@ function BotCard({
             <div>
               <div className="flex items-center justify-between mb-1">
                 <span className="text-[10px] text-odi-text-muted uppercase tracking-wider">Промпт рефлексии</span>
-                <Button icon={isEditingPrompt ? 'tick' : 'edit'} minimal small onClick={() => setIsEditingPrompt(!isEditingPrompt)} />
+                {isEditingPrompt ? (
+                  <div className="flex gap-1">
+                    <Button icon="cross" minimal small onClick={() => {
+                      setReflectionPrompt(bot.reflectionPrompt || DEFAULT_REFLECTION_PROMPT)
+                      setIsEditingPrompt(false)
+                    }} />
+                    <Button icon="tick" minimal small intent="success" loading={saving} onClick={async () => {
+                      setSaving(true)
+                      try {
+                        await saveReflectionPrompt(bot.id, reflectionPrompt)
+                        bot.reflectionPrompt = reflectionPrompt
+                      } catch { /* ignore */ }
+                      setSaving(false)
+                      setIsEditingPrompt(false)
+                    }} />
+                  </div>
+                ) : (
+                  <Button icon="edit" minimal small onClick={() => setIsEditingPrompt(true)} />
+                )}
               </div>
               {isEditingPrompt ? (
                 <TextArea

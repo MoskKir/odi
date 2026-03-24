@@ -26,6 +26,9 @@ export class BotConfigEntity {
   @Column({ type: 'text' })
   systemPrompt: string;
 
+  @Column({ type: 'text', nullable: true })
+  reflectionPrompt: string | null;
+
   @Column()
   model: string;
 

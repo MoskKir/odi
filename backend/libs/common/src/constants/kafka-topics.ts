@@ -26,6 +26,8 @@ export const KAFKA_TOPICS = {
   },
   CHAT: {
     SEND: 'odi.chat.send',
+    EDIT: 'odi.chat.edit',
+    DELETE: 'odi.chat.delete',
     HISTORY: 'odi.chat.history',
     RESULT: 'odi.chat.result',
   },

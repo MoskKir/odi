@@ -3,6 +3,7 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  UpdateDateColumn,
   ManyToOne,
   JoinColumn,
   Index,
@@ -28,8 +29,14 @@ export class ChatMessageEntity {
   @Column({ default: false })
   isSystem: boolean;
 
+  @Column({ default: false })
+  isEdited: boolean;
+
   @CreateDateColumn()
   createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 
   @ManyToOne(() => GameSessionEntity)
   @JoinColumn({ name: 'sessionId' })

@@ -1,8 +1,11 @@
 import { useRef, useEffect, useCallback, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Button } from '@blueprintjs/core'
 import { useAppSelector } from '@/store'
 import { Markdown } from '@/components/Markdown'
 import { ChatAvatar } from '@/components/ChatAvatar'
+import { MessageContextMenu } from '@/components/Chat/MessageContextMenu'
+import { useMessageContextMenu } from '@/hooks/useMessageContextMenu'
 
 function formatTime(ts: number) {
   const d = new Date(ts)
@@ -14,9 +17,12 @@ export function TheatreView() {
   const streamingMessages = useAppSelector((s) => s.app.streamingMessages)
   const sessionBots = useAppSelector((s) => s.app.sessionBots)
   const currentUser = useAppSelector((s) => s.auth.user)
+  const [searchParams] = useSearchParams()
+  const sessionId = searchParams.get('session') || ''
   const containerRef = useRef<HTMLDivElement>(null)
   const shouldAutoScroll = useRef(true)
   const [showScrollDown, setShowScrollDown] = useState(false)
+  const { contextMenu, handleContextMenu, closeContextMenu } = useMessageContextMenu()
 
   const streams = Object.values(streamingMessages)
 
@@ -57,6 +63,7 @@ export function TheatreView() {
             <div
               key={msg.id}
               className={`flex items-end gap-2 ${isMine ? 'flex-row-reverse' : 'flex-row'}`}
+              onContextMenu={(e) => handleContextMenu(e, msg)}
             >
               <ChatAvatar name={msg.author} role={msg.role} isMine={isMine} />
 
@@ -78,6 +85,7 @@ export function TheatreView() {
                 </div>
                 <div className={`text-[10px] text-odi-text-muted mt-1 ${isMine ? 'text-right' : 'text-left'}`}>
                   {formatTime(msg.timestamp)}
+                  {msg.isEdited && <span className="ml-1 italic">(ред.)</span>}
                 </div>
               </div>
             </div>
@@ -113,6 +121,16 @@ export function TheatreView() {
           intent="primary"
           className="!absolute bottom-4 left-1/2 -translate-x-1/2 !rounded-full !shadow-lg"
           onClick={scrollToBottom}
+        />
+      )}
+
+      {contextMenu && (
+        <MessageContextMenu
+          message={contextMenu.message}
+          sessionId={sessionId}
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onClose={closeContextMenu}
         />
       )}
     </div>

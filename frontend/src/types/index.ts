@@ -32,6 +32,8 @@ export interface ChatMessage {
   role: string
   text: string
   timestamp: number
+  participantId?: string
+  isEdited?: boolean
 }
 
 export interface BoardCard {

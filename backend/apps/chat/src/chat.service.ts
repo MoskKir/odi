@@ -194,6 +194,103 @@ export class ChatService implements OnModuleInit {
     }
   }
 
+  async editMessage(data: {
+    messageId: string;
+    userId: string;
+    userRole: string;
+    text: string;
+  }) {
+    const message = await this.messageRepo.findOne({
+      where: { id: data.messageId },
+      relations: ['participant', 'participant.user', 'participant.botConfig'],
+    });
+
+    if (!message) {
+      return { error: 'Message not found' };
+    }
+
+    // Check permissions: own message OR admin editing bot message
+    const isOwner = message.participant?.userId === data.userId;
+    const isBotMessage = !!message.participant?.botConfigId;
+    const isAdmin = data.userRole === 'admin';
+
+    if (!isOwner && !(isAdmin && isBotMessage)) {
+      return { error: 'Forbidden' };
+    }
+
+    message.text = data.text;
+    message.isEdited = true;
+    await this.messageRepo.save(message);
+
+    const author =
+      message.participant?.user?.name ||
+      message.participant?.botConfig?.name ||
+      'Unknown';
+
+    const result = {
+      id: message.id,
+      sessionId: message.sessionId,
+      participantId: message.participantId,
+      author,
+      role: message.participant?.role || 'unknown',
+      text: message.text,
+      isSystem: message.isSystem,
+      isEdited: message.isEdited,
+      createdAt: message.createdAt,
+    };
+
+    // Broadcast edit event
+    await lastValueFrom(
+      this.kafkaClient.emit(KAFKA_TOPICS.EVENTS.CHAT, {
+        sessionId: message.sessionId,
+        type: 'chat:edited',
+        message: result,
+      }),
+    );
+
+    return result;
+  }
+
+  async deleteMessage(data: {
+    messageId: string;
+    userId: string;
+    userRole: string;
+  }) {
+    const message = await this.messageRepo.findOne({
+      where: { id: data.messageId },
+      relations: ['participant'],
+    });
+
+    if (!message) {
+      return { error: 'Message not found' };
+    }
+
+    // Check permissions: own message OR admin deleting bot message
+    const isOwner = message.participant?.userId === data.userId;
+    const isBotMessage = !!message.participant?.botConfigId;
+    const isAdmin = data.userRole === 'admin';
+
+    if (!isOwner && !(isAdmin && isBotMessage)) {
+      return { error: 'Forbidden' };
+    }
+
+    const sessionId = message.sessionId;
+    const messageId = message.id;
+
+    await this.messageRepo.remove(message);
+
+    // Broadcast delete event
+    await lastValueFrom(
+      this.kafkaClient.emit(KAFKA_TOPICS.EVENTS.CHAT, {
+        sessionId,
+        type: 'chat:deleted',
+        messageId,
+      }),
+    );
+
+    return { success: true, messageId };
+  }
+
   async getHistory(sessionId: string, limit: number, offset: number) {
     const [messages, total] = await this.messageRepo.findAndCount({
       where: { sessionId },
@@ -214,6 +311,7 @@ export class ChatService implements OnModuleInit {
       role: msg.participant?.role || 'unknown',
       text: msg.text,
       isSystem: msg.isSystem,
+      isEdited: msg.isEdited,
       createdAt: msg.createdAt,
     }));
 

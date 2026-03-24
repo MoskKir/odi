@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAppDispatch } from '@/store'
-import { setMessages, addMessage, setCards, addCard, updateCard, removeCard, updateSession, updatePhase, setSocketJoined, setSessionTitle, setScenarioInfo, setSessionBots, setSessionParticipants, setInviteCode, startStream, appendStreamChunk, endStream } from '@/store/appSlice'
+import { setMessages, addMessage, editMessage, deleteMessage, setCards, addCard, updateCard, removeCard, updateSession, updatePhase, setSocketJoined, setSessionTitle, setScenarioInfo, setSessionBots, setSessionParticipants, setInviteCode, startStream, appendStreamChunk, endStream } from '@/store/appSlice'
 import { connectSocket, disconnectSocket } from '@/api/socket'
 import { fetchGame, fetchBoardCards } from '@/api/games'
 import type { ChatMessage, BoardCard } from '@/types'
@@ -12,7 +12,9 @@ interface ServerChatMessage {
   role: string
   text: string
   isSystem: boolean
+  isEdited?: boolean
   createdAt: string
+  participantId?: string
 }
 
 function toClientMessage(msg: ServerChatMessage): ChatMessage {
@@ -22,6 +24,8 @@ function toClientMessage(msg: ServerChatMessage): ChatMessage {
     role: msg.role as ChatMessage['role'],
     text: msg.text,
     timestamp: new Date(msg.createdAt).getTime(),
+    participantId: msg.participantId,
+    isEdited: msg.isEdited,
   }
 }
 
@@ -98,6 +102,16 @@ export function useGameSocket() {
 
     socket.on('chat:message', (data: { sessionId: string; message: ServerChatMessage }) => {
       if (mounted && data.message) dispatch(addMessage(toClientMessage(data.message)))
+    })
+
+    socket.on('chat:edited', (data: { sessionId: string; message: ServerChatMessage }) => {
+      if (mounted && data.message) {
+        dispatch(editMessage({ id: data.message.id, text: data.message.text, isEdited: true }))
+      }
+    })
+
+    socket.on('chat:deleted', (data: { sessionId: string; messageId: string }) => {
+      if (mounted && data.messageId) dispatch(deleteMessage(data.messageId))
     })
 
     socket.on('session:update', (data: { teamOnline?: number; energy?: number }) => {

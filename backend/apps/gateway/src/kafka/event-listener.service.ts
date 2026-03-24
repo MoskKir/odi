@@ -25,11 +25,22 @@ export class EventListenerService {
   }
 
   @EventPattern(KAFKA_TOPICS.EVENTS.CHAT)
-  handleChatEvent(@Payload() data: { sessionId: string; [key: string]: any }) {
+  handleChatEvent(@Payload() data: { sessionId: string; type?: string; [key: string]: any }) {
     this.logger.log(`chat event: ${JSON.stringify(data).slice(0, 200)}`);
-    this.gameGateway.server
-      .to(data.sessionId)
-      .emit('chat:message', data);
+
+    if (data.type === 'chat:edited') {
+      this.gameGateway.server
+        .to(data.sessionId)
+        .emit('chat:edited', data);
+    } else if (data.type === 'chat:deleted') {
+      this.gameGateway.server
+        .to(data.sessionId)
+        .emit('chat:deleted', data);
+    } else {
+      this.gameGateway.server
+        .to(data.sessionId)
+        .emit('chat:message', data);
+    }
   }
 
   @EventPattern(KAFKA_TOPICS.EVENTS.CHAT_STREAM)

@@ -24,6 +24,8 @@ export class ChatController {
   async onModuleInit() {
     this.kafkaClient.subscribeToResponseOf(KAFKA_TOPICS.CHAT.HISTORY);
     this.kafkaClient.subscribeToResponseOf(KAFKA_TOPICS.CHAT.SEND);
+    this.kafkaClient.subscribeToResponseOf(KAFKA_TOPICS.CHAT.EDIT);
+    this.kafkaClient.subscribeToResponseOf(KAFKA_TOPICS.CHAT.DELETE);
     await this.kafkaClient.connect();
   }
 

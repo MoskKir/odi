@@ -34,6 +34,8 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.kafkaClient.subscribeToResponseOf('odi.game.board-edit');
     this.kafkaClient.subscribeToResponseOf('odi.game.board-delete');
     this.kafkaClient.subscribeToResponseOf(KAFKA_TOPICS.AI.CHANGE_STRATEGY);
+    this.kafkaClient.subscribeToResponseOf(KAFKA_TOPICS.CHAT.EDIT);
+    this.kafkaClient.subscribeToResponseOf(KAFKA_TOPICS.CHAT.DELETE);
   }
 
   async handleConnection(client: Socket) {
@@ -134,6 +136,47 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }),
     ).catch((err) => {
       this.logger.error(`chat:send failed: ${err.message}`);
+      client.emit('error', { message: err.message });
+    });
+  }
+
+  @SubscribeMessage('chat:edit')
+  async handleChatEdit(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { sessionId: string; messageId: string; text: string },
+  ) {
+    const user = client.data?.user;
+    if (!user) return;
+
+    lastValueFrom(
+      this.kafkaClient.send(KAFKA_TOPICS.CHAT.EDIT, {
+        messageId: data.messageId,
+        userId: user.id,
+        userRole: user.role,
+        text: data.text,
+      }),
+    ).catch((err) => {
+      this.logger.error(`chat:edit failed: ${err.message}`);
+      client.emit('error', { message: err.message });
+    });
+  }
+
+  @SubscribeMessage('chat:delete')
+  async handleChatDelete(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { sessionId: string; messageId: string },
+  ) {
+    const user = client.data?.user;
+    if (!user) return;
+
+    lastValueFrom(
+      this.kafkaClient.send(KAFKA_TOPICS.CHAT.DELETE, {
+        messageId: data.messageId,
+        userId: user.id,
+        userRole: user.role,
+      }),
+    ).catch((err) => {
+      this.logger.error(`chat:delete failed: ${err.message}`);
       client.emit('error', { message: err.message });
     });
   }

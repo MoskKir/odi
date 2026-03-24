@@ -256,6 +256,16 @@ export const appSlice = createSlice({
       }
       state.streamingMessages = {}
     },
+    editMessage(state, action: PayloadAction<{ id: string; text: string; isEdited?: boolean }>) {
+      const msg = state.messages.find((m) => m.id === action.payload.id)
+      if (msg) {
+        msg.text = action.payload.text
+        msg.isEdited = action.payload.isEdited ?? true
+      }
+    },
+    deleteMessage(state, action: PayloadAction<string>) {
+      state.messages = state.messages.filter((m) => m.id !== action.payload)
+    },
     setCards(state, action: PayloadAction<BoardCard[]>) {
       state.cards = action.payload
     },
@@ -363,6 +373,8 @@ export const {
   setEmotion,
   setMessages,
   addMessage,
+  editMessage,
+  deleteMessage,
   startStream,
   appendStreamChunk,
   endStream,

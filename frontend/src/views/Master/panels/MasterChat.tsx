@@ -4,6 +4,8 @@ import { useSearchParams } from 'react-router-dom'
 import { useAppSelector } from '@/store'
 import { getSocket } from '@/api/socket'
 import { Markdown } from '@/components/Markdown'
+import { MessageContextMenu } from '@/components/Chat/MessageContextMenu'
+import { useMessageContextMenu } from '@/hooks/useMessageContextMenu'
 
 type Filter = 'all' | 'players' | 'bots' | 'system'
 
@@ -23,6 +25,7 @@ export function MasterChat() {
   const [input, setInput] = useState('')
   const [filter, setFilter] = useState<Filter>('all')
   const listRef = useRef<HTMLDivElement>(null)
+  const { contextMenu, handleContextMenu, closeContextMenu } = useMessageContextMenu()
 
   const streams = Object.values(streamingMessages)
 
@@ -102,11 +105,15 @@ export function MasterChat() {
                     ? 'bg-odi-energy/10'
                     : 'bg-odi-surface-hover'
               }`}
+              onContextMenu={(e) => handleContextMenu(e, msg)}
             >
               <span className="font-medium text-odi-text">
                 {bot && !sys && '\u{1F916} '}{msg.author}
               </span>
-              <span className="text-odi-text-muted ml-1">{formatTime(msg.timestamp)}</span>
+              <span className="text-odi-text-muted ml-1">
+                {formatTime(msg.timestamp)}
+                {msg.isEdited && <span className="italic ml-1">(ред.)</span>}
+              </span>
               <div className="text-odi-text mt-0.5 break-words">
                 <Markdown>{msg.text}</Markdown>
               </div>
@@ -149,6 +156,16 @@ export function MasterChat() {
           onClick={handleSend}
         />
       </div>
+
+      {contextMenu && sessionId && (
+        <MessageContextMenu
+          message={contextMenu.message}
+          sessionId={sessionId}
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onClose={closeContextMenu}
+        />
+      )}
     </Card>
   )
 }

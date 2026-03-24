@@ -24,6 +24,8 @@ interface PersistedPrefs {
   masterHintsPanelCollapsed: boolean
   masterHintsPanelWidth: number
   boardColumnWidths: number[] | null
+  aquariumFocusedBotId: string | null
+  aquariumBotTabs: Record<string, string>
 }
 
 function loadFromLocalStorage(): Partial<PersistedPrefs> {
@@ -120,6 +122,8 @@ interface AppState {
   inviteCode: string | null
   quickAddCard: boolean
   editingMessage: { id: string; text: string } | null
+  aquariumFocusedBotId: string | null
+  aquariumBotTabs: Record<string, string>
 }
 
 const initialState: AppState = {
@@ -153,6 +157,8 @@ const initialState: AppState = {
   inviteCode: null,
   quickAddCard: false,
   editingMessage: null,
+  aquariumFocusedBotId: saved.aquariumFocusedBotId ?? null,
+  aquariumBotTabs: saved.aquariumBotTabs ?? {},
 }
 
 function getPersistedPrefs(state: AppState): PersistedPrefs {
@@ -169,6 +175,8 @@ function getPersistedPrefs(state: AppState): PersistedPrefs {
     masterHintsPanelCollapsed: state.masterHintsPanelCollapsed,
     masterHintsPanelWidth: state.masterHintsPanelWidth,
     boardColumnWidths: state.boardColumnWidths,
+    aquariumFocusedBotId: state.aquariumFocusedBotId,
+    aquariumBotTabs: state.aquariumBotTabs,
   }
 }
 
@@ -317,6 +325,14 @@ export const appSlice = createSlice({
     clearEditingMessage(state) {
       state.editingMessage = null
     },
+    setAquariumFocusedBotId(state, action: PayloadAction<string | null>) {
+      state.aquariumFocusedBotId = action.payload
+      persistToLocalStorage(getPersistedPrefs(state))
+    },
+    setAquariumBotTab(state, action: PayloadAction<{ botId: string; tab: string }>) {
+      state.aquariumBotTabs[action.payload.botId] = action.payload.tab
+      persistToLocalStorage(getPersistedPrefs(state))
+    },
     setBoardColumnWidths(state, action: PayloadAction<number[] | null>) {
       state.boardColumnWidths = action.payload
       persistToLocalStorage(getPersistedPrefs(state))
@@ -411,4 +427,6 @@ export const {
   stopAllStreams,
   setEditingMessage,
   clearEditingMessage,
+  setAquariumFocusedBotId,
+  setAquariumBotTab,
 } = appSlice.actions

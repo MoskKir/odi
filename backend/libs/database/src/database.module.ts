@@ -15,6 +15,7 @@ import {
   SystemSettingEntity,
   BotStageContextEntity,
   StageSharedContextEntity,
+  BotReflectionEntity,
 } from './entities';
 
 const ALL_ENTITIES = [
@@ -31,6 +32,7 @@ const ALL_ENTITIES = [
   SystemSettingEntity,
   BotStageContextEntity,
   StageSharedContextEntity,
+  BotReflectionEntity,
 ];
 
 @Module({

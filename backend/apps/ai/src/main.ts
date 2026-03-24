@@ -17,6 +17,8 @@ async function bootstrap() {
         },
         consumer: {
           groupId: 'odi-ai-consumer',
+          sessionTimeout: 120000,
+          heartbeatInterval: 10000,
         },
       },
     },

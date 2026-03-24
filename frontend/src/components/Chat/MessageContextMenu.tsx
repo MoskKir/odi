@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
-import { Menu, MenuItem } from '@blueprintjs/core'
+import { useEffect, useRef, useState, useLayoutEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
+import { Icon } from '@blueprintjs/core'
 import { useAppSelector, useAppDispatch } from '@/store'
 import { setEditingMessage } from '@/store/appSlice'
 import { getSocket } from '@/api/socket'
@@ -13,11 +14,15 @@ interface Props {
   onClose: () => void
 }
 
+const ANIM_MS = 120
+
 export function MessageContextMenu({ message, sessionId, x, y, onClose }: Props) {
   const user = useAppSelector((s) => s.auth.user)
   const participants = useAppSelector((s) => s.app.sessionParticipants)
   const dispatch = useAppDispatch()
   const menuRef = useRef<HTMLDivElement>(null)
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
+  const [phase, setPhase] = useState<'measuring' | 'in' | 'out'>('measuring')
 
   const myParticipant = participants.find((p) => p.userName === user?.name)
   const isMyMessage = myParticipant && message.participantId === myParticipant.id
@@ -27,31 +32,43 @@ export function MessageContextMenu({ message, sessionId, x, y, onClose }: Props)
   const canEdit = isMyMessage || (isAdmin && isBotMessage)
   const canDelete = isMyMessage || (isAdmin && isBotMessage)
 
-  useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        onClose()
-      }
-    }
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    document.addEventListener('mousedown', handleClick)
-    document.addEventListener('keydown', handleEsc)
-    return () => {
-      document.removeEventListener('mousedown', handleClick)
-      document.removeEventListener('keydown', handleEsc)
-    }
-  }, [onClose])
+  // Animated close: play exit animation, then unmount
+  const animatedClose = useCallback(() => {
+    if (phase === 'out') return
+    setPhase('out')
+    setTimeout(onClose, ANIM_MS)
+  }, [onClose, phase])
 
-  const [pos, setPos] = useState({ x, y })
-  useEffect(() => {
+  // Measure, clamp, reveal
+  useLayoutEffect(() => {
     if (!menuRef.current) return
     const rect = menuRef.current.getBoundingClientRect()
     const nx = x + rect.width > window.innerWidth ? window.innerWidth - rect.width - 8 : x
     const ny = y + rect.height > window.innerHeight ? window.innerHeight - rect.height - 8 : y
     setPos({ x: nx, y: ny })
+    requestAnimationFrame(() => setPhase('in'))
   }, [x, y])
+
+  // Outside click / Escape / scroll → animated close
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        animatedClose()
+      }
+    }
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') animatedClose()
+    }
+    const handleScroll = () => animatedClose()
+    document.addEventListener('mousedown', handleClick)
+    document.addEventListener('keydown', handleEsc)
+    window.addEventListener('scroll', handleScroll, true)
+    return () => {
+      document.removeEventListener('mousedown', handleClick)
+      document.removeEventListener('keydown', handleEsc)
+      window.removeEventListener('scroll', handleScroll, true)
+    }
+  }, [animatedClose])
 
   if (!canEdit && !canDelete) {
     return null
@@ -59,40 +76,54 @@ export function MessageContextMenu({ message, sessionId, x, y, onClose }: Props)
 
   const handleEdit = () => {
     dispatch(setEditingMessage({ id: message.id, text: message.text }))
-    onClose()
+    animatedClose()
   }
 
   const handleDelete = () => {
     const socket = getSocket()
     socket?.emit('chat:delete', { sessionId, messageId: message.id })
-    onClose()
+    animatedClose()
   }
 
-  return (
+  const isVisible = phase === 'in'
+
+  const menu = (
     <div
       ref={menuRef}
-      className="fixed z-[9999]"
-      style={{ left: pos.x, top: pos.y }}
+      style={{
+        position: 'fixed',
+        left: pos?.x ?? x,
+        top: pos?.y ?? y,
+        zIndex: 99999,
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? 'scale(1)' : 'scale(0.88)',
+        transformOrigin: 'top left',
+        transition: `opacity ${ANIM_MS}ms ease-out, transform ${ANIM_MS}ms ease-out`,
+        visibility: phase === 'measuring' ? 'hidden' : 'visible',
+      }}
     >
-      <Menu className="!bg-odi-surface !border !border-odi-border !rounded-lg !shadow-xl !min-w-[160px]">
+      <div className="bg-odi-surface border border-odi-border rounded-lg shadow-2xl py-1 min-w-[160px] overflow-hidden">
         {canEdit && (
-          <MenuItem
-            icon="edit"
-            text="Редактировать"
+          <button
+            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-odi-text hover:bg-odi-surface-hover transition-colors"
             onClick={handleEdit}
-            className="!text-xs"
-          />
+          >
+            <Icon icon="edit" size={13} className="text-odi-text-muted" />
+            Редактировать
+          </button>
         )}
         {canDelete && (
-          <MenuItem
-            icon="trash"
-            text="Удалить"
-            intent="danger"
+          <button
+            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-red-400 hover:bg-red-500/10 transition-colors"
             onClick={handleDelete}
-            className="!text-xs"
-          />
+          >
+            <Icon icon="trash" size={13} />
+            Удалить
+          </button>
         )}
-      </Menu>
+      </div>
     </div>
   )
+
+  return createPortal(menu, document.body)
 }

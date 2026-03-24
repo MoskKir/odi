@@ -89,3 +89,33 @@ body {
 .animate-fade-in {
   animation: fade-in 0.3s ease-out;
 }
+
+/* ── Custom scrollbars ── */
+
+/* Webkit (Chrome, Safari, Edge) */
+* {
+  scrollbar-width: thin;                        /* Firefox */
+  scrollbar-color: var(--odi-border) transparent; /* Firefox */
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--odi-border);
+  border-radius: 3px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--odi-text-muted);
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}

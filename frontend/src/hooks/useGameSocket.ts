@@ -110,8 +110,14 @@ export function useGameSocket() {
       }
     })
 
-    socket.on('chat:deleted', (data: { sessionId: string; messageId: string }) => {
-      if (mounted && data.messageId) dispatch(deleteMessage(data.messageId))
+    socket.on('chat:deleted', (data: { sessionId: string; messageId?: string; message?: ServerChatMessage }) => {
+      if (!mounted) return
+      if (data.message) {
+        // Replace message with deletion notice
+        dispatch(editMessage({ id: data.message.id, text: data.message.text, isEdited: true }))
+      } else if (data.messageId) {
+        dispatch(deleteMessage(data.messageId))
+      }
     })
 
     socket.on('session:update', (data: { teamOnline?: number; energy?: number }) => {

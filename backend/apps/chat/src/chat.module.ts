@@ -7,6 +7,7 @@ import {
   BotConfigEntity,
   ChatMessageEntity,
   SessionParticipantEntity,
+  BotReflectionEntity,
 } from '@app/database';
 import { ChatController } from './chat.controller';
 import { ChatService } from './chat.service';
@@ -15,7 +16,7 @@ import { ChatService } from './chat.service';
   imports: [
     ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
     DatabaseModule,
-    TypeOrmModule.forFeature([ChatMessageEntity, SessionParticipantEntity]),
+    TypeOrmModule.forFeature([ChatMessageEntity, SessionParticipantEntity, BotReflectionEntity]),
     ClientsModule.registerAsync([
       {
         name: 'KAFKA_SERVICE',

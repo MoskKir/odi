@@ -59,6 +59,30 @@ export class EventListenerService {
     }
   }
 
+  @EventPattern(KAFKA_TOPICS.EVENTS.REFLECTION_STREAM)
+  handleReflectionStreamEvent(@Payload() data: { sessionId: string; type: string; streamId?: string; [key: string]: any }) {
+    const eventMap = {
+      start: 'reflection:stream-start',
+      chunk: 'reflection:stream-chunk',
+      end: 'reflection:stream-end',
+    };
+    const event = eventMap[data.type];
+    if (data.type !== 'chunk') {
+      this.logger.log(`[REFLECTION_STREAM] type=${data.type} streamId=${data.streamId} room=${data.sessionId}`);
+    }
+    if (event) {
+      this.gameGateway.server.to(data.sessionId).emit(event, data);
+    }
+  }
+
+  @EventPattern(KAFKA_TOPICS.EVENTS.REFLECTION)
+  handleReflectionEvent(@Payload() data: { sessionId: string; [key: string]: any }) {
+    this.logger.log(`reflection event: ${JSON.stringify(data).slice(0, 200)}`);
+    this.gameGateway.server
+      .to(data.sessionId)
+      .emit('reflection:created', data);
+  }
+
   @EventPattern(KAFKA_TOPICS.EVENTS.EMOTION)
   handleEmotionEvent(@Payload() data: { sessionId: string; [key: string]: any }) {
     this.gameGateway.server

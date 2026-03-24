@@ -1,6 +1,6 @@
 import { useRef, useEffect, useCallback, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Button } from '@blueprintjs/core'
+import { Button, Icon } from '@blueprintjs/core'
 import { useAppSelector } from '@/store'
 import { Markdown } from '@/components/Markdown'
 import { ChatAvatar } from '@/components/ChatAvatar'
@@ -58,6 +58,18 @@ export function TheatreView() {
       >
         {messages.map((msg) => {
           const isMine = currentUser?.name === msg.author
+          const isDeleted = msg.text.startsWith('\u26A0 Сообщение')
+
+          if (isDeleted) {
+            return (
+              <div key={msg.id} className="flex justify-center my-1">
+                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-odi-surface-hover/60 border border-odi-border/30">
+                  <Icon icon="trash" size={10} className="text-odi-text-muted/50" />
+                  <span className="text-[11px] text-odi-text-muted/60 italic">{msg.text.replace('\u26A0 ', '')}</span>
+                </div>
+              </div>
+            )
+          }
 
           return (
             <div

@@ -18,14 +18,27 @@ export function TerminalView() {
       <div className="border-b border-odi-border mb-3 pb-1 text-odi-text-muted">
         Введите команду или читайте лог сессии
       </div>
-      {messages.map((msg) => (
-        <div key={msg.id} className="mb-1" onContextMenu={(e) => handleContextMenu(e, msg)}>
-          <span className="text-odi-accent">[{msg.role}]</span>{' '}
-          <span className="text-odi-text-muted">{msg.author}:</span>{' '}
-          <span className="text-odi-text break-words"><Markdown>{msg.text}</Markdown></span>
-          {msg.isEdited && <span className="text-odi-text-muted text-[10px] ml-1 italic">(ред.)</span>}
-        </div>
-      ))}
+      {messages.map((msg) => {
+        const isDeleted = msg.text.startsWith('\u26A0 Сообщение')
+
+        if (isDeleted) {
+          return (
+            <div key={msg.id} className="mb-1 text-odi-text-muted/40 italic">
+              <span className="text-odi-text-muted/30">[del]</span>{' '}
+              <span>{msg.text.replace('\u26A0 ', '')}</span>
+            </div>
+          )
+        }
+
+        return (
+          <div key={msg.id} className="mb-1" onContextMenu={(e) => handleContextMenu(e, msg)}>
+            <span className="text-odi-accent">[{msg.role}]</span>{' '}
+            <span className="text-odi-text-muted">{msg.author}:</span>{' '}
+            <span className="text-odi-text break-words"><Markdown>{msg.text}</Markdown></span>
+            {msg.isEdited && <span className="text-odi-text-muted text-[10px] ml-1 italic">(ред.)</span>}
+          </div>
+        )
+      })}
       {streams.map((stream) => (
         <div key={stream.streamId} className="mb-1">
           <span className="text-odi-accent">[{stream.botConfigId}]</span>{' '}

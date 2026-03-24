@@ -6,6 +6,7 @@ import { lastValueFrom } from 'rxjs';
 import {
   ChatMessageEntity,
   SessionParticipantEntity,
+  BotReflectionEntity,
 } from '@app/database';
 import { KAFKA_TOPICS } from '@app/common';
 import { IsNull, Not } from 'typeorm';
@@ -19,6 +20,8 @@ export class ChatService implements OnModuleInit {
     private readonly messageRepo: Repository<ChatMessageEntity>,
     @InjectRepository(SessionParticipantEntity)
     private readonly participantRepo: Repository<SessionParticipantEntity>,
+    @InjectRepository(BotReflectionEntity)
+    private readonly reflectionRepo: Repository<BotReflectionEntity>,
     @Inject('KAFKA_SERVICE') private readonly kafkaClient: ClientKafka,
   ) {}
 
@@ -258,7 +261,7 @@ export class ChatService implements OnModuleInit {
   }) {
     const message = await this.messageRepo.findOne({
       where: { id: data.messageId },
-      relations: ['participant'],
+      relations: ['participant', 'participant.user', 'participant.botConfig'],
     });
 
     if (!message) {
@@ -275,20 +278,37 @@ export class ChatService implements OnModuleInit {
     }
 
     const sessionId = message.sessionId;
-    const messageId = message.id;
+    const author =
+      message.participant?.user?.name ||
+      message.participant?.botConfig?.name ||
+      'Unknown';
 
-    await this.messageRepo.remove(message);
+    // Replace message content with deletion notice
+    message.text = `⚠ Сообщение от ${author} было удалено`;
+    message.isSystem = true;
+    message.isEdited = true;
+    await this.messageRepo.save(message);
 
-    // Broadcast delete event
+    // Broadcast replacement event
     await lastValueFrom(
       this.kafkaClient.emit(KAFKA_TOPICS.EVENTS.CHAT, {
         sessionId,
         type: 'chat:deleted',
-        messageId,
+        message: {
+          id: message.id,
+          sessionId: message.sessionId,
+          participantId: message.participantId,
+          author: 'System',
+          role: 'system',
+          text: message.text,
+          isSystem: true,
+          isEdited: true,
+          createdAt: message.createdAt,
+        },
       }),
     );
 
-    return { success: true, messageId };
+    return { success: true, messageId: message.id };
   }
 
   async getHistory(sessionId: string, limit: number, offset: number) {
@@ -316,5 +336,67 @@ export class ChatService implements OnModuleInit {
     }));
 
     return { items, total };
+  }
+
+  async saveReflection(data: {
+    sessionId: string;
+    botConfigId: string;
+    prompt: string;
+    text: string;
+  }) {
+    const reflection = this.reflectionRepo.create({
+      sessionId: data.sessionId,
+      botConfigId: data.botConfigId,
+      prompt: data.prompt,
+      text: data.text,
+    });
+
+    await this.reflectionRepo.save(reflection);
+
+    // Re-fetch with relation to get bot name
+    const saved = await this.reflectionRepo.findOne({
+      where: { id: reflection.id },
+      relations: ['botConfig'],
+    });
+
+    const result = {
+      id: reflection.id,
+      sessionId: reflection.sessionId,
+      botConfigId: reflection.botConfigId,
+      botName: saved?.botConfig?.name || 'Bot',
+      prompt: reflection.prompt,
+      text: reflection.text,
+      createdAt: reflection.createdAt,
+    };
+
+    // Broadcast to clients
+    await lastValueFrom(
+      this.kafkaClient.emit(KAFKA_TOPICS.EVENTS.REFLECTION, {
+        sessionId: data.sessionId,
+        reflection: result,
+      }),
+    );
+
+    this.logger.log(`Saved reflection for bot ${data.botConfigId} in session ${data.sessionId}`);
+    return result;
+  }
+
+  async getReflections(sessionId: string) {
+    const reflections = await this.reflectionRepo.find({
+      where: { sessionId },
+      relations: ['botConfig'],
+      order: { createdAt: 'DESC' },
+      take: 50,
+    });
+
+    return reflections.map((r) => ({
+      id: r.id,
+      sessionId: r.sessionId,
+      botConfigId: r.botConfigId,
+      botName: r.botConfig?.name || 'Bot',
+      prompt: r.prompt,
+      text: r.text,
+      createdAt: r.createdAt,
+    }));
   }
 }

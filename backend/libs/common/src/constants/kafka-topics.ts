@@ -31,8 +31,13 @@ export const KAFKA_TOPICS = {
     HISTORY: 'odi.chat.history',
     RESULT: 'odi.chat.result',
   },
+  REFLECTION: {
+    SAVE: 'odi.reflection.save',
+    LIST: 'odi.reflection.list',
+  },
   AI: {
     GENERATE: 'odi.ai.generate',
+    GENERATE_REFLECTION: 'odi.ai.generate-reflection',
     TEST_CHAT: 'odi.ai.test-chat',
     ANALYZE_EMOTION: 'odi.ai.analyze-emotion',
     CHANGE_STRATEGY: 'odi.ai.change-strategy',
@@ -43,6 +48,8 @@ export const KAFKA_TOPICS = {
     SESSION: 'odi.events.session',
     CHAT: 'odi.events.chat',
     CHAT_STREAM: 'odi.events.chat-stream',
+    REFLECTION_STREAM: 'odi.events.reflection-stream',
+    REFLECTION: 'odi.events.reflection',
     EMOTION: 'odi.events.emotion',
     PHASE: 'odi.events.phase',
   },

@@ -16,3 +16,4 @@ export { ActivityLogEntity, LogType } from './activity-log.entity';
 export { SystemSettingEntity } from './system-setting.entity';
 export { BotStageContextEntity } from './bot-stage-context.entity';
 export { StageSharedContextEntity } from './stage-shared-context.entity';
+export { BotReflectionEntity } from './bot-reflection.entity';

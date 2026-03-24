@@ -26,6 +26,7 @@ export class ChatController {
     this.kafkaClient.subscribeToResponseOf(KAFKA_TOPICS.CHAT.SEND);
     this.kafkaClient.subscribeToResponseOf(KAFKA_TOPICS.CHAT.EDIT);
     this.kafkaClient.subscribeToResponseOf(KAFKA_TOPICS.CHAT.DELETE);
+    this.kafkaClient.subscribeToResponseOf(KAFKA_TOPICS.REFLECTION.LIST);
     await this.kafkaClient.connect();
   }
 
@@ -41,6 +42,15 @@ export class ChatController {
         limit: limit || 50,
         offset: offset || 0,
       }),
+    );
+  }
+
+  @Get('reflections')
+  async getReflections(
+    @Param('sessionId') sessionId: string,
+  ) {
+    return lastValueFrom(
+      this.kafkaClient.send(KAFKA_TOPICS.REFLECTION.LIST, { sessionId }),
     );
   }
 

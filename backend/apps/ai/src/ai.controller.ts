@@ -15,6 +15,12 @@ export class AiController {
     return this.aiService.generate(dto);
   }
 
+  @EventPattern(KAFKA_TOPICS.AI.GENERATE_REFLECTION)
+  async generateReflection(@Payload() dto: GenerateDto) {
+    this.logger.log(`[GENERATE_REFLECTION] received for session=${dto.sessionId}`);
+    return this.aiService.generateReflection(dto);
+  }
+
   @EventPattern(KAFKA_TOPICS.AI.TEST_CHAT)
   async testChat(
     @Payload()

@@ -368,6 +368,28 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
   }
 
+  @SubscribeMessage('reflection:request')
+  async handleReflectionRequest(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { sessionId: string; botConfigId: string; prompt: string },
+  ) {
+    const user = client.data?.user;
+    if (!user) return;
+
+    this.logger.log(`[REFLECTION] ${user.email} requesting reflection from bot ${data.botConfigId}`);
+
+    lastValueFrom(
+      this.kafkaClient.emit(KAFKA_TOPICS.AI.GENERATE_REFLECTION, {
+        sessionId: data.sessionId,
+        botConfigId: data.botConfigId,
+        trigger: data.prompt,
+      }),
+    ).catch((err) => {
+      this.logger.error(`reflection:request failed: ${err.message}`);
+      client.emit('error', { message: err.message });
+    });
+  }
+
   @SubscribeMessage('bot:speak')
   async handleBotSpeak(
     @ConnectedSocket() client: Socket,

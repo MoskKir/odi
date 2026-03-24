@@ -297,6 +297,170 @@ export class AiService implements OnModuleInit {
     return { error: errorMessage };
   }
 
+  async generateReflection(dto: GenerateDto) {
+    const streamId = `reflection:${dto.sessionId}:${dto.botConfigId}:${Date.now()}`;
+    let streamStarted = false;
+    let fullText = '';
+
+    try {
+      this.logger.log(
+        `Generating reflection for session ${dto.sessionId}, bot ${dto.botConfigId}`,
+      );
+
+      const botConfig = await this.botConfigRepo.findOne({
+        where: { id: dto.botConfigId },
+      });
+
+      if (!botConfig) {
+        this.logger.warn(`BotConfig not found: ${dto.botConfigId}`);
+        return { error: `Bot config not found: ${dto.botConfigId}` };
+      }
+
+      // Load recent messages for context
+      const recentDbMessages = await this.messageRepo.find({
+        where: { sessionId: dto.sessionId },
+        relations: ['participant', 'participant.user', 'participant.botConfig'],
+        order: { createdAt: 'DESC' },
+        take: 20,
+      });
+
+      const recentMessages = recentDbMessages.reverse().map((msg) => ({
+        role: msg.participant?.botConfigId ? 'bot' : 'user',
+        author:
+          msg.participant?.user?.name ||
+          msg.participant?.botConfig?.name ||
+          'Unknown',
+        text: msg.text,
+      }));
+
+      // Build system prompt for reflection
+      const basePrompt = botConfig.systemPrompt
+        ? this.promptBuilder.buildFromConfig(botConfig, {
+            sessionId: dto.sessionId,
+            strategyOverride: this.strategyOverrides.get(dto.botConfigId),
+          })
+        : this.promptBuilder.build({
+            botConfigId: botConfig.specialistId,
+            sessionId: dto.sessionId,
+            trigger: dto.trigger,
+            strategyOverride: this.strategyOverrides.get(dto.botConfigId),
+          });
+
+      const messages = this.contextBuilder.build({
+        systemPrompt: basePrompt + '\n\nЭто запрос на рефлексию. Ответ не будет показан в общем чате — он виден только наблюдателям в режиме "Аквариум".',
+        trigger: dto.trigger,
+        recentMessages,
+      });
+
+      // Stream via REFLECTION_STREAM events (not CHAT_STREAM)
+      await lastValueFrom(
+        this.kafkaClient.emit(KAFKA_TOPICS.EVENTS.REFLECTION_STREAM, {
+          sessionId: dto.sessionId,
+          botConfigId: dto.botConfigId,
+          streamId,
+          type: 'start',
+        }),
+      );
+      streamStarted = true;
+
+      const abortController = new AbortController();
+      this.activeStreams.set(streamId, abortController);
+      if (!this.sessionStreams.has(dto.sessionId)) {
+        this.sessionStreams.set(dto.sessionId, new Set());
+      }
+      this.sessionStreams.get(dto.sessionId)!.add(streamId);
+
+      const stream = this.openRouterService.completeStream({
+        model: botConfig.model || 'google/gemini-2.0-flash-001',
+        messages,
+        temperature: Number(botConfig.temperature) || 0.7,
+        maxTokens: botConfig.maxTokens || 4096,
+        signal: abortController.signal,
+      });
+
+      for await (const chunk of stream) {
+        fullText += chunk;
+        await lastValueFrom(
+          this.kafkaClient.emit(KAFKA_TOPICS.EVENTS.REFLECTION_STREAM, {
+            sessionId: dto.sessionId,
+            botConfigId: dto.botConfigId,
+            streamId,
+            type: 'chunk',
+            content: chunk,
+          }),
+        );
+      }
+
+      this.activeStreams.delete(streamId);
+      this.sessionStreams.get(dto.sessionId)?.delete(streamId);
+
+      await lastValueFrom(
+        this.kafkaClient.emit(KAFKA_TOPICS.EVENTS.REFLECTION_STREAM, {
+          sessionId: dto.sessionId,
+          botConfigId: dto.botConfigId,
+          streamId,
+          type: 'end',
+        }),
+      );
+
+      // Save reflection via chat service
+      if (fullText.trim()) {
+        await lastValueFrom(
+          this.kafkaClient.emit(KAFKA_TOPICS.REFLECTION.SAVE, {
+            sessionId: dto.sessionId,
+            botConfigId: dto.botConfigId,
+            prompt: dto.trigger,
+            text: fullText,
+          }),
+        );
+      }
+
+      return { text: fullText };
+    } catch (error) {
+      this.activeStreams.delete(streamId);
+      this.sessionStreams.get(dto.sessionId)?.delete(streamId);
+
+      const isAborted = error.name === 'AbortError'
+        || error.name === 'CanceledError'
+        || error.code === 'ERR_CANCELED'
+        || error.code === 'ERR_STREAM_PREMATURE_CLOSE'
+        || error.code === 'ERR_STREAM_DESTROYED';
+
+      if (isAborted) {
+        if (streamStarted) {
+          await lastValueFrom(
+            this.kafkaClient.emit(KAFKA_TOPICS.EVENTS.REFLECTION_STREAM, {
+              sessionId: dto.sessionId,
+              botConfigId: dto.botConfigId,
+              streamId,
+              type: 'end',
+              stopped: true,
+            }),
+          ).catch(() => {});
+        }
+        return { text: fullText, stopped: true };
+      }
+
+      this.logger.error(
+        `Reflection generation failed for bot ${dto.botConfigId}: ${error.message}`,
+      );
+
+      if (streamStarted) {
+        await lastValueFrom(
+          this.kafkaClient.emit(KAFKA_TOPICS.EVENTS.REFLECTION_STREAM, {
+            sessionId: dto.sessionId,
+            botConfigId: dto.botConfigId,
+            streamId,
+            type: 'end',
+            error: error.message,
+          }),
+        ).catch(() => {});
+      }
+
+      return { error: error.message };
+    }
+  }
+
   async testChat(data: {
     roomId: string;
     botId: string;

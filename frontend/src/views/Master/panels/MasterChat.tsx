@@ -1,4 +1,4 @@
-import { Card, InputGroup, Button, Tag } from '@blueprintjs/core'
+import { Card, InputGroup, Button, Tag, Icon } from '@blueprintjs/core'
 import { useState, useRef, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAppSelector, useAppDispatch } from '@/store'
@@ -125,6 +125,17 @@ export function MasterChat() {
         {filtered.map((msg) => {
           const bot = isBot(msg.role)
           const sys = isSystem(msg.role) || msg.text.startsWith('\u26A0')
+          const isDeleted = msg.text.startsWith('\u26A0 Сообщение')
+
+          if (isDeleted) {
+            return (
+              <div key={msg.id} className="flex items-center gap-1 px-2 py-0.5 text-[10px] text-odi-text-muted/50 italic">
+                <Icon icon="trash" size={9} />
+                <span>{msg.text.replace('\u26A0 ', '')}</span>
+              </div>
+            )
+          }
+
           return (
             <div
               key={msg.id}

@@ -1,5 +1,5 @@
 import { Controller } from '@nestjs/common';
-import { MessagePattern, Payload } from '@nestjs/microservices';
+import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
 import { KAFKA_TOPICS } from '@app/common';
 import { ChatService } from './chat.service';
 
@@ -51,5 +51,25 @@ export class ChatController {
     @Payload() data: { sessionId: string; limit: number; offset: number },
   ) {
     return this.chatService.getHistory(data.sessionId, data.limit, data.offset);
+  }
+
+  @EventPattern(KAFKA_TOPICS.REFLECTION.SAVE)
+  async saveReflection(
+    @Payload()
+    data: {
+      sessionId: string;
+      botConfigId: string;
+      prompt: string;
+      text: string;
+    },
+  ) {
+    return this.chatService.saveReflection(data);
+  }
+
+  @MessagePattern(KAFKA_TOPICS.REFLECTION.LIST)
+  async getReflections(
+    @Payload() data: { sessionId: string },
+  ) {
+    return this.chatService.getReflections(data.sessionId);
   }
 }

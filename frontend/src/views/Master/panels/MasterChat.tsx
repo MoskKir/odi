@@ -1,7 +1,8 @@
 import { Card, InputGroup, Button, Tag } from '@blueprintjs/core'
 import { useState, useRef, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { useAppSelector } from '@/store'
+import { useAppSelector, useAppDispatch } from '@/store'
+import { clearEditingMessage } from '@/store/appSlice'
 import { getSocket } from '@/api/socket'
 import { Markdown } from '@/components/Markdown'
 import { MessageContextMenu } from '@/components/Chat/MessageContextMenu'
@@ -19,13 +20,24 @@ export function MasterChat() {
   const streamingMessages = useAppSelector((s) => s.app.streamingMessages)
   const sessionBots = useAppSelector((s) => s.app.sessionBots)
   const socketJoined = useAppSelector((s) => s.app.socketJoined)
+  const editingMessage = useAppSelector((s) => s.app.editingMessage)
+  const dispatch = useAppDispatch()
   const [searchParams] = useSearchParams()
   const sessionId = searchParams.get('session')
 
   const [input, setInput] = useState('')
   const [filter, setFilter] = useState<Filter>('all')
   const listRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
   const { contextMenu, handleContextMenu, closeContextMenu } = useMessageContextMenu()
+
+  // Populate input when editing starts
+  useEffect(() => {
+    if (editingMessage) {
+      setInput(editingMessage.text)
+      inputRef.current?.focus()
+    }
+  }, [editingMessage])
 
   const streams = Object.values(streamingMessages)
 
@@ -39,7 +51,22 @@ export function MasterChat() {
   const handleSend = () => {
     if (!input.trim() || !socketJoined || !sessionId) return
     const socket = getSocket()
+
+    if (editingMessage) {
+      if (input.trim() !== editingMessage.text) {
+        socket?.emit('chat:edit', { sessionId, messageId: editingMessage.id, text: input.trim() })
+      }
+      dispatch(clearEditingMessage())
+      setInput('')
+      return
+    }
+
     socket?.emit('chat:send', { sessionId, text: input.trim() })
+    setInput('')
+  }
+
+  const handleCancelEdit = () => {
+    dispatch(clearEditingMessage())
     setInput('')
   }
 
@@ -47,6 +74,9 @@ export function MasterChat() {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSend()
+    }
+    if (e.key === 'Escape' && editingMessage) {
+      handleCancelEdit()
     }
   }
 
@@ -137,24 +167,29 @@ export function MasterChat() {
         })}
       </div>
 
+      {editingMessage && (
+        <div className="flex items-center gap-1 mb-1 px-1 text-[10px] text-odi-accent">
+          <span>✏️ Редактирование</span>
+          <button className="ml-auto text-odi-text-muted hover:text-odi-text" onClick={handleCancelEdit}>✕</button>
+        </div>
+      )}
       <div className="flex gap-1">
         <InputGroup
-          placeholder={socketJoined ? 'Сообщение от мастера...' : 'Не подключено'}
+          inputRef={inputRef}
+          placeholder={editingMessage ? 'Редактирование...' : socketJoined ? 'Сообщение от мастера...' : 'Не подключено'}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           small
           disabled={!socketJoined || !sessionId}
-          className="flex-1"
-          leftIcon="annotation"
+          className={`flex-1 ${editingMessage ? '[&_input]:!border-odi-accent' : ''}`}
+          leftIcon={editingMessage ? 'edit' : 'annotation'}
         />
-        <Button
-          icon="send-message"
-          intent="primary"
-          small
-          disabled={!socketJoined || !sessionId || !input.trim()}
-          onClick={handleSend}
-        />
+        {editingMessage ? (
+          <Button icon="tick" intent="success" small onClick={handleSend} disabled={!socketJoined || !sessionId || !input.trim()} />
+        ) : (
+          <Button icon="send-message" intent="primary" small disabled={!socketJoined || !sessionId || !input.trim()} onClick={handleSend} />
+        )}
       </div>
 
       {contextMenu && sessionId && (

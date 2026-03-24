@@ -119,6 +119,7 @@ interface AppState {
   socketJoined: boolean
   inviteCode: string | null
   quickAddCard: boolean
+  editingMessage: { id: string; text: string } | null
 }
 
 const initialState: AppState = {
@@ -151,6 +152,7 @@ const initialState: AppState = {
   socketJoined: false,
   inviteCode: null,
   quickAddCard: false,
+  editingMessage: null,
 }
 
 function getPersistedPrefs(state: AppState): PersistedPrefs {
@@ -309,6 +311,12 @@ export const appSlice = createSlice({
     setQuickAddCard(state, action: PayloadAction<boolean>) {
       state.quickAddCard = action.payload
     },
+    setEditingMessage(state, action: PayloadAction<{ id: string; text: string }>) {
+      state.editingMessage = action.payload
+    },
+    clearEditingMessage(state) {
+      state.editingMessage = null
+    },
     setBoardColumnWidths(state, action: PayloadAction<number[] | null>) {
       state.boardColumnWidths = action.payload
       persistToLocalStorage(getPersistedPrefs(state))
@@ -401,4 +409,6 @@ export const {
   toggleMasterHintsPanel,
   setMasterHintsPanelWidth,
   stopAllStreams,
+  setEditingMessage,
+  clearEditingMessage,
 } = appSlice.actions

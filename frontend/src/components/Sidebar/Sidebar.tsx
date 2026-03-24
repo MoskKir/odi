@@ -1,8 +1,9 @@
-import { useRef, useCallback } from 'react'
+import { useRef, useCallback, useState } from 'react'
 import { Button, ButtonGroup } from '@blueprintjs/core'
 import { useAppSelector, useAppDispatch } from '@/store'
 import { toggleLeftSidebar, setLeftSidebarWidth, setQuickAddCard, syncPreferencesToServer } from '@/store/appSlice'
 import { useViewMode } from '@/hooks/useViewMode'
+import { EmotionWheel } from '@/components/EmotionWheel'
 import type { ViewMode } from '@/types'
 
 const VIEW_MODES: { mode: ViewMode; icon: string; label: string }[] = [
@@ -23,6 +24,7 @@ export function Sidebar() {
   const dispatch = useAppDispatch()
   const { viewMode, setViewMode } = useViewMode()
   const isResizing = useRef(false)
+  const [emotionWheelOpen, setEmotionWheelOpen] = useState(false)
 
   const handleToggle = () => {
     dispatch(toggleLeftSidebar())
@@ -122,7 +124,7 @@ export function Sidebar() {
             <Button icon="pin" text={leftSidebarCollapsed ? undefined : 'На доску'} alignText="left" className="!text-odi-text-muted hover:!text-odi-text" title={leftSidebarCollapsed ? 'На доску' : undefined} onClick={() => dispatch(setQuickAddCard(true))} />
             <Button icon="link" text={leftSidebarCollapsed ? undefined : 'Связать'} alignText="left" className="!text-odi-text-muted hover:!text-odi-text" title={leftSidebarCollapsed ? 'Связать' : undefined} />
             <Button icon="lightbulb" text={leftSidebarCollapsed ? undefined : 'Анализ AI'} alignText="left" className="!text-odi-text-muted hover:!text-odi-text" title={leftSidebarCollapsed ? 'Анализ AI' : undefined} />
-            <Button icon="heart" text={leftSidebarCollapsed ? undefined : 'Атмосфера'} alignText="left" className="!text-odi-text-muted hover:!text-odi-text" title={leftSidebarCollapsed ? 'Атмосфера' : undefined} />
+            <Button icon="heart" text={leftSidebarCollapsed ? undefined : 'Атмосфера'} alignText="left" className="!text-odi-text-muted hover:!text-odi-text" title={leftSidebarCollapsed ? 'Атмосфера' : undefined} onClick={() => setEmotionWheelOpen(true)} />
           </ButtonGroup>
         </div>
       </div>
@@ -134,6 +136,8 @@ export function Sidebar() {
           className="w-1 cursor-col-resize hover:bg-odi-accent/40 active:bg-odi-accent/60 transition-colors"
         />
       )}
+
+      <EmotionWheel isOpen={emotionWheelOpen} onClose={() => setEmotionWheelOpen(false)} />
     </aside>
   )
 }

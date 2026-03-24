@@ -7,10 +7,8 @@ import { EmotionWheel } from '@/components/EmotionWheel'
 import type { ViewMode } from '@/types'
 
 const VIEW_MODES: { mode: ViewMode; icon: string; label: string }[] = [
-  { mode: 'board', icon: 'dashboard', label: 'Доска' },
+  { mode: 'board', icon: 'th-derived', label: 'Доска' },
   { mode: 'theatre', icon: 'chat', label: 'Театр' },
-  { mode: 'graph', icon: 'graph', label: 'Граф' },
-  { mode: 'hq', icon: 'shield', label: 'Штаб' },
   { mode: 'aquarium', icon: 'eye-open', label: 'Аквариум' },
   { mode: 'terminal', icon: 'console', label: 'Терминал' },
 ]
@@ -122,8 +120,6 @@ export function Sidebar() {
           )}
           <ButtonGroup vertical minimal className="gap-1 w-full">
             <Button icon="pin" text={leftSidebarCollapsed ? undefined : 'На доску'} alignText="left" className="!text-odi-text-muted hover:!text-odi-text" title={leftSidebarCollapsed ? 'На доску' : undefined} onClick={() => dispatch(setQuickAddCard(true))} />
-            <Button icon="link" text={leftSidebarCollapsed ? undefined : 'Связать'} alignText="left" className="!text-odi-text-muted hover:!text-odi-text" title={leftSidebarCollapsed ? 'Связать' : undefined} />
-            <Button icon="lightbulb" text={leftSidebarCollapsed ? undefined : 'Анализ AI'} alignText="left" className="!text-odi-text-muted hover:!text-odi-text" title={leftSidebarCollapsed ? 'Анализ AI' : undefined} />
             <Button icon="heart" text={leftSidebarCollapsed ? undefined : 'Атмосфера'} alignText="left" className="!text-odi-text-muted hover:!text-odi-text" title={leftSidebarCollapsed ? 'Атмосфера' : undefined} onClick={() => setEmotionWheelOpen(true)} />
           </ButtonGroup>
         </div>

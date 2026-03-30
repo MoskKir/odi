@@ -106,13 +106,70 @@ npm run dev              # порт 5173
 | `npm run migration:generate` | Сгенерировать миграцию из entities |
 | `npm run seed` | Заполнить базу начальными данными |
 
-### Docker
+### Docker (только инфраструктура)
 
 | Команда | Описание |
 |---------|----------|
-| `docker compose up -d` | Запуск PostgreSQL + Redis + Kafka |
-| `docker compose down` | Остановка |
-| `docker compose down -v` | Остановка + удаление данных |
+| `cd backend && docker compose up -d` | Запуск PostgreSQL + Redis + Kafka |
+| `cd backend && docker compose down` | Остановка |
+| `cd backend && docker compose down -v` | Остановка + удаление данных |
+
+## Запуск через Docker (всё приложение)
+
+Полный запуск всей платформы в Docker — без установки Node.js.
+
+### Требования
+
+- Docker >= 20.10
+- Docker Compose >= 2.0
+
+### Инструкция
+
+**1. Настроить переменные окружения:**
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+Открыть `backend/.env` и указать `OPENROUTER_API_KEY` (обязательно) и `JWT_SECRET` (рекомендуется сменить).
+
+**2. Запустить все сервисы:**
+
+```bash
+docker compose up -d --build
+```
+
+Это запустит:
+- PostgreSQL, Redis, Kafka (инфраструктура)
+- Gateway, Auth, Game, AI, Chat (бекенд-микросервисы)
+- Frontend (nginx на порту 80)
+- Миграции + seed (одноразовый контейнер)
+
+**3. Дождаться готовности:**
+
+```bash
+docker compose logs -f migrate
+```
+
+Когда увидите `All seeds completed successfully` — платформа готова.
+
+**4. Открыть приложение:**
+
+- Приложение: http://localhost
+- API: http://localhost/api
+- Вход: `admin@odi.dev` / `admin123`
+
+### Управление
+
+| Команда | Описание |
+|---------|----------|
+| `docker compose up -d --build` | Собрать и запустить всё |
+| `docker compose down` | Остановить все сервисы |
+| `docker compose down -v` | Остановить + удалить данные |
+| `docker compose logs -f gateway` | Логи gateway |
+| `docker compose logs -f` | Логи всех сервисов |
+| `docker compose restart gateway` | Перезапустить сервис |
+| `docker compose ps` | Статус контейнеров |
 
 ## Переменные окружения (backend/.env)
 

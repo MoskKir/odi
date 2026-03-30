@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Button, Collapse, Icon, type IconName } from '@blueprintjs/core'
+import { Collapse, Icon, type IconName } from '@blueprintjs/core'
 
 interface HintSection {
   key: string

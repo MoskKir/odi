@@ -1,4 +1,4 @@
-import { useAppSelector, useAppDispatch } from '@/store'
+import { useAppSelector } from '@/store'
 import { useGameSocket } from '@/hooks/useGameSocket'
 import { Header } from '@/components/Header/Header'
 import { Sidebar } from '@/components/Sidebar/Sidebar'

@@ -153,7 +153,7 @@ export function SessionsPage() {
             const isOpen = expandedId === session.id
             const humanCount = session.participants?.filter((p) => p.userId).length ?? 0
             const botCount = session.participants?.filter((p) => p.botConfigId).length ?? 0
-            const onlineCount = session.participants?.filter((p) => p.isOnline).length ?? 0
+
 
             return (
               <Card key={session.id} className="!bg-odi-surface !border-odi-border !shadow-none !p-0">

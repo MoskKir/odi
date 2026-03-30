@@ -32,10 +32,6 @@ function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-function fmtDateTime(iso: string) {
-  return new Date(iso).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
-}
-
 function fmtDuration(min: number) {
   if (min > 9000) return '\u221E'
   if (min >= 60) return `${Math.floor(min / 60)}ч ${min % 60}м`

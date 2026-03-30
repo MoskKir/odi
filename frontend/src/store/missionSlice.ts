@@ -8,7 +8,7 @@ import type {
   Specialist,
 } from '@/types'
 import { fetchScenarios, type ScenarioResponse } from '@/api/scenarios'
-import { fetchGame, type GameSessionResponse } from '@/api/games'
+import { fetchGame } from '@/api/games'
 
 export const SPECIALISTS: Specialist[] = [
   { id: 'moderator', name: 'Модератор', description: 'Ведущий', stars: 5, tag: 'популярный' },

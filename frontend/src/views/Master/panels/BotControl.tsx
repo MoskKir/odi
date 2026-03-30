@@ -100,7 +100,6 @@ export function BotControl() {
             return (
               <BotCard
                 key={bot.id}
-                participantId={bot.id}
                 name={name}
                 specialistId={bot.botSpecialistId || ''}
                 contributions={bot.contributionsCount}
@@ -181,7 +180,6 @@ export function BotControl() {
 }
 
 function BotCard({
-  participantId,
   name,
   specialistId,
   contributions,
@@ -192,7 +190,6 @@ function BotCard({
   onChangeStrategy,
   onSpeak,
 }: {
-  participantId: string
   name: string
   specialistId: string
   contributions: number

@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useCallback, useRef } from 'react'
+import { useMemo, useState, useEffect, useCallback } from 'react'
 import { Card, Tag, Icon, NonIdealState, Button, Tabs, Tab, TextArea, ButtonGroup } from '@blueprintjs/core'
 import { useSearchParams } from 'react-router-dom'
 import { useAppSelector, useAppDispatch } from '@/store'
@@ -345,7 +345,7 @@ export function AquariumView() {
   const isAdmin = user?.role === 'admin'
 
   // Transition state
-  const [transitioning, setTransitioning] = useState(false)
+  const [, setTransitioning] = useState(false)
   const [visible, setVisible] = useState(true)
 
   const chatStreams = Object.values(streamingMessages)

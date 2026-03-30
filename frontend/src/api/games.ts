@@ -105,7 +105,7 @@ export async function joinGame(id: string): Promise<void> {
   if (!res.ok) throw new Error('Failed to join game')
 }
 
-export async function fetchBoardCards(sessionId: string): Promise<{ id: string; column: string; text: string; votes: number; author: string }[]> {
+export async function fetchBoardCards(sessionId: string): Promise<{ id: string; column: string; text: string; votes: number; author: string; orderIndex: number }[]> {
   const res = await fetch(`${API_BASE}/${sessionId}/cards`, {
     headers: getAuthHeaders(),
   })

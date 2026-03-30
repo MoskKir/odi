@@ -390,8 +390,6 @@ export function EmotionWheel({ isOpen, onClose }: Props) {
     return result;
   }, []);
 
-  const activeLabel = selected || currentEmotion;
-
   return (
     <Dialog
       isOpen={isOpen}

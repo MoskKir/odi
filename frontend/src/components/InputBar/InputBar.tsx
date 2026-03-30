@@ -2,7 +2,7 @@ import { useRef, useCallback, useState, useEffect } from 'react'
 import { Button, ButtonGroup, Tag } from '@blueprintjs/core'
 import { useSearchParams } from 'react-router-dom'
 import { useAppSelector, useAppDispatch } from '@/store'
-import { setInputBarHeight, syncPreferencesToServer, stopAllStreams, clearEditingMessage } from '@/store/appSlice'
+import { setInputBarHeight, syncPreferencesToServer, stopAllStreams, clearEditingMessage, clearPendingMention } from '@/store/appSlice'
 import { getSocket } from '@/api/socket'
 
 const MIN_HEIGHT = 36
@@ -21,6 +21,7 @@ export function InputBar() {
   const sessionBots = useAppSelector((s) => s.app.sessionBots)
   const streamingMessages = useAppSelector((s) => s.app.streamingMessages)
   const editingMessage = useAppSelector((s) => s.app.editingMessage)
+  const pendingMention = useAppSelector((s) => s.app.pendingMention)
   const isStreaming = Object.keys(streamingMessages).length > 0
   const canSend = socketJoined && !!sessionId
 
@@ -31,6 +32,15 @@ export function InputBar() {
       textareaRef.current?.focus()
     }
   }, [editingMessage])
+
+  // When a bot is clicked in the right panel, append @mention
+  useEffect(() => {
+    if (pendingMention) {
+      setText((t) => `${t}@${pendingMention} `)
+      dispatch(clearPendingMention())
+      textareaRef.current?.focus()
+    }
+  }, [pendingMention, dispatch])
 
   const handleSend = () => {
     if (!text.trim() || !canSend) return

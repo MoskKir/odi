@@ -1,7 +1,9 @@
-import { useAppSelector } from '@/store'
+import { useAppSelector, useAppDispatch } from '@/store'
+import { setPendingMention } from '@/store/appSlice'
 
 export function BotsList() {
   const bots = useAppSelector((s) => s.app.sessionBots)
+  const dispatch = useAppDispatch()
 
   if (bots.length === 0) {
     return (
@@ -14,7 +16,9 @@ export function BotsList() {
       {bots.map((bot) => (
         <div
           key={bot.id}
-          className="flex items-center gap-2.5 px-2.5 py-2 rounded-md bg-odi-bg/50 border border-odi-border/50"
+          className="flex items-center gap-2.5 px-2.5 py-2 rounded-md bg-odi-bg/50 border border-odi-border/50 cursor-pointer hover:bg-odi-surface-hover hover:border-odi-accent/40 transition-colors"
+          onClick={() => dispatch(setPendingMention(bot.name))}
+          title={`Обратиться к ${bot.name}`}
         >
           <div className="w-7 h-7 rounded-full bg-odi-accent/15 flex items-center justify-center shrink-0">
             <span className="text-xs font-bold text-odi-accent">AI</span>

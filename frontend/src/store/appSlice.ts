@@ -125,6 +125,7 @@ interface AppState {
   inviteCode: string | null
   quickAddCard: boolean
   editingMessage: { id: string; text: string } | null
+  pendingMention: string | null
   aquariumFocusedBotId: string | null
   aquariumBotTabs: Record<string, string>
   activeViewMode: string | null
@@ -162,6 +163,7 @@ const initialState: AppState = {
   inviteCode: null,
   quickAddCard: false,
   editingMessage: null,
+  pendingMention: null,
   aquariumFocusedBotId: saved.aquariumFocusedBotId ?? null,
   aquariumBotTabs: saved.aquariumBotTabs ?? {},
   activeViewMode: saved.activeViewMode ?? null,
@@ -334,6 +336,12 @@ export const appSlice = createSlice({
     clearEditingMessage(state) {
       state.editingMessage = null
     },
+    setPendingMention(state, action: PayloadAction<string>) {
+      state.pendingMention = action.payload
+    },
+    clearPendingMention(state) {
+      state.pendingMention = null
+    },
     setAquariumFocusedBotId(state, action: PayloadAction<string | null>) {
       state.aquariumFocusedBotId = action.payload
       persistToLocalStorage(getPersistedPrefs(state))
@@ -444,6 +452,8 @@ export const {
   stopAllStreams,
   setEditingMessage,
   clearEditingMessage,
+  setPendingMention,
+  clearPendingMention,
   setAquariumFocusedBotId,
   setAquariumBotTab,
   setActiveViewMode,

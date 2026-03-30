@@ -7,7 +7,7 @@ interface SettingSeed {
 
 const settings: SettingSeed[] = [
   { key: 'platform_name', value: 'ODI Platform' },
-  { key: 'max_players_per_session', value: 10 },
+  { key: 'max_players_per_session', value: 0 },
   { key: 'default_model', value: 'anthropic/claude-sonnet-4-20250514' },
   { key: 'default_language', value: 'ru' },
   {

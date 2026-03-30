@@ -3,7 +3,6 @@ import { useAppSelector, useAppDispatch } from '@/store'
 import { removeFromSlot, setCrewSize, SPECIALISTS } from '@/store/missionSlice'
 
 const MIN_SLOTS = 1
-const MAX_SLOTS = 7
 
 export function CrewBuilder() {
   const { crewSlots, crewSize } = useAppSelector((s) => s.mission)
@@ -32,7 +31,6 @@ export function CrewBuilder() {
             icon="plus"
             minimal
             small
-            disabled={crewSize >= MAX_SLOTS}
             onClick={() => dispatch(setCrewSize(crewSize + 1))}
           />
         </div>

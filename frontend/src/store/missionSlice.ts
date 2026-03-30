@@ -36,7 +36,6 @@ export const loadSession = createAsyncThunk(
 )
 
 const MIN_SLOTS = 1
-const MAX_SLOTS = 7
 
 interface MissionState {
   scenarios: ScenarioResponse[]
@@ -75,7 +74,7 @@ export const missionSlice = createSlice({
       state.selectedScenario = action.payload
     },
     setCrewSize(state, action: PayloadAction<number>) {
-      const size = Math.max(MIN_SLOTS, Math.min(MAX_SLOTS, action.payload))
+      const size = Math.max(MIN_SLOTS, action.payload)
       if (size > state.crewSize) {
         while (state.crewSlots.length < size) state.crewSlots.push(null)
       } else if (size < state.crewSize) {

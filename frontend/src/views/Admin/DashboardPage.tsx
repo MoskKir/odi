@@ -1,95 +1,101 @@
-import { Card, Tag, ProgressBar } from '@blueprintjs/core'
+import { useState, useEffect } from 'react'
+import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Spinner } from '@/components/ui/spinner'
+import { fetchAdminSessions, type AdminSessionResponse } from '@/api/admin-sessions'
 
-const STATS = [
-  { label: 'Пользователи', value: '1 247', change: '+12%', icon: '\u{1F465}', intent: 'primary' as const },
-  { label: 'Активные сессии', value: '23', change: '+3', icon: '\u{1F3AE}', intent: 'success' as const },
-  { label: 'AI-боты', value: '8', change: '', icon: '\u{1F916}', intent: 'warning' as const },
-  { label: 'Сценариев', value: '15', change: '+2 новых', icon: '\u{1F4CB}', intent: 'primary' as const },
-]
+const STATUS_MAP: Record<string, { label: string; variant: 'success' | 'warning' | 'default' | 'outline' }> = {
+  active: { label: 'Активна', variant: 'success' },
+  paused: { label: 'Пауза', variant: 'warning' },
+  completed: { label: 'Завершена', variant: 'default' },
+  draft: { label: 'Черновик', variant: 'outline' },
+}
 
-const RECENT_SESSIONS = [
-  { title: 'Стратегия развития 2026', user: 'Анна К.', status: 'active', players: 4 },
-  { title: 'Редизайн продукта', user: 'Борис М.', status: 'active', players: 3 },
-  { title: 'Интеграция команды', user: 'Елена В.', status: 'paused', players: 6 },
-  { title: 'Хакатон AI', user: 'Дмитрий С.', status: 'completed', players: 5 },
-]
-
-const SYSTEM_HEALTH = [
-  { label: 'CPU', value: 34, intent: 'success' as const },
-  { label: 'RAM', value: 62, intent: 'warning' as const },
-  { label: 'Диск', value: 45, intent: 'success' as const },
-  { label: 'API latency', value: 12, intent: 'success' as const },
-]
-
-const STATUS_MAP: Record<string, { label: string; intent: 'success' | 'warning' | 'primary' }> = {
-  active: { label: 'Активна', intent: 'success' },
-  paused: { label: 'Пауза', intent: 'warning' },
-  completed: { label: 'Завершена', intent: 'primary' },
+function formatDate(dateStr: string) {
+  const d = new Date(dateStr)
+  return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
 }
 
 export function DashboardPage() {
+  const [sessions, setSessions] = useState<AdminSessionResponse[]>([])
+  const [total, setTotal] = useState(0)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchAdminSessions({ limit: 10 })
+      .then((res) => {
+        setSessions(res.items)
+        setTotal(res.total)
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
+
+  const activeCount = sessions.filter((s) => s.status === 'active').length
+  const pausedCount = sessions.filter((s) => s.status === 'paused').length
+  const completedCount = sessions.filter((s) => s.status === 'completed').length
+
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-bold text-odi-text">Дашборд</h2>
+      <h2 className="text-xl font-bold text-foreground">Дашборд</h2>
 
       {/* Stats cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {STATS.map((stat) => (
-          <Card key={stat.label} className="!bg-odi-surface !border-odi-border !shadow-none">
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="text-xs text-odi-text-muted uppercase tracking-wider">{stat.label}</div>
-                <div className="text-2xl font-bold text-odi-text mt-1">{stat.value}</div>
-                {stat.change && (
-                  <Tag minimal intent={stat.intent} className="text-[10px] mt-1">{stat.change}</Tag>
-                )}
-              </div>
-              <span className="text-2xl">{stat.icon}</span>
-            </div>
-          </Card>
-        ))}
+        <Card className="bg-card border-border shadow-none p-5">
+          <div className="text-xs text-muted-foreground uppercase tracking-wider">Всего сессий</div>
+          <div className="text-2xl font-bold text-foreground mt-1">{total}</div>
+        </Card>
+        <Card className="bg-card border-border shadow-none p-5">
+          <div className="text-xs text-muted-foreground uppercase tracking-wider">Активные</div>
+          <div className="text-2xl font-bold text-foreground mt-1">{activeCount}</div>
+        </Card>
+        <Card className="bg-card border-border shadow-none p-5">
+          <div className="text-xs text-muted-foreground uppercase tracking-wider">На паузе</div>
+          <div className="text-2xl font-bold text-foreground mt-1">{pausedCount}</div>
+        </Card>
+        <Card className="bg-card border-border shadow-none p-5">
+          <div className="text-xs text-muted-foreground uppercase tracking-wider">Завершённые</div>
+          <div className="text-2xl font-bold text-foreground mt-1">{completedCount}</div>
+        </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent sessions */}
-        <Card className="!bg-odi-surface !border-odi-border !shadow-none">
-          <h3 className="text-sm font-bold text-odi-text uppercase tracking-wider mb-3">
-            Последние сессии
-          </h3>
-          <div className="space-y-2">
-            {RECENT_SESSIONS.map((s, i) => {
-              const cfg = STATUS_MAP[s.status]
+      {/* Recent sessions */}
+      <Card className="bg-card border-border shadow-none p-5">
+        <h3 className="text-sm font-bold text-foreground uppercase tracking-wider mb-3">
+          Последние сессии
+        </h3>
+
+        {loading ? (
+          <div className="flex justify-center py-8">
+            <Spinner size="md" />
+          </div>
+        ) : sessions.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-4">Сессий пока нет</p>
+        ) : (
+          <div className="space-y-1">
+            {sessions.map((s) => {
+              const cfg = STATUS_MAP[s.status] ?? STATUS_MAP.draft
+              const humanCount = s.participants?.filter((p) => p.user).length ?? 0
+              const botCount = s.participants?.filter((p) => p.botConfig).length ?? 0
+
               return (
-                <div key={i} className="flex items-center justify-between p-2 rounded bg-odi-surface-hover">
-                  <div>
-                    <div className="text-sm text-odi-text font-medium">{s.title}</div>
-                    <div className="text-xs text-odi-text-muted">{s.user} &middot; {s.players} игроков</div>
+                <div key={s.id} className="flex items-center justify-between p-2.5 rounded-md hover:bg-muted transition-colors">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm text-foreground font-medium truncate">{s.title}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      {s.host?.name ?? 'Неизвестный'}{' '}
+                      &middot; {humanCount} чел. {botCount > 0 && `+ ${botCount} бот`}{' '}
+                      &middot; {formatDate(s.createdAt)}
+                      {s.scenario && <> &middot; {s.scenario.icon} {s.scenario.title}</>}
+                    </div>
                   </div>
-                  <Tag minimal intent={cfg.intent} round className="text-[10px]">{cfg.label}</Tag>
+                  <Badge variant={cfg.variant} className="text-[10px] ml-3 shrink-0">{cfg.label}</Badge>
                 </div>
               )
             })}
           </div>
-        </Card>
-
-        {/* System health */}
-        <Card className="!bg-odi-surface !border-odi-border !shadow-none">
-          <h3 className="text-sm font-bold text-odi-text uppercase tracking-wider mb-3">
-            Состояние системы
-          </h3>
-          <div className="space-y-4">
-            {SYSTEM_HEALTH.map((item) => (
-              <div key={item.label}>
-                <div className="flex justify-between text-xs text-odi-text-muted mb-1">
-                  <span>{item.label}</span>
-                  <span>{item.value}%</span>
-                </div>
-                <ProgressBar value={item.value / 100} intent={item.intent} stripes={false} animate={false} />
-              </div>
-            ))}
-          </div>
-        </Card>
-      </div>
+        )}
+      </Card>
     </div>
   )
 }

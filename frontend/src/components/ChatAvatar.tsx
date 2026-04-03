@@ -1,4 +1,4 @@
-import { Icon, type IconName } from '@blueprintjs/core'
+import { Shield, Eye, Sun, Heart, Zap, Bookmark, GraduationCap, BarChart3, type LucideIcon } from 'lucide-react'
 
 const AVATAR_COLORS = [
   'bg-blue-600',
@@ -15,15 +15,15 @@ const AVATAR_COLORS = [
   'bg-fuchsia-600',
 ] as const
 
-const ROLE_STYLES: Record<string, { color: string; icon: IconName }> = {
-  moderator:   { color: 'bg-blue-600',   icon: 'shield' },
-  critic:      { color: 'bg-red-600',    icon: 'eye-open' },
-  visionary:   { color: 'bg-purple-600', icon: 'lightbulb' },
-  analyst:     { color: 'bg-cyan-600',   icon: 'chart' },
-  peacemaker:  { color: 'bg-emerald-600', icon: 'heart' },
-  provocateur: { color: 'bg-orange-600', icon: 'flash' },
-  keeper:      { color: 'bg-teal-600',   icon: 'bookmark' },
-  expert:      { color: 'bg-indigo-600', icon: 'learning' },
+const ROLE_STYLES: Record<string, { color: string; icon: LucideIcon }> = {
+  moderator:   { color: 'bg-blue-600',    icon: Shield },
+  critic:      { color: 'bg-red-600',     icon: Eye },
+  visionary:   { color: 'bg-purple-600',  icon: Sun },
+  analyst:     { color: 'bg-cyan-600',    icon: BarChart3 },
+  peacemaker:  { color: 'bg-emerald-600', icon: Heart },
+  provocateur: { color: 'bg-orange-600',  icon: Zap },
+  keeper:      { color: 'bg-teal-600',    icon: Bookmark },
+  expert:      { color: 'bg-indigo-600',  icon: GraduationCap },
 }
 
 function hashCode(str: string): number {
@@ -64,11 +64,12 @@ export function ChatAvatar({ name, role, isMine, size = 'md' }: ChatAvatarProps)
   let content: React.ReactNode
 
   if (isMine) {
-    bgColor = 'bg-odi-accent'
+    bgColor = 'bg-muted-foreground'
     content = getInitials(name)
   } else if (roleStyle) {
     bgColor = roleStyle.color
-    content = <Icon icon={roleStyle.icon} size={iconSize} className="text-white" />
+    const IconComp = roleStyle.icon
+    content = <IconComp size={iconSize} className="text-white" />
   } else {
     bgColor = getColorByName(name)
     content = getInitials(name)

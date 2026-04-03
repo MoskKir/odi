@@ -1,23 +1,22 @@
-import { OverlayToaster, Position } from '@blueprintjs/core'
+import { toast } from 'sonner'
 
-const toaster = OverlayToaster.createAsync({
-  position: Position.BOTTOM_RIGHT,
-  maxToasts: 3,
-})
-
-export async function showToast(message: string, intent: 'success' | 'danger' | 'warning' | 'primary' = 'primary') {
-  const t = await toaster
-  t.show({ message, intent, timeout: intent === 'danger' ? 5000 : 3000 })
+export function showToast(message: string, intent: 'success' | 'danger' | 'warning' | 'primary' = 'primary') {
+  switch (intent) {
+    case 'success': toast.success(message); break
+    case 'danger': toast.error(message, { duration: 5000 }); break
+    case 'warning': toast.warning(message); break
+    default: toast(message); break
+  }
 }
 
 export function success(message: string) {
-  showToast(message, 'success')
+  toast.success(message)
 }
 
 export function error(message: string) {
-  showToast(message, 'danger')
+  toast.error(message, { duration: 5000 })
 }
 
 export function warning(message: string) {
-  showToast(message, 'warning')
+  toast.warning(message)
 }

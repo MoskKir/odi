@@ -14,8 +14,8 @@ export function TerminalView() {
 
   return (
     <div className="p-4 h-full overflow-y-auto font-mono text-sm">
-      <div className="text-odi-success mb-2">ODI Terminal v0.1 — Режим фокуса</div>
-      <div className="border-b border-odi-border mb-3 pb-1 text-odi-text-muted">
+      <div className="text-success mb-2">ODI Terminal v0.1 — Режим фокуса</div>
+      <div className="border-b border-border mb-3 pb-1 text-muted-foreground">
         Введите команду или читайте лог сессии
       </div>
       {messages.map((msg) => {
@@ -23,8 +23,8 @@ export function TerminalView() {
 
         if (isDeleted) {
           return (
-            <div key={msg.id} className="mb-1 text-odi-text-muted/40 italic">
-              <span className="text-odi-text-muted/30">[del]</span>{' '}
+            <div key={msg.id} className="mb-1 text-muted-foreground/40 italic">
+              <span className="text-muted-foreground/30">[del]</span>{' '}
               <span>{msg.text.replace('\u26A0 ', '')}</span>
             </div>
           )
@@ -32,24 +32,24 @@ export function TerminalView() {
 
         return (
           <div key={msg.id} className="mb-1" onContextMenu={(e) => handleContextMenu(e, msg)}>
-            <span className="text-odi-accent">[{msg.role}]</span>{' '}
-            <span className="text-odi-text-muted">{msg.author}:</span>{' '}
-            <span className="text-odi-text break-words"><Markdown>{msg.text}</Markdown></span>
-            {msg.isEdited && <span className="text-odi-text-muted text-[10px] ml-1 italic">(ред.)</span>}
+            <span className="text-primary">[{msg.role}]</span>{' '}
+            <span className="text-muted-foreground">{msg.author}:</span>{' '}
+            <span className="text-foreground break-words"><Markdown>{msg.text}</Markdown></span>
+            {msg.isEdited && <span className="text-muted-foreground text-[10px] ml-1 italic">(ред.)</span>}
           </div>
         )
       })}
       {streams.map((stream) => (
         <div key={stream.streamId} className="mb-1">
-          <span className="text-odi-accent">[{stream.botConfigId}]</span>{' '}
-          <span className="text-odi-text-muted">bot:</span>{' '}
-          <span className="text-odi-text break-words">
+          <span className="text-primary">[{stream.botConfigId}]</span>{' '}
+          <span className="text-muted-foreground">bot:</span>{' '}
+          <span className="text-foreground break-words">
             <Markdown>{stream.text}</Markdown>
             <span className="animate-pulse">▌</span>
           </span>
         </div>
       ))}
-      <div className="mt-3 text-odi-success">
+      <div className="mt-3 text-success">
         {'>'} <span className="animate-pulse">_</span>
       </div>
 

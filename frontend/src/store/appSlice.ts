@@ -112,6 +112,7 @@ interface AppState {
   cards: BoardCard[]
   sessionBots: SessionBot[]
   sessionParticipants: SessionParticipant[]
+  sessionBoardColumns: { id: string; title: string }[] | null
   rightPanelCollapsed: boolean
   rightPanelWidth: number
   rightPanelSections: RightPanelSections
@@ -150,6 +151,7 @@ const initialState: AppState = {
   cards: [],
   sessionBots: [],
   sessionParticipants: [],
+  sessionBoardColumns: null,
   rightPanelCollapsed: saved.rightPanelCollapsed ?? false,
   rightPanelWidth: saved.rightPanelWidth ?? 256,
   rightPanelSections: saved.rightPanelSections ?? { scenario: true, emotion: true, meta: true, bots: true, chat: true },
@@ -321,6 +323,9 @@ export const appSlice = createSlice({
     setSessionParticipants(state, action: PayloadAction<SessionParticipant[]>) {
       state.sessionParticipants = action.payload
     },
+    setSessionBoardColumns(state, action: PayloadAction<{ id: string; title: string }[] | null>) {
+      state.sessionBoardColumns = action.payload
+    },
     setSocketJoined(state, action: PayloadAction<boolean>) {
       state.socketJoined = action.payload
     },
@@ -438,6 +443,7 @@ export const {
   setScenarioInfo,
   setSessionBots,
   setSessionParticipants,
+  setSessionBoardColumns,
   setInviteCode,
   setQuickAddCard,
   setBoardColumnWidths,

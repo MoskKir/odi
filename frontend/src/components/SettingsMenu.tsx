@@ -1,31 +1,48 @@
-import { Button, Popover, Menu, MenuItem, MenuDivider, Switch, Tag } from '@blueprintjs/core'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import {
+  Settings, LogOut, Zap, Moon, Minus, Plus, Home, List, Rocket,
+  Crown, Shield, LogIn, UserPlus, LayoutDashboard, MessageSquare,
+  GitGraph, Eye, Terminal,
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from '@/components/ui/dropdown-menu'
 import { useAppSelector, useAppDispatch } from '@/store'
 import { setTheme, setFontSize, toggleDevMode } from '@/store/appSlice'
 import { logout } from '@/store/authSlice'
 import type { ViewMode } from '@/types'
+import type { LucideIcon } from 'lucide-react'
 
 const MIN_FONT = 12
 const MAX_FONT = 24
 const STEP = 1
 
-const PAGES = [
-  { path: '/', label: 'Landing', icon: 'home' as const },
-  { path: '/dashboard', label: 'Game List', icon: 'list' as const },
-  { path: '/mission', label: 'Mission Control', icon: 'rocket-slant' as const },
-  { path: '/master', label: 'Game Master', icon: 'crown' as const },
-  { path: '/admin', label: 'Admin Panel', icon: 'shield' as const },
-  { path: '/login', label: 'Login', icon: 'log-in' as const },
-  { path: '/register', label: 'Register', icon: 'new-person' as const },
+const PAGES: { path: string; label: string; icon: LucideIcon }[] = [
+  { path: '/', label: 'Landing', icon: Home },
+  { path: '/dashboard', label: 'Game List', icon: List },
+  { path: '/mission', label: 'Mission Control', icon: Rocket },
+  { path: '/master', label: 'Game Master', icon: Crown },
+  { path: '/admin', label: 'Admin Panel', icon: Shield },
+  { path: '/login', label: 'Login', icon: LogIn },
+  { path: '/register', label: 'Register', icon: UserPlus },
 ]
 
-const VIEW_MODES: { mode: ViewMode; icon: string; label: string }[] = [
-  { mode: 'board', icon: 'dashboard', label: 'Board' },
-  { mode: 'theatre', icon: 'chat', label: 'Theatre' },
-  { mode: 'graph', icon: 'graph', label: 'Graph' },
-  { mode: 'hq', icon: 'shield', label: 'HQ' },
-  { mode: 'aquarium', icon: 'eye-open', label: 'Aquarium' },
-  { mode: 'terminal', icon: 'console', label: 'Terminal' },
+const VIEW_MODES: { mode: ViewMode; icon: LucideIcon; label: string }[] = [
+  { mode: 'board', icon: LayoutDashboard, label: 'Board' },
+  { mode: 'theatre', icon: MessageSquare, label: 'Theatre' },
+  { mode: 'graph', icon: GitGraph, label: 'Graph' },
+  { mode: 'hq', icon: Shield, label: 'HQ' },
+  { mode: 'aquarium', icon: Eye, label: 'Aquarium' },
+  { mode: 'terminal', icon: Terminal, label: 'Terminal' },
 ]
 
 export function SettingsMenu() {
@@ -40,108 +57,130 @@ export function SettingsMenu() {
     ? location.pathname.split('/')[2]
     : null
 
-  const content = (
-    <Menu className="!bg-odi-surface !text-odi-text">
-      {isAuthenticated && user && (
-        <>
-          <MenuDivider title="Аккаунт" />
-          <li className="px-3 py-1.5">
-            <div className="text-sm text-odi-text font-medium">{user.name}</div>
-            <div className="text-xs text-odi-text-muted">{user.email}</div>
-          </li>
-          <MenuItem
-            icon="log-out"
-            text="Выйти"
-            intent="danger"
-            onClick={() => {
-              dispatch(logout())
-              navigate('/login')
-            }}
-          />
-        </>
-      )}
-      <MenuDivider title="Тема" />
-      <MenuItem
-        icon="flash"
-        text="Светлая"
-        active={theme === 'light'}
-        onClick={() => dispatch(setTheme('light'))}
-      />
-      <MenuItem
-        icon="moon"
-        text="Тёмная"
-        active={theme === 'dark'}
-        onClick={() => dispatch(setTheme('dark'))}
-      />
-      <MenuDivider title="Размер шрифта" />
-      <li className="px-2 py-1.5">
-        <div className="flex items-center justify-between gap-3">
-          <Button
-            icon="minus"
-            minimal
-            small
-            disabled={fontSize <= MIN_FONT}
-            onClick={() => dispatch(setFontSize(Math.max(MIN_FONT, fontSize - STEP)))}
-          />
-          <span className="text-sm font-mono text-odi-text min-w-[40px] text-center">
-            {fontSize}px
-          </span>
-          <Button
-            icon="plus"
-            minimal
-            small
-            disabled={fontSize >= MAX_FONT}
-            onClick={() => dispatch(setFontSize(Math.min(MAX_FONT, fontSize + STEP)))}
-          />
-        </div>
-      </li>
-      <MenuDivider title="Разработчик" />
-      <li className="px-3 py-1.5">
-        <Switch
-          checked={devMode}
-          label="Режим разработчика"
-          onChange={() => dispatch(toggleDevMode())}
-          className="!mb-0 !text-sm"
-        />
-      </li>
-      {devMode && (
-        <>
-          <MenuDivider title="Навигация" />
-          <li className="px-3 py-1">
-            <Tag intent="warning" minimal className="text-[10px]">
-              {location.pathname}
-            </Tag>
-          </li>
-          {PAGES.map((page) => (
-            <MenuItem
-              key={page.path}
-              icon={page.icon}
-              text={page.label}
-              active={location.pathname === page.path}
-              onClick={() => navigate(page.path)}
-            />
-          ))}
-          <MenuDivider title="Game Views" />
-          {VIEW_MODES.map(({ mode, icon, label }) => (
-            <MenuItem
-              key={mode}
-              icon={icon as any}
-              text={label}
-              active={currentViewMode === mode}
-              onClick={() => {
-                const qs = searchParams.toString()
-                navigate(`/game/${mode}${qs ? `?${qs}` : ''}`)
-              }}
-            />
-          ))}
-        </>
-      )}
-    </Menu>
-  )
-
   return (
-    <Popover content={content} placement="bottom-end">
-      <Button icon="cog" minimal className="!text-odi-text-muted" />
-    </Popover>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="text-muted-foreground">
+          <Settings className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        {isAuthenticated && user && (
+          <>
+            <DropdownMenuLabel>Аккаунт</DropdownMenuLabel>
+            <div className="px-2 py-1.5">
+              <div className="text-sm text-foreground font-medium">{user.name}</div>
+              <div className="text-xs text-muted-foreground">{user.email}</div>
+            </div>
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              onClick={() => {
+                dispatch(logout())
+                navigate('/login')
+              }}
+            >
+              <LogOut className="h-4 w-4" />
+              Выйти
+            </DropdownMenuItem>
+          </>
+        )}
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel>Тема</DropdownMenuLabel>
+        <DropdownMenuItem
+          onClick={() => dispatch(setTheme('light'))}
+          className={theme === 'light' ? 'bg-muted' : ''}
+        >
+          <Zap className="h-4 w-4" />
+          Светлая
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => dispatch(setTheme('dark'))}
+          className={theme === 'dark' ? 'bg-muted' : ''}
+        >
+          <Moon className="h-4 w-4" />
+          Тёмная
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel>Размер шрифта</DropdownMenuLabel>
+        <div className="px-2 py-1.5">
+          <div className="flex items-center justify-between gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              disabled={fontSize <= MIN_FONT}
+              onClick={() => dispatch(setFontSize(Math.max(MIN_FONT, fontSize - STEP)))}
+            >
+              <Minus className="h-3.5 w-3.5" />
+            </Button>
+            <span className="text-sm font-mono text-foreground min-w-[40px] text-center">
+              {fontSize}px
+            </span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              disabled={fontSize >= MAX_FONT}
+              onClick={() => dispatch(setFontSize(Math.min(MAX_FONT, fontSize + STEP)))}
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel>Разработчик</DropdownMenuLabel>
+        <div className="px-3 py-1.5">
+          <div className="flex items-center gap-2">
+            <Switch
+              checked={devMode}
+              onCheckedChange={() => dispatch(toggleDevMode())}
+              id="dev-mode"
+            />
+            <Label htmlFor="dev-mode" className="text-sm cursor-pointer">
+              Режим разработчика
+            </Label>
+          </div>
+        </div>
+        {devMode && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Навигация</DropdownMenuLabel>
+            <div className="px-3 py-1">
+              <Badge variant="warning" className="text-[10px]">
+                {location.pathname}
+              </Badge>
+            </div>
+            {PAGES.map((page) => {
+              const PageIcon = page.icon
+              return (
+                <DropdownMenuItem
+                  key={page.path}
+                  onClick={() => navigate(page.path)}
+                  className={location.pathname === page.path ? 'bg-muted' : ''}
+                >
+                  <PageIcon className="h-4 w-4" />
+                  {page.label}
+                </DropdownMenuItem>
+              )
+            })}
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Game Views</DropdownMenuLabel>
+            {VIEW_MODES.map(({ mode, icon: ModeIcon, label }) => (
+              <DropdownMenuItem
+                key={mode}
+                onClick={() => {
+                  const qs = searchParams.toString()
+                  navigate(`/game/${mode}${qs ? `?${qs}` : ''}`)
+                }}
+                className={currentViewMode === mode ? 'bg-muted' : ''}
+              >
+                <ModeIcon className="h-4 w-4" />
+                {label}
+              </DropdownMenuItem>
+            ))}
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }

@@ -1,12 +1,14 @@
 import { useRef, useState, useCallback, useEffect, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { Button, Icon, type IconName } from '@blueprintjs/core'
+import { X } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 interface FloatingWindowProps {
   isOpen: boolean
   onClose: () => void
   title: string
-  icon?: IconName
+  icon?: LucideIcon | string
   children: ReactNode
   initialWidth?: number
   initialHeight?: number
@@ -22,7 +24,7 @@ export function FloatingWindow({
   isOpen,
   onClose,
   title,
-  icon,
+  icon: Icon,
   children,
   initialWidth = 420,
   initialHeight = 320,
@@ -158,24 +160,28 @@ export function FloatingWindow({
     <div
       ref={windowRef}
       data-floating-window
-      className="fixed flex flex-col bg-odi-surface border border-odi-border rounded-lg shadow-2xl overflow-hidden"
+      className="fixed flex flex-col bg-card border border-border rounded-lg shadow-2xl overflow-hidden"
       style={{ left: pos.x, top: pos.y, width: size.w, height: size.h, zIndex: 1000 }}
       onMouseDown={handleFocus}
     >
       {/* Title bar */}
       <div
         onMouseDown={handleTitleMouseDown}
-        className="flex items-center gap-2 px-3 py-2 bg-odi-surface-hover border-b border-odi-border shrink-0 cursor-move select-none"
+        className="flex items-center gap-2 px-3 py-2 bg-muted border-b border-border shrink-0 cursor-move select-none"
       >
-        {icon && <Icon icon={icon} size={14} className="text-odi-text-muted shrink-0" />}
-        <span className="text-sm font-medium text-odi-text truncate flex-1">{title}</span>
+        {Icon && (typeof Icon === 'string'
+          ? <span className="text-muted-foreground shrink-0 text-sm">{Icon}</span>
+          : <Icon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+        )}
+        <span className="text-sm font-medium text-foreground truncate flex-1">{title}</span>
         <Button
-          icon="cross"
-          minimal
-          small
-          className="!text-odi-text-muted hover:!text-odi-text shrink-0"
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6 text-muted-foreground hover:text-foreground shrink-0"
           onClick={onClose}
-        />
+        >
+          <X className="h-3.5 w-3.5" />
+        </Button>
       </div>
 
       {/* Content */}

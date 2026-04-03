@@ -1,6 +1,12 @@
 import { useRef, useCallback, useState, useEffect, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { Button, Collapse, Icon, Menu, MenuItem, type IconName } from '@blueprintjs/core'
+import {
+  PanelRightOpen, PanelRightClose, BookOpen, Users, MessageSquare,
+  ChevronDown, ChevronUp,
+} from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible'
 import { useAppSelector, useAppDispatch } from '@/store'
 import { toggleRightPanel, toggleRightPanelSection, setRightPanelWidth, syncPreferencesToServer } from '@/store/appSlice'
 import type { RightPanelSections } from '@/api/preferences'
@@ -18,7 +24,7 @@ interface ContextMenuState {
 }
 
 function Section({
-  icon,
+  icon: Icon,
   label,
   sectionKey,
   sections,
@@ -26,7 +32,7 @@ function Section({
   children,
   grow,
 }: {
-  icon: IconName
+  icon: LucideIcon
   label: string
   sectionKey: keyof RightPanelSections
   sections: RightPanelSections
@@ -40,8 +46,6 @@ function Section({
   useEffect(() => {
     if (!ctxMenu) return
     const close = () => setCtxMenu(null)
-    // mousedown instead of click so the menu closes on outside interaction
-    // but MenuItem onClick (which fires on click) still works
     document.addEventListener('mousedown', close)
     document.addEventListener('scroll', close, true)
     return () => {
@@ -59,20 +63,16 @@ function Section({
   const header = (
     <button
       onClick={() => onToggle(sectionKey)}
-      className="w-full flex items-center gap-2 px-2 py-1.5 -mx-0.5 rounded hover:bg-odi-surface-hover transition-colors select-none group shrink-0"
+      className="w-full flex items-center gap-2 px-2 py-1.5 -mx-0.5 rounded hover:bg-muted transition-colors select-none group shrink-0"
     >
       <Icon
-        icon={icon}
-        size={13}
-        className="text-odi-text-muted group-hover:text-odi-text transition-colors shrink-0"
+        className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors shrink-0"
       />
-      <span className="text-xs font-medium text-odi-text-muted group-hover:text-odi-text uppercase tracking-wide flex-1 text-left transition-colors">
+      <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground uppercase tracking-wide flex-1 text-left transition-colors">
         {label}
       </span>
-      <Icon
-        icon="chevron-down"
-        size={12}
-        className={`text-odi-text-muted transition-transform duration-200 ${isOpen ? '' : '-rotate-90'}`}
+      <ChevronDown
+        className={`h-3 w-3 text-muted-foreground transition-transform duration-200 ${isOpen ? '' : '-rotate-90'}`}
       />
     </button>
   )
@@ -83,16 +83,18 @@ function Section({
       style={{ left: ctxMenu.x, top: ctxMenu.y }}
       onMouseDown={(e) => e.stopPropagation()}
     >
-      <Menu className="bp5-elevation-2">
-        <MenuItem
-          icon={isOpen ? 'chevron-up' : 'chevron-down'}
-          text={isOpen ? 'Свернуть' : 'Развернуть'}
+      <div className="bg-card border border-border rounded-lg shadow-md py-1 min-w-[140px]">
+        <button
+          className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-foreground hover:bg-muted transition-colors"
           onClick={() => {
             onToggle(sectionKey)
             setCtxMenu(null)
           }}
-        />
-      </Menu>
+        >
+          {isOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+          {isOpen ? 'Свернуть' : 'Развернуть'}
+        </button>
+      </div>
     </div>,
     document.body,
   )
@@ -115,11 +117,13 @@ function Section({
     <div className="shrink-0" onContextMenu={handleContextMenu}>
       {header}
       {contextMenu}
-      <Collapse isOpen={isOpen}>
-        <div className="pt-2 pb-3">
-          {children}
-        </div>
-      </Collapse>
+      <Collapsible open={isOpen}>
+        <CollapsibleContent>
+          <div className="pt-2 pb-3">
+            {children}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
     </div>
   )
 }
@@ -187,24 +191,25 @@ export function RightPanel() {
       {!rightPanelCollapsed && (
         <div
           onMouseDown={handleMouseDown}
-          className="w-1 cursor-col-resize hover:bg-odi-accent/40 active:bg-odi-accent/60 transition-colors"
+          className="w-1 cursor-col-resize hover:bg-border active:bg-muted-foreground transition-colors"
         />
       )}
 
-      <div className="flex-1 bg-odi-surface border-l border-odi-border flex flex-col overflow-hidden h-full">
+      <div className="flex-1 bg-card border-l border-border flex flex-col overflow-hidden h-full">
         {/* Panel header */}
-        <div className={`flex items-center shrink-0 border-b border-odi-border ${rightPanelCollapsed ? 'justify-center p-2' : 'justify-between px-3 py-2.5'}`}>
+        <div className={`flex items-center shrink-0 border-b border-border ${rightPanelCollapsed ? 'justify-center p-2' : 'justify-between px-3 py-2.5'}`}>
           {!rightPanelCollapsed && (
-            <span className="text-xs font-semibold text-odi-text-muted uppercase tracking-wider whitespace-nowrap overflow-hidden">Панель</span>
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap overflow-hidden">Панель</span>
           )}
           <Button
-            icon={rightPanelCollapsed ? 'menu-open' : 'menu-closed'}
-            minimal
-            small
-            className={`!text-odi-text-muted hover:!text-odi-text shrink-0 ${rightPanelCollapsed ? '' : '!rotate-180'}`}
+            variant="ghost"
+            size="icon"
+            className={`h-7 w-7 text-muted-foreground hover:text-foreground shrink-0 ${rightPanelCollapsed ? '' : 'rotate-180'}`}
             onClick={handleToggle}
             title={rightPanelCollapsed ? 'Развернуть панель' : 'Свернуть панель'}
-          />
+          >
+            {rightPanelCollapsed ? <PanelRightOpen className="h-4 w-4" /> : <PanelRightClose className="h-4 w-4" />}
+          </Button>
         </div>
 
         {/* Scrollable sections */}
@@ -213,16 +218,16 @@ export function RightPanel() {
             {/* Scenario */}
             {scenarioInfo && (
               <Section
-                icon="manual"
+                icon={BookOpen}
                 label="Сценарий"
                 sectionKey="scenario"
                 sections={rightPanelSections}
                 onToggle={handleSectionToggle}
               >
                 {scenarioInfo.subtitle && (
-                  <p className="text-xs text-odi-accent mb-2 font-medium">{scenarioInfo.subtitle}</p>
+                  <p className="text-xs text-primary mb-2 font-medium">{scenarioInfo.subtitle}</p>
                 )}
-                <div className="text-sm text-odi-text leading-relaxed">
+                <div className="text-xs text-foreground leading-relaxed">
                   <Markdown>{scenarioInfo.description}</Markdown>
                 </div>
               </Section>
@@ -230,7 +235,7 @@ export function RightPanel() {
 
             {/* Bots */}
             <Section
-              icon="people"
+              icon={Users}
               label="Боты"
               sectionKey="bots"
               sections={rightPanelSections}
@@ -241,7 +246,7 @@ export function RightPanel() {
 
             {/* Chat */}
             <Section
-              icon="chat"
+              icon={MessageSquare}
               label="Чат"
               sectionKey="chat"
               sections={rightPanelSections}

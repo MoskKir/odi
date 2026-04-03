@@ -1,19 +1,6 @@
-import {
-  Button,
-  Card,
-  Checkbox,
-  FormGroup,
-  Icon,
-  InputGroup,
-  TextArea,
-  HTMLSelect,
-  Switch,
-  Tag,
-  Spinner,
-  NonIdealState,
-} from '@blueprintjs/core'
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { ArrowLeft, Save, ChevronRight, Settings, Bot } from 'lucide-react'
 import {
   fetchScenarios,
   updateScenario,
@@ -21,6 +8,22 @@ import {
 } from '@/api/scenarios'
 import { success, error as toastError } from '@/utils/toaster'
 import { fetchBots, type BotResponse } from '@/api/bots'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
+import { Badge } from '@/components/ui/badge'
+import { Spinner } from '@/components/ui/spinner'
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from '@/components/ui/select'
+import { AlertCircle } from 'lucide-react'
 
 const ICONS = [
   { value: '\u{1F3E2}', label: '\u{1F3E2} Бизнес' },
@@ -34,9 +37,9 @@ const ICONS = [
 ]
 
 const DIFF_OPTIONS = [
-  { value: 'easy', label: 'Лёгкий', intent: 'success' as const },
-  { value: 'medium', label: 'Средний', intent: 'warning' as const },
-  { value: 'hard', label: 'Сложный', intent: 'danger' as const },
+  { value: 'easy', label: 'Лёгкий', variant: 'success' as const },
+  { value: 'medium', label: 'Средний', variant: 'warning' as const },
+  { value: 'hard', label: 'Сложный', variant: 'danger' as const },
 ]
 
 function autoResize(el: HTMLTextAreaElement) {
@@ -151,17 +154,20 @@ export function ScenarioEditPage() {
   }
 
   if (loading) {
-    return <div className="flex justify-center py-12"><Spinner size={32} /></div>
+    return <div className="flex justify-center py-12"><Spinner size="lg" /></div>
   }
 
   if (loadError) {
     return (
-      <NonIdealState
-        icon="error"
-        title="Ошибка"
-        description={loadError}
-        action={<Button text="Назад" icon="arrow-left" onClick={() => navigate('/master/scenarios')} />}
-      />
+      <div className="flex flex-col items-center justify-center py-16 gap-4">
+        <AlertCircle className="h-12 w-12 text-muted-foreground" />
+        <h3 className="text-lg font-semibold text-foreground">Ошибка</h3>
+        <p className="text-sm text-muted-foreground">{loadError}</p>
+        <Button onClick={() => navigate('/master/scenarios')}>
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          Назад
+        </Button>
+      </div>
     )
   }
 
@@ -172,142 +178,158 @@ export function ScenarioEditPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button icon="arrow-left" minimal small onClick={() => navigate('/master/scenarios')} className="!text-odi-text-muted" />
-          <h2 className="text-xl font-bold text-odi-text m-0">Редактировать сценарий</h2>
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => navigate('/master/scenarios')}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <h2 className="text-xl font-bold text-foreground m-0">Редактировать сценарий</h2>
         </div>
         <div className="flex items-center gap-2">
-          <Switch
-            checked={published}
-            label={published ? 'Опубликован' : 'Черновик'}
-            onChange={() => setPublished(!published)}
-            className="!mb-0"
-          />
+          <div className="flex items-center gap-2">
+            <Switch
+              checked={published}
+              onCheckedChange={setPublished}
+            />
+            <Label className="mb-0">{published ? 'Опубликован' : 'Черновик'}</Label>
+          </div>
           <Button
-            icon="settings"
-            text="Контексты ботов"
+            variant="ghost"
             onClick={() => navigate(`/master/scenarios/${id}/bot-context`)}
-            className="!text-odi-accent"
-          />
+            className="text-primary"
+          >
+            <Settings className="h-4 w-4 mr-1" />
+            Контексты ботов
+          </Button>
           <Button
-            intent="primary"
-            icon="floppy-disk"
-            text="Сохранить"
-            loading={saving}
-            disabled={!canSubmit}
+            disabled={!canSubmit || saving}
             onClick={handleSubmit}
-          />
+          >
+            {saving ? <Spinner size="sm" /> : <Save className="h-4 w-4 mr-1" />}
+            Сохранить
+          </Button>
         </div>
       </div>
 
       {error && <div className="text-sm text-red-500 px-1">{error}</div>}
 
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-4">
-        {/* Main content — left 3 cols */}
+        {/* Main content -- left 3 cols */}
         <div className="xl:col-span-3 space-y-4">
           {/* Title card */}
-          <Card className="!bg-odi-surface !border-odi-border !shadow-none">
-            <FormGroup label="Название" labelInfo="(обязательно)" className="!mb-3">
-              <TextArea
+          <Card className="bg-card border-border shadow-none p-5">
+            <div className="space-y-2 mb-3">
+              <Label>Название <span className="text-muted-foreground">(обязательно)</span></Label>
+              <Textarea
                 value={title}
-                inputRef={titleRef}
+                ref={titleRef}
                 onChange={(e) => { setTitle(e.target.value); autoResize(e.target) }}
                 placeholder="Название сценария"
-                fill
                 rows={1}
-                className="!bg-odi-bg !text-odi-text !overflow-hidden !resize-none !text-lg !font-bold"
+                className="bg-background text-foreground overflow-hidden resize-none text-lg font-bold"
               />
-            </FormGroup>
+            </div>
 
-            <FormGroup label="Подзаголовок" labelInfo="(обязательно)" className="!mb-0">
-              <InputGroup
+            <div className="space-y-2">
+              <Label>Подзаголовок <span className="text-muted-foreground">(обязательно)</span></Label>
+              <Input
                 value={subtitle}
                 onChange={(e) => setSubtitle(e.target.value)}
                 placeholder="Короткое описание в одну строку"
               />
-            </FormGroup>
+            </div>
           </Card>
 
           {/* Description card */}
-          <Card className="!bg-odi-surface !border-odi-border !shadow-none">
-            <FormGroup label="Описание" labelInfo="(обязательно)" className="!mb-0">
-              <TextArea
+          <Card className="bg-card border-border shadow-none p-5">
+            <div className="space-y-2">
+              <Label>Описание <span className="text-muted-foreground">(обязательно)</span></Label>
+              <Textarea
                 value={description}
-                inputRef={descRef}
+                ref={descRef}
                 onChange={(e) => { setDescription(e.target.value); autoResize(e.target) }}
                 placeholder="Подробное описание сценария..."
-                fill
                 rows={3}
-                className="!bg-odi-bg !text-odi-text !overflow-hidden !resize-none"
+                className="bg-background text-foreground overflow-hidden resize-none"
               />
-            </FormGroup>
+            </div>
           </Card>
 
           {/* Bots card */}
-          <Card className="!bg-odi-surface !border-odi-border !shadow-none !p-0">
+          <Card className="bg-card border-border shadow-none p-0">
             <div className="px-5 py-4">
-              <h3 className="text-sm font-bold text-odi-text mb-3">Боты</h3>
+              <h3 className="text-sm font-bold text-foreground mb-3">Боты</h3>
               <div className="flex flex-wrap gap-2 mb-1">
                 {requiredBots.length === 0 && recommendedBots.length === 0 && (
-                  <span className="text-xs text-odi-text-muted">Боты не выбраны</span>
+                  <span className="text-xs text-muted-foreground">Боты не выбраны</span>
                 )}
                 {requiredBots.map((b) => (
-                  <Tag key={`r-${b}`} intent="primary" minimal onRemove={() => toggleBot(b, 'required')}>
+                  <Badge key={`r-${b}`} variant="default" className="gap-1">
                     {allBots.find((bot) => bot.specialistId === b)?.name ?? b} (обяз.)
-                  </Tag>
+                    <button onClick={() => toggleBot(b, 'required')} className="ml-1 hover:text-red-500">
+                      <span className="text-xs">&times;</span>
+                    </button>
+                  </Badge>
                 ))}
                 {recommendedBots.map((b) => (
-                  <Tag key={`rec-${b}`} minimal onRemove={() => toggleBot(b, 'recommended')}>
+                  <Badge key={`rec-${b}`} variant="outline" className="gap-1">
                     {allBots.find((bot) => bot.specialistId === b)?.name ?? b} (рек.)
-                  </Tag>
+                    <button onClick={() => toggleBot(b, 'recommended')} className="ml-1 hover:text-red-500">
+                      <span className="text-xs">&times;</span>
+                    </button>
+                  </Badge>
                 ))}
               </div>
             </div>
 
             {/* Accordion: select from existing bots */}
             <div
-              className="border-t border-odi-border px-5 py-2 flex items-center gap-2 cursor-pointer select-none"
+              className="border-t border-border px-5 py-2 flex items-center gap-2 cursor-pointer select-none"
               onClick={() => setBotsExpanded(!botsExpanded)}
             >
-              <Icon
-                icon="chevron-right"
-                className={`text-odi-text-muted transition-transform ${botsExpanded ? 'rotate-90' : ''}`}
+              <ChevronRight
+                className={`h-4 w-4 text-muted-foreground transition-transform ${botsExpanded ? 'rotate-90' : ''}`}
               />
-              <span className="text-sm text-odi-text-muted">Выбрать из существующих ботов ({allBots.length})</span>
+              <span className="text-sm text-muted-foreground">Выбрать из существующих ботов ({allBots.length})</span>
             </div>
 
             {botsExpanded && (
-              <div className="border-t border-odi-border">
+              <div className="border-t border-border">
                 {allBots.length === 0 ? (
-                  <div className="px-5 py-4 text-sm text-odi-text-muted">Нет доступных ботов</div>
+                  <div className="px-5 py-4 text-sm text-muted-foreground">Нет доступных ботов</div>
                 ) : (
-                  <div className="divide-y divide-odi-border">
+                  <div className="divide-y divide-border">
                     {allBots.map((bot) => {
                       const isRequired = requiredBots.includes(bot.specialistId)
                       const isRecommended = recommendedBots.includes(bot.specialistId)
                       return (
                         <div key={bot.id} className="px-5 py-3 flex items-center gap-4">
-                          <span className="text-xl shrink-0">{'\u{1F916}'}</span>
+                          <Bot className="h-5 w-5 text-muted-foreground shrink-0" />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className="font-medium text-odi-text text-sm">{bot.name}</span>
-                              <Tag minimal className="text-[10px]">{bot.specialistId}</Tag>
-                              <Tag minimal className="text-[10px]">{bot.model}</Tag>
+                              <span className="font-medium text-foreground text-sm">{bot.name}</span>
+                              <Badge variant="outline" className="text-[10px]">{bot.specialistId}</Badge>
+                              <Badge variant="outline" className="text-[10px]">{bot.model}</Badge>
                             </div>
-                            <div className="text-xs text-odi-text-muted mt-0.5">{bot.description}</div>
+                            <div className="text-xs text-muted-foreground mt-0.5">{bot.description}</div>
                           </div>
                           <div className="flex items-center gap-4 shrink-0">
-                            <Checkbox
-                              checked={isRequired}
-                              label="Обяз."
-                              onChange={() => toggleBot(bot.specialistId, 'required')}
-                              className="!mb-0 !text-xs"
-                            />
-                            <Checkbox
-                              checked={isRecommended}
-                              label="Рек."
-                              onChange={() => toggleBot(bot.specialistId, 'recommended')}
-                              className="!mb-0 !text-xs"
-                            />
+                            <label className="flex items-center gap-1 text-xs cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={isRequired}
+                                onChange={() => toggleBot(bot.specialistId, 'required')}
+                                className="rounded border-border"
+                              />
+                              Обяз.
+                            </label>
+                            <label className="flex items-center gap-1 text-xs cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={isRecommended}
+                                onChange={() => toggleBot(bot.specialistId, 'recommended')}
+                                className="rounded border-border"
+                              />
+                              Рек.
+                            </label>
                           </div>
                         </div>
                       )
@@ -319,62 +341,75 @@ export function ScenarioEditPage() {
           </Card>
         </div>
 
-        {/* Sidebar — right col */}
+        {/* Sidebar -- right col */}
         <div className="space-y-4">
           {/* Meta card */}
-          <Card className="!bg-odi-surface !border-odi-border !shadow-none">
-            <h3 className="text-sm font-bold text-odi-text mb-3">Параметры</h3>
+          <Card className="bg-card border-border shadow-none p-5">
+            <h3 className="text-sm font-bold text-foreground mb-3">Параметры</h3>
 
-            <FormGroup label="Иконка" className="!mb-3">
-              <HTMLSelect value={icon} onChange={(e) => setIcon(e.target.value)} fill>
-                {ICONS.map((i) => (
-                  <option key={i.value} value={i.value}>{i.label}</option>
-                ))}
-              </HTMLSelect>
-            </FormGroup>
+            <div className="space-y-2 mb-3">
+              <Label>Иконка</Label>
+              <Select value={icon} onValueChange={setIcon}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ICONS.map((i) => (
+                    <SelectItem key={i.value} value={i.value}>{i.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-            <FormGroup label="Сложность" className="!mb-3">
-              <HTMLSelect value={difficulty} onChange={(e) => setDifficulty(e.target.value as any)} fill>
-                {DIFF_OPTIONS.map((d) => (
-                  <option key={d.value} value={d.value}>{d.label}</option>
-                ))}
-              </HTMLSelect>
-            </FormGroup>
+            <div className="space-y-2 mb-3">
+              <Label>Сложность</Label>
+              <Select value={difficulty} onValueChange={(v) => setDifficulty(v as any)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {DIFF_OPTIONS.map((d) => (
+                    <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-            <FormGroup label="Ср. длительность (мин)" className="!mb-0">
-              <InputGroup
+            <div className="space-y-2">
+              <Label>Ср. длительность (мин)</Label>
+              <Input
                 type="number"
                 min={0}
                 value={avgDurationMinutes}
                 onChange={(e) => setAvgDurationMinutes(e.target.value)}
                 placeholder="60"
               />
-            </FormGroup>
+            </div>
           </Card>
 
           {/* Info card */}
-          <Card className="!bg-odi-surface !border-odi-border !shadow-none">
-            <h3 className="text-sm font-bold text-odi-text mb-3">Информация</h3>
-            <div className="space-y-2 text-xs text-odi-text-muted">
+          <Card className="bg-card border-border shadow-none p-5">
+            <h3 className="text-sm font-bold text-foreground mb-3">Информация</h3>
+            <div className="space-y-2 text-xs text-muted-foreground">
               <div className="flex justify-between">
                 <span>Slug</span>
-                <span className="font-mono text-odi-text">{slug}</span>
+                <span className="font-mono text-foreground">{slug}</span>
               </div>
               <div className="flex justify-between">
                 <span>Сессий</span>
-                <span className="text-odi-text">{sessionsCount}</span>
+                <span className="text-foreground">{sessionsCount}</span>
               </div>
               <div className="flex justify-between">
                 <span>Статус</span>
                 {published
-                  ? <Tag intent="success" minimal round className="text-[10px]">Опубликован</Tag>
-                  : <Tag intent="warning" minimal round className="text-[10px]">Черновик</Tag>
+                  ? <Badge variant="success" className="text-[10px]">Опубликован</Badge>
+                  : <Badge variant="warning" className="text-[10px]">Черновик</Badge>
                 }
               </div>
               {diffCfg && (
                 <div className="flex justify-between">
                   <span>Сложность</span>
-                  <Tag intent={diffCfg.intent} minimal round className="text-[10px]">{diffCfg.label}</Tag>
+                  <Badge variant={diffCfg.variant} className="text-[10px]">{diffCfg.label}</Badge>
                 </div>
               )}
             </div>

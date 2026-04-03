@@ -1,5 +1,8 @@
-import { Card, Button, Tag } from '@blueprintjs/core'
 import { useState } from 'react'
+import { ArrowLeft, ArrowRight, CheckCircle2, Circle, Disc } from 'lucide-react'
+import { Card } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 
 interface Phase {
   id: string
@@ -17,10 +20,10 @@ const INITIAL_PHASES: Phase[] = [
   { id: '6', name: 'Итоги и рефлексия', duration: '10 мин', status: 'pending' },
 ]
 
-const STATUS_ICON: Record<string, string> = {
-  done: 'tick-circle',
-  active: 'record',
-  pending: 'circle',
+const StatusIcon = ({ status }: { status: string }) => {
+  if (status === 'done') return <CheckCircle2 className="h-3.5 w-3.5" />
+  if (status === 'active') return <Disc className="h-3.5 w-3.5" />
+  return <Circle className="h-3.5 w-3.5" />
 }
 
 export function PhaseControl() {
@@ -28,10 +31,10 @@ export function PhaseControl() {
   const activeIndex = phases.findIndex((p) => p.status === 'active')
 
   return (
-    <Card className="!bg-odi-surface !border-odi-border !shadow-none flex-1 flex flex-col overflow-hidden !p-3">
+    <Card className="bg-card border-border shadow-none flex-1 flex flex-col overflow-hidden p-3">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-bold text-odi-text-muted uppercase tracking-wider">Фазы сессии</span>
-        <Tag minimal className="text-[10px]">{activeIndex + 1}/{phases.length}</Tag>
+        <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Фазы сессии</span>
+        <Badge variant="outline" className="text-[10px]">{activeIndex + 1}/{phases.length}</Badge>
       </div>
       <div className="flex-1 overflow-y-auto space-y-1">
         {phases.map((phase) => (
@@ -39,13 +42,13 @@ export function PhaseControl() {
             key={phase.id}
             className={`flex items-center gap-2 p-2 rounded text-sm ${
               phase.status === 'active'
-                ? 'bg-odi-accent/15 text-odi-accent'
+                ? 'bg-accent text-primary'
                 : phase.status === 'done'
-                  ? 'text-odi-text-muted'
-                  : 'text-odi-text-muted opacity-60'
+                  ? 'text-muted-foreground'
+                  : 'text-muted-foreground opacity-60'
             }`}
           >
-            <span className={`bp5-icon bp5-icon-${STATUS_ICON[phase.status]} text-xs`} />
+            <StatusIcon status={phase.status} />
             <span className={`flex-1 ${phase.status === 'active' ? 'font-medium' : ''} ${phase.status === 'done' ? 'line-through' : ''}`}>
               {phase.name}
             </span>
@@ -53,9 +56,15 @@ export function PhaseControl() {
           </div>
         ))}
       </div>
-      <div className="flex gap-1 mt-2 pt-2 border-t border-odi-border">
-        <Button icon="arrow-left" small minimal disabled={activeIndex <= 0} className="flex-1" text="Назад" />
-        <Button icon="arrow-right" small intent="primary" className="flex-1" text="Далее" />
+      <div className="flex gap-1 mt-2 pt-2 border-t border-border">
+        <Button variant="ghost" size="sm" disabled={activeIndex <= 0} className="flex-1">
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          Назад
+        </Button>
+        <Button size="sm" className="flex-1">
+          <ArrowRight className="h-4 w-4 mr-1" />
+          Далее
+        </Button>
       </div>
     </Card>
   )

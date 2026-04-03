@@ -1,8 +1,13 @@
 import { useState, useCallback } from 'react'
-import { Navbar, Tag, ProgressBar, Button, Tooltip } from '@blueprintjs/core'
+import { Clock, Users, Link as LinkIcon, Check } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Progress } from '@/components/ui/progress'
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip'
 import { useAppSelector } from '@/store'
 import { SettingsMenu } from '@/components/SettingsMenu'
 import { AccountBadge } from '@/components/AccountBadge'
+import { AppMenu } from '@/components/AppMenu'
 
 export function Header() {
   const { sessionTitle, elapsed, teamOnline, teamSize, energy, inviteCode } =
@@ -19,46 +24,52 @@ export function Header() {
   }, [inviteCode])
 
   return (
-    <Navbar className="!bg-odi-surface border-b border-odi-border px-4 shrink-0">
-      <Navbar.Group>
-        <Navbar.Heading className="text-odi-text font-bold text-lg">
-          ODI: "{sessionTitle}"
-        </Navbar.Heading>
-        <Navbar.Divider />
-        <Tag minimal icon="time" className="mr-2">
+    <header className="bg-card border-b border-border px-4 shrink-0 h-[50px] flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        <span className="text-foreground font-bold text-lg">
+          ODI: &quot;{sessionTitle}&quot;
+        </span>
+        <div className="w-px h-5 bg-border mx-1" />
+        <Badge variant="outline" className="gap-1">
+          <Clock className="h-3 w-3" />
           {elapsed}
-        </Tag>
-        <Tag minimal icon="people" className="mr-2">
+        </Badge>
+        <Badge variant="outline" className="gap-1">
+          <Users className="h-3 w-3" />
           {teamOnline}/{teamSize}
-        </Tag>
+        </Badge>
         <div className="flex items-center gap-2 ml-2">
-          <span className="text-odi-text-muted text-sm">Энергия</span>
+          <span className="text-muted-foreground text-sm">Энергия</span>
           <div className="w-24">
-            <ProgressBar
-              value={energy / 10}
-              intent="primary"
-              stripes={false}
-              animate={false}
-            />
+            <Progress value={energy * 10} />
           </div>
         </div>
-      </Navbar.Group>
-      <Navbar.Group align="right">
+      </div>
+      <div className="flex items-center gap-2">
         {inviteCode && (
-          <Tooltip content={copied ? 'Скопировано!' : 'Скопировать ссылку-приглашение'}>
-            <Button
-              minimal
-              icon="link"
-              text="Пригласить"
-              onClick={handleCopyInvite}
-              intent={copied ? 'success' : 'none'}
-              className="mr-2"
-            />
-          </Tooltip>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCopyInvite}
+                  className={`mr-2 ${copied ? 'text-success' : ''}`}
+                >
+                  {copied ? <Check className="h-4 w-4" /> : <LinkIcon className="h-4 w-4" />}
+                  Пригласить
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {copied ? 'Скопировано!' : 'Скопировать ссылку-приглашение'}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         )}
+        <AppMenu />
         <AccountBadge />
         <SettingsMenu />
-      </Navbar.Group>
-    </Navbar>
+      </div>
+    </header>
   )
 }

@@ -38,6 +38,9 @@ export class KafkaInitService implements OnModuleInit {
       // Game
       KAFKA_TOPICS.GAME.LIST,
       KAFKA_TOPICS.GAME.CREATE,
+      KAFKA_TOPICS.GAME.DELETE,
+      KAFKA_TOPICS.GAME.RESOLVE_INVITE,
+      KAFKA_TOPICS.GAME.BOARD_LIST,
       'odi.game.get',
       'odi.game.update-title',
       KAFKA_TOPICS.GAME.UPDATE_STATUS,
@@ -53,13 +56,31 @@ export class KafkaInitService implements OnModuleInit {
       'odi.game.settings-get',
       'odi.game.settings-update',
       'odi.game.bot-list',
+      'odi.game.bot-create',
       'odi.game.bot-update',
+      'odi.game.bot-delete',
       'odi.game.emotion-set',
       'odi.game.board-add',
       'odi.game.board-vote',
+      'odi.game.board-move',
+      'odi.game.board-edit',
+      'odi.game.board-delete',
       // Chat
       KAFKA_TOPICS.CHAT.HISTORY,
       KAFKA_TOPICS.CHAT.SEND,
+      KAFKA_TOPICS.CHAT.EDIT,
+      KAFKA_TOPICS.CHAT.DELETE,
+      // Reflection
+      KAFKA_TOPICS.REFLECTION.LIST,
+      // AI
+      KAFKA_TOPICS.AI.GENERATE,
+      KAFKA_TOPICS.AI.CHANGE_STRATEGY,
+      // Bot context
+      KAFKA_TOPICS.GAME.BOT_CONTEXT_LIST,
+      KAFKA_TOPICS.GAME.BOT_CONTEXT_UPSERT,
+      KAFKA_TOPICS.GAME.BOT_CONTEXT_DELETE,
+      KAFKA_TOPICS.GAME.SHARED_CONTEXT_UPSERT,
+      KAFKA_TOPICS.GAME.SHARED_CONTEXT_DELETE,
     ];
 
     // Event topics (fire-and-forget, no reply needed)
@@ -67,11 +88,15 @@ export class KafkaInitService implements OnModuleInit {
       KAFKA_TOPICS.EVENTS.SESSION,
       KAFKA_TOPICS.EVENTS.CHAT,
       KAFKA_TOPICS.EVENTS.CHAT_STREAM,
+      KAFKA_TOPICS.EVENTS.REFLECTION_STREAM,
+      KAFKA_TOPICS.EVENTS.REFLECTION,
       KAFKA_TOPICS.EVENTS.EMOTION,
       KAFKA_TOPICS.EVENTS.PHASE,
-      KAFKA_TOPICS.AI.GENERATE,
+      KAFKA_TOPICS.AI.GENERATE_REFLECTION,
       KAFKA_TOPICS.AI.TEST_CHAT,
       KAFKA_TOPICS.AI.ANALYZE_EMOTION,
+      KAFKA_TOPICS.AI.STOP_STREAM,
+      KAFKA_TOPICS.REFLECTION.SAVE,
     ];
 
     // Build list of topics + reply topics

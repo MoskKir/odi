@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { ProgressBar, Button, Collapse } from '@blueprintjs/core'
+import { ChevronDown, ChevronRight, BarChart3 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Progress } from '@/components/ui/progress'
 import { useAppSelector } from '@/store'
 import type { SpecialistId } from '@/types'
 
@@ -23,13 +25,13 @@ export function EfficiencyForecast() {
   const hasPeacemaker = crewSlots.includes('peacemaker')
   const hasProvocateur = crewSlots.includes('provocateur')
   let conflictLevel = 'Средние'
-  let conflictColor = 'text-odi-warning'
+  let conflictColor = 'text-warning'
   if (hasPeacemaker && !hasProvocateur) {
     conflictLevel = 'Низкие'
-    conflictColor = 'text-odi-success'
+    conflictColor = 'text-success'
   } else if (hasProvocateur && !hasPeacemaker) {
     conflictLevel = 'Высокие'
-    conflictColor = 'text-odi-danger'
+    conflictColor = 'text-destructive'
   }
 
   const hasCritic = crewSlots.includes('critic')
@@ -43,42 +45,46 @@ export function EfficiencyForecast() {
     recommendation = 'Выберите специалистов'
   }
 
-  const intent = successChance >= 70 ? 'success' : successChance >= 50 ? 'warning' : 'danger'
+  const indicatorColor =
+    successChance >= 70
+      ? 'bg-success'
+      : successChance >= 50
+        ? 'bg-warning'
+        : 'bg-destructive'
 
   return (
     <div>
       <Button
-        minimal
-        fill
-        alignText="left"
-        icon={isOpen ? 'chevron-down' : 'chevron-right'}
-        className="!text-sm !font-bold !text-odi-text-muted !px-0 !justify-start"
+        variant="ghost"
+        className="text-sm font-bold text-muted-foreground px-0 justify-start w-full"
         onClick={() => setIsOpen(!isOpen)}
       >
-        {'\u{1F4CA}'} ПРОГНОЗ — {successChance}%
+        {isOpen ? <ChevronDown className="h-4 w-4 mr-1" /> : <ChevronRight className="h-4 w-4 mr-1" />}
+        <BarChart3 className="h-3.5 w-3.5 mr-1" />
+        ПРОГНОЗ — {successChance}%
         <span className="font-normal ml-2 text-xs">
           конфликты: <span className={conflictColor}>{conflictLevel.toLowerCase()}</span>
         </span>
       </Button>
-      <Collapse isOpen={isOpen}>
-        <div className="bg-odi-surface rounded-lg border border-odi-border p-4 space-y-3 mt-2">
+      {isOpen && (
+        <div className="bg-card rounded-lg border border-border p-4 space-y-3 mt-2">
           <div>
             <div className="flex items-center justify-between mb-1">
-              <span className="text-sm text-odi-text">Шанс на успех</span>
-              <span className="text-sm font-bold text-odi-text">{successChance}%</span>
+              <span className="text-sm text-foreground">Шанс на успех</span>
+              <span className="text-sm font-bold text-foreground">{successChance}%</span>
             </div>
-            <ProgressBar value={successChance / 100} intent={intent} stripes={false} animate={false} />
+            <Progress value={successChance} indicatorClassName={indicatorColor} />
           </div>
           <div className="text-sm">
-            <span className="text-odi-text-muted">Потенциальные конфликты: </span>
+            <span className="text-muted-foreground">Потенциальные конфликты: </span>
             <span className={conflictColor}>{conflictLevel}</span>
           </div>
           <div className="text-sm">
-            <span className="text-odi-text-muted">Рекомендация: </span>
-            <span className="text-odi-text">{recommendation}</span>
+            <span className="text-muted-foreground">Рекомендация: </span>
+            <span className="text-foreground">{recommendation}</span>
           </div>
         </div>
-      </Collapse>
+      )}
     </div>
   )
 }

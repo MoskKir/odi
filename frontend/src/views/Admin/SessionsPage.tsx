@@ -1,17 +1,32 @@
-import {
-  Card,
-  Tag,
-  Button,
-  InputGroup,
-  HTMLSelect,
-  ProgressBar,
-  Spinner,
-  NonIdealState,
-  Icon,
-  Popover,
-} from '@blueprintjs/core'
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Progress } from '@/components/ui/progress'
+import { Spinner } from '@/components/ui/spinner'
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from '@/components/ui/select'
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from '@/components/ui/popover'
+import {
+  ChevronRight,
+  Eye,
+  Pause,
+  Play,
+  Square,
+  Search,
+  AlertCircle,
+} from 'lucide-react'
 import {
   fetchAdminSessions,
   updateSessionStatus,
@@ -19,11 +34,11 @@ import {
 } from '@/api/admin-sessions'
 import { success, error as toastError } from '@/utils/toaster'
 
-const STATUS_MAP: Record<string, { label: string; intent: 'success' | 'warning' | 'primary' | 'none' }> = {
-  active: { label: 'Активна', intent: 'success' },
-  paused: { label: 'Пауза', intent: 'warning' },
-  completed: { label: 'Завершена', intent: 'primary' },
-  draft: { label: 'Черновик', intent: 'none' },
+const STATUS_MAP: Record<string, { label: string; variant: 'success' | 'warning' | 'default' | 'outline' }> = {
+  active: { label: 'Активна', variant: 'success' },
+  paused: { label: 'Пауза', variant: 'warning' },
+  completed: { label: 'Завершена', variant: 'default' },
+  draft: { label: 'Черновик', variant: 'outline' },
 }
 
 function fmtDate(iso: string | null): string {
@@ -102,50 +117,65 @@ export function SessionsPage() {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-odi-text">Игровые сессии</h2>
+        <h2 className="text-xl font-bold text-foreground">Игровые сессии</h2>
         <div className="flex items-center gap-2">
-          <Tag intent="success" minimal>{activeCnt} активных</Tag>
-          <Tag minimal>{totalPlayers} игроков онлайн</Tag>
-          <Tag minimal>{total} всего</Tag>
+          <Badge variant="success">{activeCnt} активных</Badge>
+          <Badge variant="outline">{totalPlayers} игроков онлайн</Badge>
+          <Badge variant="outline">{total} всего</Badge>
         </div>
       </div>
 
       {/* Filters */}
       <div className="flex items-center gap-3">
-        <InputGroup
-          leftIcon="search"
-          placeholder="Поиск по названию..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="!w-64"
-        />
-        <HTMLSelect value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-          <option value="all">Все статусы</option>
-          <option value="active">Активные</option>
-          <option value="paused">На паузе</option>
-          <option value="completed">Завершённые</option>
-          <option value="draft">Черновики</option>
-        </HTMLSelect>
+        <div className="relative w-64">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Поиск по названию..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-[160px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Все статусы</SelectItem>
+            <SelectItem value="active">Активные</SelectItem>
+            <SelectItem value="paused">На паузе</SelectItem>
+            <SelectItem value="completed">Завершённые</SelectItem>
+            <SelectItem value="draft">Черновики</SelectItem>
+          </SelectContent>
+        </Select>
         <div className="flex-1" />
-        <Tag minimal>{filtered.length} показано</Tag>
+        <Badge variant="outline">{filtered.length} показано</Badge>
       </div>
 
       {/* Content */}
       {loading ? (
         <div className="flex justify-center py-8"><Spinner size={32} /></div>
       ) : error ? (
-        <NonIdealState
-          icon="error"
-          title="Ошибка"
-          description={error}
-          action={<Button text="Повторить" small onClick={loadSessions} />}
-        />
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <AlertCircle className="h-12 w-12 text-muted-foreground mb-3" />
+          <h3 className="text-lg font-medium text-foreground mb-1">Ошибка</h3>
+          <p className="text-sm text-muted-foreground mb-3">{error}</p>
+          <Button size="sm" onClick={loadSessions}>Повторить</Button>
+        </div>
       ) : filtered.length === 0 ? (
-        <NonIdealState
-          icon={search || statusFilter !== 'all' ? 'search' : 'play'}
-          title={search || statusFilter !== 'all' ? 'Ничего не найдено' : 'Нет сессий'}
-          description={search || statusFilter !== 'all' ? 'Измените фильтры' : 'Сессии появятся здесь после создания'}
-        />
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          {search || statusFilter !== 'all' ? (
+            <Search className="h-12 w-12 text-muted-foreground mb-3" />
+          ) : (
+            <Play className="h-12 w-12 text-muted-foreground mb-3" />
+          )}
+          <h3 className="text-lg font-medium text-foreground mb-1">
+            {search || statusFilter !== 'all' ? 'Ничего не найдено' : 'Нет сессий'}
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            {search || statusFilter !== 'all' ? 'Измените фильтры' : 'Сессии появятся здесь после создания'}
+          </p>
+        </div>
       ) : (
         <div className="space-y-3">
           {filtered.map((session) => {
@@ -154,28 +184,26 @@ export function SessionsPage() {
             const humanCount = session.participants?.filter((p) => p.userId).length ?? 0
             const botCount = session.participants?.filter((p) => p.botConfigId).length ?? 0
 
-
             return (
-              <Card key={session.id} className="!bg-odi-surface !border-odi-border !shadow-none !p-0">
+              <Card key={session.id} className="bg-card border-border shadow-none p-0">
                 {/* Main row */}
                 <div className="flex items-center gap-4 px-4 py-3">
                   <div
                     className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer select-none"
                     onClick={() => toggle(session.id)}
                   >
-                    <Icon
-                      icon="chevron-right"
-                      className={`text-odi-text-muted transition-transform shrink-0 ${isOpen ? 'rotate-90' : ''}`}
+                    <ChevronRight
+                      className={`h-4 w-4 text-muted-foreground transition-transform shrink-0 ${isOpen ? 'rotate-90' : ''}`}
                     />
                     {session.scenario?.icon && (
                       <span className="text-xl shrink-0">{session.scenario.icon}</span>
                     )}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
-                        <span className="font-medium text-odi-text truncate">{session.title}</span>
-                        <Tag intent={cfg.intent} minimal round className="text-[10px] shrink-0">{cfg.label}</Tag>
+                        <span className="font-medium text-foreground truncate">{session.title}</span>
+                        <Badge variant={cfg.variant} className="text-[10px] shrink-0">{cfg.label}</Badge>
                       </div>
-                      <div className="flex items-center gap-4 text-xs text-odi-text-muted">
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
                         {session.scenario && <span>{session.scenario.title}</span>}
                         {session.host && <span>Хост: {session.host.name}</span>}
                         <span>{humanCount} чел. + {botCount} ботов</span>
@@ -187,69 +215,77 @@ export function SessionsPage() {
 
                   {/* Progress */}
                   <div className="w-28 shrink-0">
-                    <div className="flex justify-between text-xs text-odi-text-muted mb-1">
+                    <div className="flex justify-between text-xs text-muted-foreground mb-1">
                       <span>Прогресс</span>
                       <span>{session.progress}%</span>
                     </div>
-                    <ProgressBar
-                      value={session.progress / 100}
-                      intent={session.progress === 100 ? 'success' : 'primary'}
-                      stripes={false}
-                      animate={false}
+                    <Progress
+                      value={session.progress}
+                      indicatorClassName={session.progress === 100 ? 'bg-green-500' : 'bg-primary'}
                     />
                   </div>
 
                   {/* Actions */}
                   <div className="flex gap-1 shrink-0">
                     <Button
-                      icon="eye-open"
-                      minimal
-                      small
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
                       title="Открыть"
                       onClick={() => navigate(`/game/board?session=${session.id}`)}
-                    />
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
                     {session.status === 'active' && (
                       <Button
-                        icon="pause"
-                        minimal
-                        small
-                        intent="warning"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-amber-500 hover:text-amber-600"
                         title="Пауза"
-                        loading={updating === session.id}
+                        disabled={updating === session.id}
                         onClick={() => handleStatusChange(session.id, 'paused')}
-                      />
+                      >
+                        {updating === session.id ? <Spinner size={16} /> : <Pause className="h-4 w-4" />}
+                      </Button>
                     )}
                     {session.status === 'paused' && (
                       <Button
-                        icon="play"
-                        minimal
-                        small
-                        intent="success"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-green-500 hover:text-green-600"
                         title="Продолжить"
-                        loading={updating === session.id}
+                        disabled={updating === session.id}
                         onClick={() => handleStatusChange(session.id, 'active')}
-                      />
+                      >
+                        {updating === session.id ? <Spinner size={16} /> : <Play className="h-4 w-4" />}
+                      </Button>
                     )}
                     {session.status !== 'completed' && (
-                      <Popover
-                        placement="bottom-end"
-                        content={
-                          <div className="p-3">
-                            <p className="text-sm text-odi-text mb-2">Завершить <strong>{session.title}</strong>?</p>
-                            <div className="flex gap-2 justify-end">
-                              <Button small minimal text="Отмена" className="bp5-popover-dismiss" />
-                              <Button
-                                small
-                                intent="danger"
-                                text="Завершить"
-                                loading={updating === session.id}
-                                onClick={() => handleStatusChange(session.id, 'completed')}
-                              />
-                            </div>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-red-500 hover:text-red-600"
+                            title="Завершить"
+                          >
+                            <Square className="h-4 w-4" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto">
+                          <p className="text-sm text-foreground mb-2">Завершить <strong>{session.title}</strong>?</p>
+                          <div className="flex gap-2 justify-end">
+                            <Button size="sm" variant="ghost">Отмена</Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              disabled={updating === session.id}
+                              onClick={() => handleStatusChange(session.id, 'completed')}
+                            >
+                              {updating === session.id ? <Spinner size={14} /> : 'Завершить'}
+                            </Button>
                           </div>
-                        }
-                      >
-                        <Button icon="stop" minimal small intent="danger" title="Завершить" />
+                        </PopoverContent>
                       </Popover>
                     )}
                   </div>
@@ -257,52 +293,50 @@ export function SessionsPage() {
 
                 {/* Expanded details */}
                 {isOpen && (
-                  <div className="border-t border-odi-border px-4 py-3">
+                  <div className="border-t border-border px-4 py-3">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs mb-3">
                       <div>
-                        <div className="text-odi-text-muted mb-1">Сложность</div>
-                        <div className="text-odi-text capitalize">{session.difficulty}</div>
+                        <div className="text-muted-foreground mb-1">Сложность</div>
+                        <div className="text-foreground capitalize">{session.difficulty}</div>
                       </div>
                       <div>
-                        <div className="text-odi-text-muted mb-1">Интерфейс</div>
-                        <div className="text-odi-text">{session.interfaceMode}</div>
+                        <div className="text-muted-foreground mb-1">Интерфейс</div>
+                        <div className="text-foreground">{session.interfaceMode}</div>
                       </div>
                       <div>
-                        <div className="text-odi-text-muted mb-1">AI видимость</div>
-                        <div className="text-odi-text">{session.aiVisibility}</div>
+                        <div className="text-muted-foreground mb-1">AI видимость</div>
+                        <div className="text-foreground">{session.aiVisibility}</div>
                       </div>
                       <div>
-                        <div className="text-odi-text-muted mb-1">Энергия</div>
-                        <div className="text-odi-text">{session.energy}/10</div>
+                        <div className="text-muted-foreground mb-1">Энергия</div>
+                        <div className="text-foreground">{session.energy}/10</div>
                       </div>
                     </div>
 
                     {session.participants && session.participants.length > 0 && (
                       <>
-                        <div className="text-xs text-odi-text-muted font-medium mb-2">
+                        <div className="text-xs text-muted-foreground font-medium mb-2">
                           Участники ({session.participants.length})
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {session.participants.map((p) => (
-                            <Tag
+                            <Badge
                               key={p.id}
-                              minimal
-                              round
-                              intent={p.isOnline ? 'success' : 'none'}
+                              variant={p.isOnline ? 'success' : 'outline'}
                               className="text-[10px]"
                             >
                               {p.botConfig
-                                ? `${'\u{1F916}'} ${p.botConfig.name}`
+                                ? `🤖 ${p.botConfig.name}`
                                 : p.user?.name ?? 'Участник'
                               }
                               {p.isOnline ? ' (online)' : ''}
-                            </Tag>
+                            </Badge>
                           ))}
                         </div>
                       </>
                     )}
 
-                    <div className="flex items-center gap-4 mt-3 text-xs text-odi-text-muted">
+                    <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
                       <span>Создана: {fmtDate(session.createdAt)}</span>
                       {session.startedAt && <span>Начата: {fmtDate(session.startedAt)}</span>}
                       {session.completedAt && <span>Завершена: {fmtDate(session.completedAt)}</span>}

@@ -1,27 +1,54 @@
-import { Card, Tag, Button, Icon, Spinner, NonIdealState, Popover, Switch, InputGroup } from '@blueprintjs/core'
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Switch } from '@/components/ui/switch'
+import { Spinner } from '@/components/ui/spinner'
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from '@/components/ui/popover'
+import {
+  Plus,
+  Search,
+  Shield,
+  Sun,
+  Eye,
+  Lock,
+  Star,
+  Pencil,
+  Copy,
+  Trash2,
+  AlertCircle,
+  Box,
+  MessageSquare,
+  Thermometer,
+  Maximize,
+} from 'lucide-react'
 import { fetchBots, createBot, deleteBot, updateBot, type BotResponse } from '@/api/bots'
 import { success, error as toastError } from '@/utils/toaster'
 
-const ROLE_META: Record<string, { icon: string; color: string; label: string }> = {
-  moderator:   { icon: 'shield',       color: 'bg-blue-600',   label: 'Модератор' },
-  analyst:     { icon: 'chart',        color: 'bg-cyan-600',   label: 'Аналитик' },
-  visionary:   { icon: 'lightbulb',    color: 'bg-purple-600', label: 'Визионер' },
-  critic:      { icon: 'eye-open',     color: 'bg-red-600',    label: 'Критик' },
-  expert:      { icon: 'learning',     color: 'bg-amber-600',  label: 'Эксперт' },
-  peacemaker:  { icon: 'heart',        color: 'bg-green-600',  label: 'Миротворец' },
-  provocateur: { icon: 'flash',        color: 'bg-orange-600', label: 'Провокатор' },
-  keeper:      { icon: 'lock',         color: 'bg-gray-600',   label: 'Хранитель' },
+const ROLE_META: Record<string, { icon: typeof Shield; color: string; label: string }> = {
+  moderator:   { icon: Shield,  color: 'bg-blue-600',   label: 'Модератор' },
+  analyst:     { icon: Eye,     color: 'bg-cyan-600',   label: 'Аналитик' },
+  visionary:   { icon: Sun,     color: 'bg-purple-600', label: 'Визионер' },
+  critic:      { icon: Eye,     color: 'bg-red-600',    label: 'Критик' },
+  expert:      { icon: Star,    color: 'bg-amber-600',  label: 'Эксперт' },
+  peacemaker:  { icon: Shield,  color: 'bg-green-600',  label: 'Миротворец' },
+  provocateur: { icon: Star,    color: 'bg-orange-600', label: 'Провокатор' },
+  keeper:      { icon: Lock,    color: 'bg-gray-600',   label: 'Хранитель' },
 }
 
 function getRoleMeta(specialistId: string) {
-  return ROLE_META[specialistId] ?? { icon: 'cube', color: 'bg-odi-accent', label: specialistId }
+  return ROLE_META[specialistId] ?? { icon: Box, color: 'bg-primary', label: specialistId }
 }
 
 function renderStars(count: number) {
   return Array.from({ length: 5 }, (_, i) => (
-    <Icon key={i} icon="star" size={10} className={i < count ? 'text-amber-400' : 'text-odi-border'} />
+    <Star key={i} className={`h-2.5 w-2.5 ${i < count ? 'text-amber-400 fill-amber-400' : 'text-border'}`} />
   ))
 }
 
@@ -129,22 +156,26 @@ export function BotsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-odi-text m-0">AI-боты</h2>
-          <p className="text-xs text-odi-text-muted mt-1">Управление ботами-специалистами для игровых сессий</p>
+          <h2 className="text-xl font-bold text-foreground m-0">AI-боты</h2>
+          <p className="text-xs text-muted-foreground mt-1">Управление ботами-специалистами для игровых сессий</p>
         </div>
-        <Button icon="plus" intent="success" text="Создать бота" onClick={() => navigate('/master/bots/new')} />
+        <Button className="bg-success hover:bg-success/90" onClick={() => navigate('/master/bots/new')}>
+          <Plus className="h-4 w-4 mr-2" />
+          Создать бота
+        </Button>
       </div>
 
       {/* Toolbar */}
       <div className="flex items-center gap-3 flex-wrap">
-        <InputGroup
-          leftIcon="search"
-          placeholder="Поиск по имени, роли, модели..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="!w-64"
-          small
-        />
+        <div className="relative w-64">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Поиск по имени, роли, модели..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9 h-8 text-sm"
+          />
+        </div>
         <div className="flex gap-1">
           {(['all', 'enabled', 'disabled'] as FilterTab[]).map((tab) => {
             const labels: Record<FilterTab, string> = { all: 'Все', enabled: 'Активные', disabled: 'Выключенные' }
@@ -152,12 +183,12 @@ export function BotsPage() {
             return (
               <Button
                 key={tab}
-                small
-                minimal={!isActive}
-                intent={isActive ? 'primary' : 'none'}
-                text={`${labels[tab]} (${counts[tab]})`}
+                size="sm"
+                variant={isActive ? 'default' : 'ghost'}
                 onClick={() => setFilter(tab)}
-              />
+              >
+                {labels[tab]} ({counts[tab]})
+              </Button>
             )
           })}
         </div>
@@ -167,18 +198,22 @@ export function BotsPage() {
       {loading ? (
         <div className="flex justify-center py-12"><Spinner size={32} /></div>
       ) : error ? (
-        <NonIdealState
-          icon="error"
-          title="Ошибка"
-          description={error}
-          action={<Button text="Повторить" small onClick={loadBots} />}
-        />
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <AlertCircle className="h-12 w-12 text-muted-foreground mb-3" />
+          <h3 className="text-lg font-medium text-foreground mb-1">Ошибка</h3>
+          <p className="text-sm text-muted-foreground mb-3">{error}</p>
+          <Button size="sm" onClick={loadBots}>Повторить</Button>
+        </div>
       ) : filtered.length === 0 ? (
-        <NonIdealState
-          icon="cube"
-          title={search || filter !== 'all' ? 'Ничего не найдено' : 'Нет ботов'}
-          description={search || filter !== 'all' ? 'Попробуйте изменить фильтры' : 'Создайте первого бота'}
-        />
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <Box className="h-12 w-12 text-muted-foreground mb-3" />
+          <h3 className="text-lg font-medium text-foreground mb-1">
+            {search || filter !== 'all' ? 'Ничего не найдено' : 'Нет ботов'}
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            {search || filter !== 'all' ? 'Попробуйте изменить фильтры' : 'Создайте первого бота'}
+          </p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
           {filtered.map((bot) => (
@@ -200,7 +235,7 @@ export function BotsPage() {
   )
 }
 
-/* ── Bot Card ── */
+/* -- Bot Card -- */
 
 function BotCard({ bot, toggling, deleting, duplicating, onEdit, onToggle, onDuplicate, onDelete }: {
   bot: BotResponse
@@ -213,11 +248,12 @@ function BotCard({ bot, toggling, deleting, duplicating, onEdit, onToggle, onDup
   onDelete: () => void
 }) {
   const meta = getRoleMeta(bot.specialistId)
+  const RoleIcon = meta.icon
 
   return (
     <Card
-      className={`!shadow-none !border-odi-border !p-0 overflow-hidden transition-opacity ${
-        bot.enabled ? '!bg-odi-surface' : '!bg-odi-surface opacity-60'
+      className={`shadow-none border-border p-0 overflow-hidden transition-opacity ${
+        bot.enabled ? 'bg-card' : 'bg-card opacity-60'
       }`}
     >
       {/* Top color bar */}
@@ -227,94 +263,102 @@ function BotCard({ bot, toggling, deleting, duplicating, onEdit, onToggle, onDup
         {/* Header row */}
         <div className="flex items-start gap-3 mb-3">
           <div className={`shrink-0 w-10 h-10 rounded-xl ${meta.color} flex items-center justify-center`}>
-            <Icon icon={meta.icon as any} size={18} className="text-white" />
+            <RoleIcon className="h-[18px] w-[18px] text-white" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <span className="font-bold text-odi-text truncate">{bot.name}</span>
-              {!bot.enabled && <Tag minimal intent="warning" className="text-[10px] shrink-0">OFF</Tag>}
+              <span className="font-bold text-foreground truncate">{bot.name}</span>
+              {!bot.enabled && <Badge variant="warning" className="text-[10px] shrink-0">OFF</Badge>}
             </div>
             <div className="flex items-center gap-2 mt-0.5">
-              <Tag minimal className="text-[10px]">{meta.label}</Tag>
-              {bot.tag && <Tag minimal intent="primary" className="text-[10px]">{bot.tag}</Tag>}
+              <Badge variant="outline" className="text-[10px]">{meta.label}</Badge>
+              {bot.tag && <Badge variant="default" className="text-[10px]">{bot.tag}</Badge>}
             </div>
           </div>
           <Switch
             checked={bot.enabled}
             disabled={toggling}
-            onChange={onToggle}
-            className="!mb-0 shrink-0"
+            onCheckedChange={onToggle}
+            className="shrink-0"
           />
         </div>
 
         {/* Description */}
-        <p className="text-sm text-odi-text-muted line-clamp-2 mb-3">{bot.description}</p>
+        <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{bot.description}</p>
 
         {/* Stats row */}
-        <div className="flex items-center gap-4 text-xs text-odi-text-muted mb-3">
+        <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3">
           <span className="flex items-center gap-0.5">{renderStars(bot.stars)}</span>
           <span className="font-mono text-[10px] truncate max-w-[140px]" title={bot.model}>{bot.model}</span>
         </div>
 
-        <div className="flex items-center gap-3 text-[11px] text-odi-text-muted">
+        <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
           <span className="flex items-center gap-1">
-            <Icon icon="chat" size={10} />
+            <MessageSquare className="h-2.5 w-2.5" />
             {bot.usageCount}
           </span>
           <span className="flex items-center gap-1">
-            <Icon icon="star" size={10} />
+            <Star className="h-2.5 w-2.5" />
             {Number(bot.avgRating).toFixed(1)}
           </span>
           <span className="flex items-center gap-1">
-            <Icon icon="temperature" size={10} />
+            <Thermometer className="h-2.5 w-2.5" />
             {bot.temperature}
           </span>
           <span className="flex items-center gap-1">
-            <Icon icon="maximize" size={10} />
+            <Maximize className="h-2.5 w-2.5" />
             {bot.maxTokens}
           </span>
         </div>
       </div>
 
       {/* Actions footer */}
-      <div className="flex items-center justify-between border-t border-odi-border px-4 py-2">
+      <div className="flex items-center justify-between border-t border-border px-4 py-2">
         <Button
-          icon="edit"
-          minimal
-          small
-          text="Редактировать"
-          className="!text-odi-text-muted"
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground"
           onClick={onEdit}
-        />
+        >
+          <Pencil className="h-3.5 w-3.5 mr-1.5" />
+          Редактировать
+        </Button>
         <div className="flex gap-1">
           <Button
-            icon="duplicate"
-            minimal
-            small
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground"
             title="Дублировать"
-            loading={duplicating}
+            disabled={duplicating}
             onClick={onDuplicate}
-            className="!text-odi-text-muted"
-          />
-          <Popover
-            placement="bottom-end"
-            content={
-              <div className="p-3">
-                <p className="text-sm text-odi-text mb-2">Удалить <strong>{bot.name}</strong>?</p>
-                <div className="flex gap-2 justify-end">
-                  <Button small minimal text="Отмена" className="bp5-popover-dismiss" />
-                  <Button
-                    small
-                    intent="danger"
-                    text="Удалить"
-                    loading={deleting}
-                    onClick={onDelete}
-                  />
-                </div>
-              </div>
-            }
           >
-            <Button icon="trash" minimal small intent="danger" title="Удалить" className="!text-red-400" />
+            {duplicating ? <Spinner size={14} /> : <Copy className="h-3.5 w-3.5" />}
+          </Button>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-red-400"
+                title="Удалить"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto">
+              <p className="text-sm text-foreground mb-2">Удалить <strong>{bot.name}</strong>?</p>
+              <div className="flex gap-2 justify-end">
+                <Button size="sm" variant="ghost">Отмена</Button>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  disabled={deleting}
+                  onClick={onDelete}
+                >
+                  {deleting ? <Spinner size={14} /> : 'Удалить'}
+                </Button>
+              </div>
+            </PopoverContent>
           </Popover>
         </div>
       </div>

@@ -79,12 +79,11 @@ const STATS = [
 ]
 
 export function LandingPage() {
-  const theme = useAppSelector((s) => s.app.theme)
   const isAuthenticated = useAppSelector((s) => s.auth.isAuthenticated)
   const navigate = useNavigate()
 
   return (
-    <div className={`${theme === 'dark' ? 'bp5-dark' : ''} landing-bw min-h-screen bg-[var(--lbw-bg)]`}>
+    <div className="landing-bw min-h-screen bg-[var(--lbw-bg)]">
       {/* Navbar */}
       <nav className="bg-[var(--lbw-bg)]/80 backdrop-blur-md border-b border-[var(--lbw-border)] sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">

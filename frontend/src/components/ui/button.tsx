@@ -3,15 +3,16 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-odi-accent disabled:pointer-events-none disabled:opacity-50 cursor-pointer',
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary disabled:pointer-events-none disabled:opacity-50 cursor-pointer',
   {
     variants: {
       variant: {
-        default: 'bg-odi-accent text-white hover:bg-odi-accent-hover shadow-sm',
-        secondary: 'bg-odi-surface text-odi-text border border-odi-border hover:bg-odi-surface-hover',
-        ghost: 'text-odi-text-muted hover:bg-odi-surface-hover hover:text-odi-text',
-        outline: 'border border-odi-border text-odi-text hover:bg-odi-surface-hover',
-        link: 'text-odi-accent underline-offset-4 hover:underline',
+        default: 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm',
+        secondary: 'bg-card text-foreground border border-border hover:bg-muted',
+        ghost: 'text-muted-foreground hover:bg-muted hover:text-foreground',
+        outline: 'border border-border text-foreground hover:bg-muted',
+        destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm',
+        link: 'text-primary underline-offset-4 hover:underline',
       },
       size: {
         default: 'h-9 px-4 py-2',

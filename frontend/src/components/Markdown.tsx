@@ -7,7 +7,7 @@ const components: Components = {
   strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
   em: ({ children }) => <em>{children}</em>,
   ul: ({ children }) => <ul className="list-disc pl-4 mb-2 last:mb-0">{children}</ul>,
-  ol: ({ children }) => <ol className="list-decimal pl-4 mb-2 last:mb-0">{children}</ol>,
+  ol: ({ children }) => <ol className="list-decimal pl-6 mb-2 last:mb-0">{children}</ol>,
   li: ({ children }) => <li className="mb-0.5">{children}</li>,
   code: ({ className, children, ...props }) => {
     const isBlock = className?.includes('language-')
@@ -29,12 +29,12 @@ const components: Components = {
   },
   pre: ({ children }) => <pre className="mb-2 last:mb-0">{children}</pre>,
   blockquote: ({ children }) => (
-    <blockquote className="border-l-2 border-odi-accent/50 pl-3 my-2 text-odi-text-muted italic">
+    <blockquote className="border-l-2 border-border pl-3 my-2 text-muted-foreground italic">
       {children}
     </blockquote>
   ),
   a: ({ href, children }) => (
-    <a href={href} target="_blank" rel="noopener noreferrer" className="text-odi-accent underline underline-offset-2">
+    <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">
       {children}
     </a>
   ),
@@ -49,9 +49,9 @@ const components: Components = {
   thead: ({ children }) => <thead>{children}</thead>,
   tbody: ({ children }) => <tbody>{children}</tbody>,
   tr: ({ children }) => <tr>{children}</tr>,
-  th: ({ children }) => <th className="border border-odi-border px-2 py-1 text-left font-semibold bg-black/10">{children}</th>,
-  td: ({ children }) => <td className="border border-odi-border px-2 py-1">{children}</td>,
-  hr: () => <hr className="border-odi-border my-2" />,
+  th: ({ children }) => <th className="border border-border px-2 py-1 text-left font-semibold bg-black/10">{children}</th>,
+  td: ({ children }) => <td className="border border-border px-2 py-1">{children}</td>,
+  hr: () => <hr className="border-border my-2" />,
 }
 
 /**

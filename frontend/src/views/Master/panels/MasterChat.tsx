@@ -1,12 +1,16 @@
-import { Card, InputGroup, Button, Tag, Icon } from '@blueprintjs/core'
 import { useState, useRef, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { Trash2, StickyNote, Pencil, Send, Check, Bot } from 'lucide-react'
 import { useAppSelector, useAppDispatch } from '@/store'
 import { clearEditingMessage } from '@/store/appSlice'
 import { getSocket } from '@/api/socket'
 import { Markdown } from '@/components/Markdown'
 import { MessageContextMenu } from '@/components/Chat/MessageContextMenu'
 import { useMessageContextMenu } from '@/hooks/useMessageContextMenu'
+import { Card } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 
 type Filter = 'all' | 'players' | 'bots' | 'system'
 
@@ -92,33 +96,31 @@ export function MasterChat() {
   })
 
   return (
-    <Card className="!bg-odi-surface !border-odi-border !shadow-none h-full flex flex-col overflow-hidden !p-3">
+    <Card className="bg-card border-border shadow-none h-full flex flex-col overflow-hidden p-3">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-bold text-odi-text-muted uppercase tracking-wider">
+        <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
           Чат сессии
           {!socketJoined && sessionId && (
-            <span className="ml-2 text-odi-warning normal-case font-normal">подключение...</span>
+            <span className="ml-2 text-warning normal-case font-normal">подключение...</span>
           )}
         </span>
         <div className="flex gap-1">
           {(['all', 'players', 'bots', 'system'] as Filter[]).map((f) => (
-            <Tag
+            <Badge
               key={f}
-              minimal
-              interactive
-              intent={filter === f ? 'primary' : 'none'}
+              variant={filter === f ? 'default' : 'outline'}
               className="text-[10px] cursor-pointer"
               onClick={() => setFilter(f)}
             >
               {{ all: 'Все', players: 'Игроки', bots: 'Боты', system: 'Система' }[f]}
-            </Tag>
+            </Badge>
           ))}
         </div>
       </div>
 
       <div ref={listRef} className="flex-1 overflow-y-auto space-y-1 mb-2">
         {filtered.length === 0 && (
-          <div className="text-xs text-odi-text-muted text-center py-4">
+          <div className="text-xs text-muted-foreground text-center py-4">
             {sessionId ? 'Нет сообщений' : 'Выберите сессию'}
           </div>
         )}
@@ -129,8 +131,8 @@ export function MasterChat() {
 
           if (isDeleted) {
             return (
-              <div key={msg.id} className="flex items-center gap-1 px-2 py-0.5 text-[10px] text-odi-text-muted/50 italic">
-                <Icon icon="trash" size={9} />
+              <div key={msg.id} className="flex items-center gap-1 px-2 py-0.5 text-[10px] text-muted-foreground/50 italic">
+                <Trash2 className="h-2.5 w-2.5" />
                 <span>{msg.text.replace('\u26A0 ', '')}</span>
               </div>
             )
@@ -141,21 +143,21 @@ export function MasterChat() {
               key={msg.id}
               className={`px-2 py-1 rounded text-xs ${
                 sys
-                  ? 'bg-odi-warning/10 text-odi-warning italic'
+                  ? 'bg-warning/10 text-warning italic'
                   : bot
-                    ? 'bg-odi-energy/10'
-                    : 'bg-odi-surface-hover'
+                    ? 'bg-energy/10'
+                    : 'bg-muted'
               }`}
               onContextMenu={(e) => handleContextMenu(e, msg)}
             >
-              <span className="font-medium text-odi-text">
-                {bot && !sys && '\u{1F916} '}{msg.author}
+              <span className="font-medium text-foreground">
+                {bot && !sys && <Bot className="h-3 w-3 inline mr-0.5" />}{msg.author}
               </span>
-              <span className="text-odi-text-muted ml-1">
+              <span className="text-muted-foreground ml-1">
                 {formatTime(msg.timestamp)}
                 {msg.isEdited && <span className="italic ml-1">(ред.)</span>}
               </span>
-              <div className="text-odi-text mt-0.5 break-words">
+              <div className="text-foreground mt-0.5 break-words">
                 <Markdown>{msg.text}</Markdown>
               </div>
             </div>
@@ -167,11 +169,11 @@ export function MasterChat() {
           )
           const botName = bot?.name || stream.botConfigId
           return (
-            <div key={stream.streamId} className="px-2 py-1 rounded text-xs bg-odi-energy/10">
-              <span className="font-medium text-odi-text">{'\u{1F916}'} {botName}</span>
-              <div className="text-odi-text mt-0.5 break-words">
+            <div key={stream.streamId} className="px-2 py-1 rounded text-xs bg-energy/10">
+              <span className="font-medium text-foreground"><Bot className="h-3 w-3 inline mr-0.5" /> {botName}</span>
+              <div className="text-foreground mt-0.5 break-words">
                 <Markdown>{stream.text}</Markdown>
-                <span className="inline-block w-1 h-3 ml-0.5 bg-odi-accent animate-pulse rounded-sm align-text-bottom" />
+                <span className="inline-block w-1 h-3 ml-0.5 bg-foreground animate-pulse rounded-sm align-text-bottom" />
               </div>
             </div>
           )
@@ -179,27 +181,37 @@ export function MasterChat() {
       </div>
 
       {editingMessage && (
-        <div className="flex items-center gap-1 mb-1 px-1 text-[10px] text-odi-accent">
-          <span>✏️ Редактирование</span>
-          <button className="ml-auto text-odi-text-muted hover:text-odi-text" onClick={handleCancelEdit}>✕</button>
+        <div className="flex items-center gap-1 mb-1 px-1 text-[10px] text-primary">
+          <span>Редактирование</span>
+          <button className="ml-auto text-muted-foreground hover:text-foreground" onClick={handleCancelEdit}>&times;</button>
         </div>
       )}
       <div className="flex gap-1">
-        <InputGroup
-          inputRef={inputRef}
-          placeholder={editingMessage ? 'Редактирование...' : socketJoined ? 'Сообщение от мастера...' : 'Не подключено'}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          small
-          disabled={!socketJoined || !sessionId}
-          className={`flex-1 ${editingMessage ? '[&_input]:!border-odi-accent' : ''}`}
-          leftIcon={editingMessage ? 'edit' : 'annotation'}
-        />
+        <div className="flex-1 relative">
+          <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground">
+            {editingMessage
+              ? <Pencil className="h-3.5 w-3.5" />
+              : <StickyNote className="h-3.5 w-3.5" />
+            }
+          </div>
+          <Input
+            ref={inputRef}
+            placeholder={editingMessage ? 'Редактирование...' : socketJoined ? 'Сообщение от мастера...' : 'Не подключено'}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={!socketJoined || !sessionId}
+            className={`pl-8 h-8 text-sm ${editingMessage ? 'border-primary' : ''}`}
+          />
+        </div>
         {editingMessage ? (
-          <Button icon="tick" intent="success" small onClick={handleSend} disabled={!socketJoined || !sessionId || !input.trim()} />
+          <Button size="sm" className="bg-success hover:bg-success/90 h-8" onClick={handleSend} disabled={!socketJoined || !sessionId || !input.trim()}>
+            <Check className="h-4 w-4" />
+          </Button>
         ) : (
-          <Button icon="send-message" intent="primary" small disabled={!socketJoined || !sessionId || !input.trim()} onClick={handleSend} />
+          <Button size="sm" className="h-8" disabled={!socketJoined || !sessionId || !input.trim()} onClick={handleSend}>
+            <Send className="h-4 w-4" />
+          </Button>
         )}
       </div>
 

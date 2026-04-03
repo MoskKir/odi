@@ -1,8 +1,23 @@
-import { Button, Card, FormGroup, InputGroup, TextArea, HTMLSelect, Switch, TagInput } from '@blueprintjs/core'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { X, Check, Plus } from 'lucide-react'
 import { createScenario, type CreateScenarioDto } from '@/api/scenarios'
 import { success, error as toastError } from '@/utils/toaster'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
+import { Badge } from '@/components/ui/badge'
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from '@/components/ui/select'
+import { Spinner } from '@/components/ui/spinner'
 
 const ICONS = [
   { value: '\u{1F3E2}', label: '\u{1F3E2} Бизнес' },
@@ -39,6 +54,10 @@ export function ScenarioCreatePage() {
   const [recommendedBots, setRecommendedBots] = useState<string[]>([])
   const [avgDurationMinutes, setAvgDurationMinutes] = useState('')
 
+  // Tag input state
+  const [requiredInput, setRequiredInput] = useState('')
+  const [recommendedInput, setRecommendedInput] = useState('')
+
   const canSubmit = title.trim() && subtitle.trim() && description.trim()
 
   const handleSubmit = async () => {
@@ -72,25 +91,50 @@ export function ScenarioCreatePage() {
     }
   }
 
+  const addTag = (list: 'required' | 'recommended') => {
+    const input = list === 'required' ? requiredInput : recommendedInput
+    const setInput = list === 'required' ? setRequiredInput : setRecommendedInput
+    const setter = list === 'required' ? setRequiredBots : setRecommendedBots
+    const val = input.trim()
+    if (!val) return
+    setter((prev) => (prev.includes(val) ? prev : [...prev, val]))
+    setInput('')
+  }
+
+  const removeTag = (list: 'required' | 'recommended', value: string) => {
+    const setter = list === 'required' ? setRequiredBots : setRecommendedBots
+    setter((prev) => prev.filter((v) => v !== value))
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-odi-text">Новый сценарий</h2>
-        <Button minimal icon="cross" text="Отмена" onClick={() => navigate('/master/scenarios')} />
+        <h2 className="text-xl font-bold text-foreground">Новый сценарий</h2>
+        <Button variant="ghost" onClick={() => navigate('/master/scenarios')}>
+          <X className="h-4 w-4 mr-1" />
+          Отмена
+        </Button>
       </div>
 
-      <Card className="!bg-odi-surface !border-odi-border !shadow-none">
+      <Card className="bg-card border-border shadow-none p-5">
         <div className="space-y-4">
-          <FormGroup label="Иконка" className="!mb-0">
-            <HTMLSelect value={icon} onChange={(e) => setIcon(e.target.value)}>
-              {ICONS.map((i) => (
-                <option key={i.value} value={i.value}>{i.label}</option>
-              ))}
-            </HTMLSelect>
-          </FormGroup>
+          <div className="space-y-2">
+            <Label>Иконка</Label>
+            <Select value={icon} onValueChange={setIcon}>
+              <SelectTrigger className="w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ICONS.map((i) => (
+                  <SelectItem key={i.value} value={i.value}>{i.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-          <FormGroup label="Название" labelInfo="(обязательно)">
-            <TextArea
+          <div className="space-y-2">
+            <Label>Название <span className="text-muted-foreground">(обязательно)</span></Label>
+            <Textarea
               value={title}
               onChange={(e) => {
                 setTitle(e.target.value)
@@ -98,22 +142,23 @@ export function ScenarioCreatePage() {
                 e.target.style.height = e.target.scrollHeight + 'px'
               }}
               placeholder="Например: Бизнес-стратегия"
-              fill
               rows={1}
-              className="!bg-odi-bg !text-odi-text !overflow-hidden !resize-none"
+              className="bg-background text-foreground overflow-hidden resize-none"
             />
-          </FormGroup>
+          </div>
 
-          <FormGroup label="Подзаголовок" labelInfo="(обязательно)">
-            <InputGroup
+          <div className="space-y-2">
+            <Label>Подзаголовок <span className="text-muted-foreground">(обязательно)</span></Label>
+            <Input
               value={subtitle}
               onChange={(e) => setSubtitle(e.target.value)}
               placeholder="Короткое описание в одну строку"
             />
-          </FormGroup>
+          </div>
 
-          <FormGroup label="Описание" labelInfo="(обязательно)">
-            <TextArea
+          <div className="space-y-2">
+            <Label>Описание <span className="text-muted-foreground">(обязательно)</span></Label>
+            <Textarea
               value={description}
               onChange={(e) => {
                 setDescription(e.target.value)
@@ -125,58 +170,102 @@ export function ScenarioCreatePage() {
                 e.target.style.height = e.target.scrollHeight + 'px'
               }}
               placeholder="Подробное описание сценария..."
-              fill
               rows={3}
-              className="!bg-odi-bg !text-odi-text !overflow-hidden !resize-none"
+              className="bg-background text-foreground overflow-hidden resize-none"
             />
-          </FormGroup>
+          </div>
 
           <div className="flex gap-4">
-            <FormGroup label="Сложность" className="!mb-0">
-              <HTMLSelect value={difficulty} onChange={(e) => setDifficulty(e.target.value as any)}>
-                <option value="easy">Лёгкий</option>
-                <option value="medium">Средний</option>
-                <option value="hard">Сложный</option>
-              </HTMLSelect>
-            </FormGroup>
+            <div className="space-y-2">
+              <Label>Сложность</Label>
+              <Select value={difficulty} onValueChange={(v) => setDifficulty(v as any)}>
+                <SelectTrigger className="w-36">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="easy">Лёгкий</SelectItem>
+                  <SelectItem value="medium">Средний</SelectItem>
+                  <SelectItem value="hard">Сложный</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-            <FormGroup label="Ср. длительность (мин)" className="!mb-0">
-              <InputGroup
+            <div className="space-y-2">
+              <Label>Ср. длительность (мин)</Label>
+              <Input
                 type="number"
                 min={0}
                 value={avgDurationMinutes}
                 onChange={(e) => setAvgDurationMinutes(e.target.value)}
                 placeholder="60"
-                className="!w-28"
+                className="w-28"
               />
-            </FormGroup>
+            </div>
           </div>
 
-          <FormGroup label="Обязательные боты" helperText="Введите slug бота и нажмите Enter">
-            <TagInput
-              values={requiredBots}
-              onChange={(values) => setRequiredBots(values as string[])}
-              placeholder="moderator, critic..."
-              addOnBlur
-              className="!bg-odi-bg"
-            />
-          </FormGroup>
+          <div className="space-y-2">
+            <Label>Обязательные боты</Label>
+            <p className="text-xs text-muted-foreground">Введите slug бота и нажмите Enter</p>
+            <div className="flex flex-wrap gap-1 mb-2">
+              {requiredBots.map((b) => (
+                <Badge key={b} variant="outline" className="gap-1">
+                  {b}
+                  <button onClick={() => removeTag('required', b)} className="ml-1 hover:text-red-500">
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <Input
+                value={requiredInput}
+                onChange={(e) => setRequiredInput(e.target.value)}
+                placeholder="moderator, critic..."
+                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag('required'))}
+                onBlur={() => addTag('required')}
+                className="flex-1 bg-background"
+              />
+              <Button variant="ghost" size="icon" onClick={() => addTag('required')}>
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
 
-          <FormGroup label="Рекомендуемые боты" helperText="Введите slug бота и нажмите Enter">
-            <TagInput
-              values={recommendedBots}
-              onChange={(values) => setRecommendedBots(values as string[])}
-              placeholder="analyst, visionary..."
-              addOnBlur
-              className="!bg-odi-bg"
-            />
-          </FormGroup>
+          <div className="space-y-2">
+            <Label>Рекомендуемые боты</Label>
+            <p className="text-xs text-muted-foreground">Введите slug бота и нажмите Enter</p>
+            <div className="flex flex-wrap gap-1 mb-2">
+              {recommendedBots.map((b) => (
+                <Badge key={b} variant="outline" className="gap-1">
+                  {b}
+                  <button onClick={() => removeTag('recommended', b)} className="ml-1 hover:text-red-500">
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <Input
+                value={recommendedInput}
+                onChange={(e) => setRecommendedInput(e.target.value)}
+                placeholder="analyst, visionary..."
+                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag('recommended'))}
+                onBlur={() => addTag('recommended')}
+                className="flex-1 bg-background"
+              />
+              <Button variant="ghost" size="icon" onClick={() => addTag('recommended')}>
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
 
-          <Switch
-            checked={published}
-            label="Опубликовать сразу"
-            onChange={() => setPublished(!published)}
-          />
+          <div className="flex items-center gap-2">
+            <Switch
+              checked={published}
+              onCheckedChange={setPublished}
+            />
+            <Label>Опубликовать сразу</Label>
+          </div>
 
           {error && (
             <div className="text-sm text-red-500">{error}</div>
@@ -184,14 +273,14 @@ export function ScenarioCreatePage() {
 
           <div className="flex gap-2 pt-2">
             <Button
-              intent="success"
-              icon="tick"
-              text="Создать сценарий"
-              loading={saving}
-              disabled={!canSubmit}
+              className="bg-success hover:bg-success/90"
+              disabled={!canSubmit || saving}
               onClick={handleSubmit}
-            />
-            <Button minimal text="Отмена" onClick={() => navigate('/master/scenarios')} />
+            >
+              {saving ? <Spinner size="sm" /> : <Check className="h-4 w-4 mr-1" />}
+              Создать сценарий
+            </Button>
+            <Button variant="ghost" onClick={() => navigate('/master/scenarios')}>Отмена</Button>
           </div>
         </div>
       </Card>

@@ -69,21 +69,30 @@ export class GameService implements OnModuleInit {
       interfaceMode: dto.interfaceMode,
       aiVisibility: dto.aiVisibility,
       crewSize: dto.crewSize,
+      boardColumns: dto.boardColumns ?? null,
       inviteCode,
     });
 
     await this.sessionRepo.save(session);
 
-    // Create default phases
-    const defaultPhases = [
-      { name: 'Знакомство', durationMinutes: 5, orderIndex: 0 },
-      { name: 'Анализ проблемы', durationMinutes: 10, orderIndex: 1 },
-      { name: 'Генерация идей', durationMinutes: 15, orderIndex: 2 },
-      { name: 'Обсуждение', durationMinutes: 10, orderIndex: 3 },
-      { name: 'Подведение итогов', durationMinutes: 5, orderIndex: 4 },
-    ];
+    // Create phases (custom or default)
+    const phasesDef = dto.phases?.length > 0
+      ? dto.phases.map(
+          (p: { name: string; durationMinutes: number }, i: number) => ({
+            name: p.name,
+            durationMinutes: p.durationMinutes,
+            orderIndex: i,
+          }),
+        )
+      : [
+          { name: 'Знакомство', durationMinutes: 5, orderIndex: 0 },
+          { name: 'Анализ проблемы', durationMinutes: 10, orderIndex: 1 },
+          { name: 'Генерация идей', durationMinutes: 15, orderIndex: 2 },
+          { name: 'Обсуждение', durationMinutes: 10, orderIndex: 3 },
+          { name: 'Подведение итогов', durationMinutes: 5, orderIndex: 4 },
+        ];
 
-    const phases = defaultPhases.map((p) =>
+    const phases = phasesDef.map((p: any) =>
       this.phaseRepo.create({ ...p, sessionId: session.id }),
     );
     await this.phaseRepo.save(phases);

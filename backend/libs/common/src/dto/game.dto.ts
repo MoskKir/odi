@@ -6,9 +6,28 @@ import {
   IsString,
   IsUUID,
   Min,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { GameStatus } from '../enums/game-status.enum';
 import { Difficulty } from '../enums/difficulty.enum';
+
+class PhaseDto {
+  @IsString()
+  name: string;
+
+  @IsNumber()
+  @Min(1)
+  durationMinutes: number;
+}
+
+class BoardColumnDto {
+  @IsString()
+  id: string;
+
+  @IsString()
+  title: string;
+}
 
 export class CreateGameDto {
   @IsString()
@@ -48,6 +67,18 @@ export class CreateGameDto {
   @IsArray()
   @IsString({ each: true })
   specialistIds?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PhaseDto)
+  phases?: PhaseDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => BoardColumnDto)
+  boardColumns?: BoardColumnDto[];
 }
 
 export class UpdateGameStatusDto {

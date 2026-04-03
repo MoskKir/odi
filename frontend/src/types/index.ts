@@ -75,6 +75,10 @@ export type SpecialistId =
   | 'provocateur'
   | 'keeper'
   | 'expert'
+  | 'strategist'
+  | 'coach'
+  | 'devil_advocate'
+  | 'innovator'
 
 export interface Specialist {
   id: SpecialistId

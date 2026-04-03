@@ -15,24 +15,24 @@ export function MiniChat() {
 
   if (lastMessages.length === 0 && streams.length === 0) {
     return (
-      <p className="text-xs text-odi-text-muted italic">Нет сообщений</p>
+      <p className="text-xs text-muted-foreground italic">Нет сообщений</p>
     )
   }
 
   return (
     <div className="space-y-1.5">
       {lastMessages.map((msg) => (
-        <div key={msg.id} className="text-xs px-2.5 py-2 rounded-md bg-odi-bg/50 border border-odi-border/50">
-          <span className="text-odi-accent font-semibold">{msg.author}</span>
-          <div className="text-odi-text mt-0.5 break-words leading-relaxed"><Markdown>{msg.text}</Markdown></div>
+        <div key={msg.id} className="text-xs px-2.5 py-2 rounded-md bg-background/50 border border-border/50">
+          <span className="text-foreground font-semibold">{msg.author}</span>
+          <div className="text-foreground mt-0.5 break-words leading-relaxed"><Markdown>{msg.text}</Markdown></div>
         </div>
       ))}
       {streams.map((stream) => (
-        <div key={stream.streamId} className="text-xs px-2.5 py-2 rounded-md bg-odi-bg/50 border border-odi-accent/20">
-          <span className="text-odi-accent font-semibold">{stream.botConfigId}</span>
-          <div className="text-odi-text mt-0.5 break-words leading-relaxed">
+        <div key={stream.streamId} className="text-xs px-2.5 py-2 rounded-md bg-background/50 border border-border">
+          <span className="text-foreground font-semibold">{stream.botConfigId}</span>
+          <div className="text-foreground mt-0.5 break-words leading-relaxed">
             <Markdown>{stream.text}</Markdown>
-            <span className="inline-block w-1 h-3 ml-0.5 bg-odi-accent animate-pulse rounded-sm align-text-bottom" />
+            <span className="inline-block w-1 h-3 ml-0.5 bg-foreground animate-pulse rounded-sm align-text-bottom" />
           </div>
         </div>
       ))}

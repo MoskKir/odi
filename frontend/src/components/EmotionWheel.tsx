@@ -1,11 +1,13 @@
 import { useState, useMemo } from 'react';
-import { Dialog, Button } from '@blueprintjs/core';
+import { X, Check } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useAppSelector, useAppDispatch } from '@/store';
 import { setEmotion } from '@/store/appSlice';
 import { getSocket } from '@/api/socket';
 
-/* ── Emotion data ── */
+/* -- Emotion data -- */
 
 interface Sector {
   core: string;
@@ -150,7 +152,7 @@ const SECTORS: Sector[] = [
   },
 ];
 
-/* ── Geometry ── */
+/* -- Geometry -- */
 
 const DEG2RAD = Math.PI / 180;
 
@@ -187,12 +189,6 @@ function arcLen(r: number, angleDeg: number): number {
 
 /**
  * Compute font size that fits within the segment.
- * For radial text:
- *   - text "width" (along text baseline) must fit in ringHeight (ro - ri)
- *   - text "height" (perpendicular) must fit in arcWidth at midRadius
- * For tangential text:
- *   - text "width" must fit in arcWidth
- *   - text "height" must fit in ringHeight
  */
 function fitFontSize(
   label: string,
@@ -205,28 +201,23 @@ function fitFontSize(
   const ringH = ro - ri;
   const midR = (ri + ro) / 2;
   const arcW = arcLen(midR, angleDeg);
-  // Cyrillic chars are wide; bold even wider
   const cw = 0.62;
 
-  let byLength: number; // text must fit along its baseline
-  let byHeight: number; // text must fit perpendicular to baseline
+  let byLength: number;
+  let byHeight: number;
 
   if (mode === 'radial') {
-    // baseline goes along radius → text length must fit ringH
     byLength = (ringH * 0.88) / (label.length * cw);
-    // perpendicular = arc width → font height must fit
     byHeight = arcW * 0.72;
   } else {
-    // baseline along arc → text length must fit arcW
     byLength = (arcW * 0.88) / (label.length * cw);
-    // perpendicular = ring height → font height must fit
     byHeight = ringH * 0.55;
   }
 
   return Math.min(maxFont, byLength, byHeight);
 }
 
-/* ── Segment ── */
+/* -- Segment -- */
 
 interface Seg {
   path: string;
@@ -241,7 +232,7 @@ interface Seg {
   textColor: string;
 }
 
-/* ── Component ── */
+/* -- Component -- */
 
 interface Props {
   isOpen: boolean;
@@ -271,14 +262,12 @@ export function EmotionWheel({ isOpen, onClose }: Props) {
   const handleConfirm = () => {
     if (!selected || !sessionId) return;
     const socket = getSocket();
-    // Update emotion state
     dispatch(setEmotion(selected as any));
     socket?.emit('emotion:set', { sessionId, emotion: selected });
-    // Send system message to chat
     const name = user?.name || 'Пользователь';
     socket?.emit('chat:send', {
       sessionId,
-      text: `🎭 ${name} сейчас испытывает: ${selected}`,
+      text: `${name} сейчас испытывает: ${selected}`,
     });
     setSelected(null);
     onClose();
@@ -312,7 +301,7 @@ export function EmotionWheel({ isOpen, onClose }: Props) {
       const cAngle = cA2 - cA1;
       const coreMid = (cA1 + cA2) / 2;
 
-      /* Core — tangential */
+      /* Core -- tangential */
       const coreMidR = (R0 + R1) / 2;
       const [cx, cy] = polar(coreMidR, coreMid);
       const coreFontSize = fitFontSize(
@@ -336,7 +325,7 @@ export function EmotionWheel({ isOpen, onClose }: Props) {
         textColor: '#fff',
       });
 
-      /* Level 1 — radial */
+      /* Level 1 -- radial */
       const l1n = sector.level1.length;
       const l1deg = (sectorDeg - gap * 2) / l1n;
       sector.level1.forEach((lbl, i) => {
@@ -361,7 +350,7 @@ export function EmotionWheel({ isOpen, onClose }: Props) {
         });
       });
 
-      /* Level 2 — radial */
+      /* Level 2 -- radial */
       const l2n = sector.level2.length;
       const l2deg = (sectorDeg - gap * 2) / l2n;
       sector.level2.forEach((lbl, i) => {
@@ -391,118 +380,112 @@ export function EmotionWheel({ isOpen, onClose }: Props) {
   }, []);
 
   return (
-    <Dialog
-      isOpen={isOpen}
-      onClose={handleClose}
-      className="!bg-odi-surface !p-0 !w-[95vw] !max-w-[1200px]"
-    >
-      <div className="flex flex-col items-center p-3">
-        {/* Header */}
-        <div className="flex items-center justify-between w-full mb-1 px-1">
-          <span className="text-sm font-bold text-odi-text">Колесо эмоций</span>
-          <div className="flex items-center gap-2">
-            {currentEmotion && (
-              <span className="text-[10px] text-odi-text-muted">
-                сейчас:{' '}
-                <span className="text-odi-accent font-medium">
-                  {currentEmotion}
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) handleClose(); }}>
+      <DialogContent className="!p-0 !w-[95vw] !max-w-[1200px] !gap-0">
+        <div className="flex flex-col items-center p-3">
+          {/* Header */}
+          <div className="flex items-center justify-between w-full mb-1 px-1">
+            <span className="text-sm font-bold text-foreground">Колесо эмоций</span>
+            <div className="flex items-center gap-2">
+              {currentEmotion && (
+                <span className="text-[10px] text-muted-foreground">
+                  сейчас:{' '}
+                  <span className="text-primary font-medium">
+                    {currentEmotion}
+                  </span>
                 </span>
+              )}
+            </div>
+          </div>
+
+          {/* Hover / selection label */}
+          <div className="h-6 flex items-center justify-center">
+            {(hovered || selected) && (
+              <span
+                className={`text-sm font-semibold animate-fade-in ${selected && !hovered ? 'text-primary' : 'text-foreground'}`}
+              >
+                {hovered || selected}
               </span>
             )}
+          </div>
+
+          {/* SVG Wheel */}
+          <svg
+            viewBox="-52 -52 104 104"
+            className="w-full max-w-[min(1100px,85vh)] aspect-square"
+          >
+            {segments.map((seg, i) => {
+              const isSelected = selected === seg.label;
+              const isCurrent = currentEmotion === seg.label;
+              const isHov = hovered === seg.label;
+              const highlighted = isSelected || (isCurrent && !selected);
+              return (
+                <g key={i}>
+                  <path
+                    d={seg.path}
+                    fill={highlighted ? '#4A7FC0' : seg.fill}
+                    stroke={
+                      highlighted ? '#3060A0' : isHov ? '#fff' : '#ffffffa0'
+                    }
+                    strokeWidth={highlighted ? 0.4 : 0.12}
+                    opacity={isHov && !highlighted ? 0.8 : 1}
+                    className="cursor-pointer"
+                    style={{ transition: 'opacity 0.12s, fill 0.12s' }}
+                    onMouseEnter={() => setHovered(seg.label)}
+                    onMouseLeave={() => setHovered(null)}
+                    onClick={() => handlePick(seg.label)}
+                  />
+                  <text
+                    x={seg.x}
+                    y={seg.y}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fontSize={seg.fontSize}
+                    fontWeight={seg.fontWeight}
+                    fill={highlighted ? '#fff' : seg.textColor}
+                    className="pointer-events-none select-none"
+                    transform={`rotate(${seg.rotate},${seg.x},${seg.y})`}
+                  >
+                    {seg.label}
+                  </text>
+                </g>
+              );
+            })}
+          </svg>
+
+          {/* Footer -- confirm / reset */}
+          <div className="flex items-center gap-2 mt-2 w-full px-1">
+            {currentEmotion && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleReset}
+                className="text-muted-foreground"
+              >
+                <X className="h-3.5 w-3.5" />
+                Сбросить
+              </Button>
+            )}
+            <div className="flex-1" />
             <Button
-              minimal
-              small
-              icon="small-cross"
+              variant="ghost"
+              size="sm"
               onClick={handleClose}
-              className="!text-odi-text-muted"
-            />
+              className="text-muted-foreground"
+            >
+              Отмена
+            </Button>
+            <Button
+              size="sm"
+              disabled={!selected || !socketJoined}
+              onClick={handleConfirm}
+            >
+              <Check className="h-3.5 w-3.5" />
+              {selected ? `Выбрать: ${selected}` : 'Выберите эмоцию'}
+            </Button>
           </div>
         </div>
-
-        {/* Hover / selection label */}
-        <div className="h-6 flex items-center justify-center">
-          {(hovered || selected) && (
-            <span
-              className={`text-sm font-semibold animate-fade-in ${selected && !hovered ? 'text-odi-accent' : 'text-odi-text'}`}
-            >
-              {hovered || selected}
-            </span>
-          )}
-        </div>
-
-        {/* SVG Wheel */}
-        <svg
-          viewBox="-52 -52 104 104"
-          className="w-full max-w-[min(1100px,85vh)] aspect-square"
-        >
-          {segments.map((seg, i) => {
-            const isSelected = selected === seg.label;
-            const isCurrent = currentEmotion === seg.label;
-            const isHov = hovered === seg.label;
-            const highlighted = isSelected || (isCurrent && !selected);
-            return (
-              <g key={i}>
-                <path
-                  d={seg.path}
-                  fill={highlighted ? '#4A7FC0' : seg.fill}
-                  stroke={
-                    highlighted ? '#3060A0' : isHov ? '#fff' : '#ffffffa0'
-                  }
-                  strokeWidth={highlighted ? 0.4 : 0.12}
-                  opacity={isHov && !highlighted ? 0.8 : 1}
-                  className="cursor-pointer"
-                  style={{ transition: 'opacity 0.12s, fill 0.12s' }}
-                  onMouseEnter={() => setHovered(seg.label)}
-                  onMouseLeave={() => setHovered(null)}
-                  onClick={() => handlePick(seg.label)}
-                />
-                <text
-                  x={seg.x}
-                  y={seg.y}
-                  textAnchor="middle"
-                  dominantBaseline="central"
-                  fontSize={seg.fontSize}
-                  fontWeight={seg.fontWeight}
-                  fill={highlighted ? '#fff' : seg.textColor}
-                  className="pointer-events-none select-none"
-                  transform={`rotate(${seg.rotate},${seg.x},${seg.y})`}
-                >
-                  {seg.label}
-                </text>
-              </g>
-            );
-          })}
-        </svg>
-
-        {/* Footer — confirm / reset */}
-        <div className="flex items-center gap-2 mt-2 w-full px-1">
-          {currentEmotion && (
-            <Button
-              minimal
-              small
-              text="Сбросить"
-              icon="cross"
-              onClick={handleReset}
-              className="!text-odi-text-muted"
-            />
-          )}
-          <div className="flex-1" />
-          <Button
-            small
-            text="Отмена"
-            onClick={handleClose}
-            className="!text-odi-text-muted"
-          />
-          <Button
-            small
-            intent="primary"
-            icon="tick"
-            text={selected ? `Выбрать: ${selected}` : 'Выберите эмоцию'}
-            disabled={!selected || !socketJoined}
-            onClick={handleConfirm}
-          />
-        </div>
-      </div>
+      </DialogContent>
     </Dialog>
   );
 }

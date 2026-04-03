@@ -1,31 +1,43 @@
-import { Button, Card, Tag, ProgressBar, NonIdealState, InputGroup, Spinner, EditableText, Popover, ButtonGroup, Icon } from '@blueprintjs/core'
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
+import { Input } from '@/components/ui/input'
+import { Spinner } from '@/components/ui/spinner'
+import { Popover, PopoverTrigger, PopoverContent, PopoverClose } from '@/components/ui/popover'
+import {
+  Play, Users, LayoutGrid, List,
+  Plus, ChevronLeft, ChevronRight, ChevronUp, ChevronDown,
+  Search, Settings, Trash2, AlertCircle, Box, Gamepad2,
+} from 'lucide-react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppSelector, useAppDispatch } from '@/store'
 import { setDashboardView } from '@/store/appSlice'
 import { SettingsMenu } from '@/components/SettingsMenu'
 import { AccountBadge } from '@/components/AccountBadge'
+import { AppMenu } from '@/components/AppMenu'
 import { fetchGames, updateGameTitle, deleteGame, type GameSessionResponse } from '@/api/games'
 import { success, error as toastError } from '@/utils/toaster'
 import type { GameStatus } from '@/types'
 
-const STATUS_CFG: Record<string, { label: string; intent: 'success' | 'warning' | 'primary' | 'none'; icon: string }> = {
-  active: { label: 'Активна', intent: 'success', icon: 'play' },
-  paused: { label: 'Пауза', intent: 'warning', icon: 'pause' },
-  completed: { label: 'Завершена', intent: 'primary', icon: 'tick-circle' },
-  draft: { label: 'Черновик', intent: 'none', icon: 'document' },
+const STATUS_CFG: Record<string, { label: string; variant: 'success' | 'warning' | 'default' | 'outline' }> = {
+  active: { label: 'Активна', variant: 'success' },
+  paused: { label: 'Пауза', variant: 'warning' },
+  completed: { label: 'Завершена', variant: 'default' },
+  draft: { label: 'Черновик', variant: 'outline' },
 }
 
 type FilterTab = 'all' | GameStatus
 type ViewType = 'grid' | 'table'
 type SortKey = 'date' | 'title' | 'status' | 'progress'
 
-const FILTERS: { value: FilterTab; label: string; icon: string }[] = [
-  { value: 'all', label: 'Все', icon: 'applications' },
-  { value: 'active', label: 'Активные', icon: 'play' },
-  { value: 'paused', label: 'Пауза', icon: 'pause' },
-  { value: 'completed', label: 'Завершённые', icon: 'tick-circle' },
-  { value: 'draft', label: 'Черновики', icon: 'document' },
+const FILTERS: { value: FilterTab; label: string }[] = [
+  { value: 'all', label: 'Все' },
+  { value: 'active', label: 'Активные' },
+  { value: 'paused', label: 'Пауза' },
+  { value: 'completed', label: 'Завершённые' },
+  { value: 'draft', label: 'Черновики' },
 ]
 
 function fmtDate(iso: string) {
@@ -38,7 +50,67 @@ function fmtDuration(min: number) {
   return `${min} мин`
 }
 
-// ── Stats Bar ──
+// -- Inline editable title --
+
+function InlineEditableTitle({
+  defaultValue,
+  onConfirm,
+  className = '',
+  placeholder = 'Название...',
+}: {
+  defaultValue: string
+  onConfirm: (value: string) => void
+  className?: string
+  placeholder?: string
+}) {
+  const [editing, setEditing] = useState(false)
+  const [value, setValue] = useState(defaultValue)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (editing) {
+      inputRef.current?.focus()
+      inputRef.current?.select()
+    }
+  }, [editing])
+
+  if (!editing) {
+    return (
+      <span
+        className={`cursor-text hover:bg-muted/50 px-1 -mx-1 rounded ${className}`}
+        onClick={() => setEditing(true)}
+      >
+        {value || placeholder}
+      </span>
+    )
+  }
+
+  return (
+    <input
+      ref={inputRef}
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+      onBlur={() => {
+        setEditing(false)
+        if (value.trim() && value.trim() !== defaultValue) onConfirm(value.trim())
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          setEditing(false)
+          if (value.trim() && value.trim() !== defaultValue) onConfirm(value.trim())
+        }
+        if (e.key === 'Escape') {
+          setValue(defaultValue)
+          setEditing(false)
+        }
+      }}
+      placeholder={placeholder}
+      className={`bg-transparent border-b border-primary/40 outline-none px-1 -mx-1 ${className}`}
+    />
+  )
+}
+
+// -- Stats Bar --
 
 function StatsBar({ games }: { games: GameSessionResponse[] }) {
   const active = games.filter((g) => g.status === 'active').length
@@ -48,7 +120,7 @@ function StatsBar({ games }: { games: GameSessionResponse[] }) {
   const totalParticipants = games.reduce((sum, g) => sum + (g.participants?.length ?? g.crewSize), 0)
 
   return (
-    <div className="flex items-center gap-4 text-xs text-odi-text-muted">
+    <div className="flex items-center gap-4 text-xs text-muted-foreground">
       <div className="flex items-center gap-1.5">
         <span className="w-2 h-2 rounded-full bg-green-500" />
         <span>{active} активных</span>
@@ -66,14 +138,14 @@ function StatsBar({ games }: { games: GameSessionResponse[] }) {
         <span>{draft} черновиков</span>
       </div>
       <div className="ml-auto flex items-center gap-1.5">
-        <Icon icon="people" size={12} />
+        <Users className="h-3 w-3" />
         <span>{totalParticipants} участников</span>
       </div>
     </div>
   )
 }
 
-// ── Table Row ──
+// -- Table Row --
 
 function GameRow({
   game,
@@ -95,79 +167,82 @@ function GameRow({
 
   return (
     <tr
-      className="border-b border-odi-border/30 hover:bg-odi-surface-hover/50 transition-colors cursor-pointer group"
+      className="border-b border-border/30 hover:bg-muted/50 transition-colors cursor-pointer group"
       onClick={onOpen}
     >
       {/* Status */}
       <td className="px-3 py-2.5">
-        <Tag intent={cfg.intent} minimal round className="!text-[10px]">
+        <Badge variant={cfg.variant} className="text-[10px]">
           {cfg.label}
-        </Tag>
+        </Badge>
       </td>
 
       {/* Title + Scenario */}
       <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
         <div>
-          <EditableText
+          <InlineEditableTitle
             defaultValue={game.title}
-            className="!text-sm !font-semibold !text-odi-text"
+            className="text-sm font-semibold text-foreground"
             onConfirm={onTitleChange}
-            selectAllOnFocus
             placeholder="Название..."
           />
         </div>
-        <div className="text-[11px] text-odi-text-muted mt-0.5">
+        <div className="text-[11px] text-muted-foreground mt-0.5">
           {game.scenario?.icon} {game.scenario?.title ?? 'Без сценария'}
         </div>
       </td>
 
       {/* Team */}
       <td className="px-3 py-2.5">
-        <div className="flex items-center gap-2 text-xs text-odi-text-muted">
-          <span title="Участники"><Icon icon="people" size={11} className="mr-0.5" />{humanCount}</span>
-          {botCount > 0 && <span title="Боты"><Icon icon="desktop" size={11} className="mr-0.5" />{botCount}</span>}
-          {onlineCount > 0 && <span className="text-green-400" title="Онлайн"><Icon icon="dot" size={11} />{onlineCount}</span>}
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <span title="Участники"><Users className="h-3 w-3 inline mr-0.5" />{humanCount}</span>
+          {botCount > 0 && <span title="Боты">{botCount} бот</span>}
+          {onlineCount > 0 && <span className="text-green-400" title="Онлайн">{onlineCount} онл.</span>}
         </div>
       </td>
 
       {/* Progress */}
       <td className="px-3 py-2.5 w-36">
         <div className="flex items-center gap-2">
-          <ProgressBar
-            value={game.progress / 100}
-            intent={game.progress === 100 ? 'success' : 'primary'}
-            stripes={false}
-            animate={false}
-            className="flex-1 !h-1.5"
+          <Progress
+            value={game.progress}
+            indicatorClassName={game.progress === 100 ? 'bg-success' : undefined}
+            className="flex-1 h-1.5"
           />
-          <span className="text-[10px] text-odi-text-muted w-7 text-right">{game.progress}%</span>
+          <span className="text-[10px] text-muted-foreground w-7 text-right">{game.progress}%</span>
         </div>
       </td>
 
       {/* Duration */}
-      <td className="px-3 py-2.5 text-xs text-odi-text-muted">{fmtDuration(game.durationMinutes)}</td>
+      <td className="px-3 py-2.5 text-xs text-muted-foreground">{fmtDuration(game.durationMinutes)}</td>
 
       {/* Date */}
-      <td className="px-3 py-2.5 text-xs text-odi-text-muted">{fmtDate(game.createdAt)}</td>
+      <td className="px-3 py-2.5 text-xs text-muted-foreground">{fmtDate(game.createdAt)}</td>
 
       {/* Actions */}
       <td className="px-3 py-2.5 text-right" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button small minimal icon="play" intent="primary" title="Играть" onClick={() => navigate(`/game/board?session=${game.id}`)} />
-          {game.status === 'draft' && <Button small minimal icon="cog" title="Настроить" onClick={onOpen} />}
-          <Popover
-            placement="bottom-end"
-            content={
-              <div className="p-3">
-                <p className="text-sm text-odi-text mb-2">Удалить <strong>{game.title}</strong>?</p>
-                <div className="flex gap-2 justify-end">
-                  <Button small minimal text="Отмена" className="bp5-popover-dismiss" />
-                  <Button small intent="danger" text="Удалить" onClick={onDelete} className="bp5-popover-dismiss" />
-                </div>
+          <Button variant="ghost" size="icon" className="h-7 w-7" title="Играть" onClick={() => navigate(`/game/board?session=${game.id}`)}>
+            <Play className="h-3.5 w-3.5" />
+          </Button>
+          {game.status === 'draft' && (
+            <Button variant="ghost" size="icon" className="h-7 w-7" title="Настроить" onClick={onOpen}>
+              <Settings className="h-3.5 w-3.5" />
+            </Button>
+          )}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" title="Удалить">
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-auto">
+              <p className="text-sm text-foreground mb-2">Удалить <strong>{game.title}</strong>?</p>
+              <div className="flex gap-2 justify-end">
+                <PopoverClose asChild><Button variant="ghost" size="sm">Отмена</Button></PopoverClose>
+                <Button variant="destructive" size="sm" onClick={onDelete}>Удалить</Button>
               </div>
-            }
-          >
-            <Button small minimal icon="trash" intent="danger" title="Удалить" />
+            </PopoverContent>
           </Popover>
         </div>
       </td>
@@ -175,7 +250,7 @@ function GameRow({
   )
 }
 
-// ── Grid Card ──
+// -- Grid Card --
 
 function GameCard({
   game,
@@ -195,73 +270,75 @@ function GameCard({
   const onlineCount = game.participants?.filter((p) => p.isOnline).length ?? 0
 
   return (
-    <Card className="!bg-odi-surface !border-odi-border !shadow-none !p-3 hover:!border-odi-accent/30 transition-colors">
+    <Card className="bg-card border-border shadow-none p-3 hover:border-primary/30 transition-colors">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs text-odi-text-muted">
+        <span className="text-xs text-muted-foreground">
           {game.scenario?.icon} {game.scenario?.title ?? '—'}
         </span>
-        <Tag intent={cfg.intent} minimal round className="text-[10px]">{cfg.label}</Tag>
+        <Badge variant={cfg.variant} className="text-[10px]">{cfg.label}</Badge>
       </div>
 
       <div className="mb-2" onClick={(e) => e.stopPropagation()}>
-        <EditableText
+        <InlineEditableTitle
           defaultValue={game.title}
-          className="!text-sm !font-bold !text-odi-text"
+          className="text-sm font-bold text-foreground"
           onConfirm={onTitleChange}
-          selectAllOnFocus
           placeholder="Название игры..."
         />
       </div>
 
-      <div className="flex items-center gap-3 text-[11px] text-odi-text-muted mb-2">
-        <span><Icon icon="people" size={10} className="mr-0.5" />{crew - botCount}</span>
-        {botCount > 0 && <span><Icon icon="desktop" size={10} className="mr-0.5" />{botCount}</span>}
-        {onlineCount > 0 && <span className="text-green-400"><Icon icon="dot" size={10} />{onlineCount} онлайн</span>}
+      <div className="flex items-center gap-3 text-[11px] text-muted-foreground mb-2">
+        <span><Users className="h-2.5 w-2.5 inline mr-0.5" />{crew - botCount}</span>
+        {botCount > 0 && <span>{botCount} бот</span>}
+        {onlineCount > 0 && <span className="text-green-400">{onlineCount} онлайн</span>}
         <span>{fmtDuration(game.durationMinutes)}</span>
         <span className="ml-auto">{fmtDate(game.createdAt)}</span>
       </div>
 
       <div className="flex items-center gap-2 mb-3">
-        <ProgressBar
-          value={game.progress / 100}
-          intent={game.progress === 100 ? 'success' : 'primary'}
-          stripes={false}
-          animate={false}
+        <Progress
+          value={game.progress}
+          indicatorClassName={game.progress === 100 ? 'bg-success' : undefined}
           className="flex-1"
         />
-        <span className="text-[10px] text-odi-text-muted w-7 text-right">{game.progress}%</span>
+        <span className="text-[10px] text-muted-foreground w-7 text-right">{game.progress}%</span>
       </div>
 
       <div className="flex gap-2">
-        <Button small fill intent="primary" icon="play" text="Играть" onClick={() => navigate(`/game/board?session=${game.id}`)} />
-        {game.status === 'draft' && <Button small outlined icon="cog" onClick={onOpen} />}
-        <Popover
-          placement="bottom-end"
-          content={
-            <div className="p-3">
-              <p className="text-sm text-odi-text mb-2">Удалить <strong>{game.title}</strong>?</p>
-              <div className="flex gap-2 justify-end">
-                <Button small minimal text="Отмена" className="bp5-popover-dismiss" />
-                <Button small intent="danger" text="Удалить" onClick={onDelete} className="bp5-popover-dismiss" />
-              </div>
+        <Button size="sm" className="flex-1" onClick={() => navigate(`/game/board?session=${game.id}`)}>
+          <Play className="h-3.5 w-3.5 mr-1" /> Играть
+        </Button>
+        {game.status === 'draft' && (
+          <Button variant="outline" size="sm" onClick={onOpen}>
+            <Settings className="h-3.5 w-3.5" />
+          </Button>
+        )}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="sm" className="text-red-500" title="Удалить игру">
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-auto">
+            <p className="text-sm text-foreground mb-2">Удалить <strong>{game.title}</strong>?</p>
+            <div className="flex gap-2 justify-end">
+              <PopoverClose asChild><Button variant="ghost" size="sm">Отмена</Button></PopoverClose>
+              <Button variant="destructive" size="sm" onClick={onDelete}>Удалить</Button>
             </div>
-          }
-        >
-          <Button small minimal icon="trash" intent="danger" title="Удалить игру" />
+          </PopoverContent>
         </Popover>
       </div>
     </Card>
   )
 }
 
-// ── Main ──
+// -- Main --
 
 const PAGE_SIZE = 20
 
 export function GameList() {
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
-  const theme = useAppSelector((s) => s.app.theme)
   const savedView = useAppSelector((s) => s.app.dashboardView) as ViewType
   const [filter, setFilter] = useState<FilterTab>('all')
   const [search, setSearch] = useState('')
@@ -359,56 +436,77 @@ export function GameList() {
 
   const SortIcon = ({ col }: { col: SortKey }) => {
     if (sort !== col) return null
-    return <Icon icon={sortAsc ? 'chevron-up' : 'chevron-down'} size={10} className="ml-0.5" />
+    return sortAsc
+      ? <ChevronUp className="inline h-2.5 w-2.5 ml-0.5" />
+      : <ChevronDown className="inline h-2.5 w-2.5 ml-0.5" />
   }
 
   return (
-    <div className={`${theme === 'dark' ? 'bp5-dark' : ''} h-screen flex flex-col bg-odi-bg`}>
+    <div className="h-screen flex flex-col bg-background">
       {/* Header */}
-      <header className="bg-odi-surface border-b border-odi-border px-5 py-2.5 flex items-center justify-between shrink-0">
+      <header className="bg-card border-b border-border px-5 py-2.5 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
-          <span className="text-lg">{'\u{1F3AE}'}</span>
-          <h1 className="text-sm font-bold text-odi-text m-0 uppercase">Мои игры</h1>
-          <Tag minimal className="text-[10px]">{total}</Tag>
+          <Gamepad2 className="h-5 w-5 text-muted-foreground" />
+          <h1 className="text-sm font-bold text-foreground m-0 uppercase">Мои игры</h1>
+          <Badge variant="outline" className="text-[10px]">{total}</Badge>
         </div>
         <div className="flex items-center gap-2">
-          <InputGroup
-            leftIcon="search"
-            placeholder="Поиск по названию..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            small
-            className="!w-56"
-          />
-          <div className="w-px h-5 bg-odi-border/50" />
-          <ButtonGroup minimal>
-            <Button icon="grid-view" small active={view === 'grid'} onClick={() => setView('grid')} title="Сетка" />
-            <Button icon="th" small active={view === 'table'} onClick={() => setView('table')} title="Таблица" />
-          </ButtonGroup>
-          <div className="w-px h-5 bg-odi-border/50" />
+          <div className="relative w-56">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              placeholder="Поиск по названию..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-8 h-8 text-sm"
+            />
+          </div>
+          <div className="w-px h-5 bg-border/50" />
+          <div className="flex gap-0.5">
+            <Button
+              variant={view === 'grid' ? 'secondary' : 'ghost'}
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setView('grid')}
+              title="Сетка"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={view === 'table' ? 'secondary' : 'ghost'}
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setView('table')}
+              title="Таблица"
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="w-px h-5 bg-border/50" />
+          <AppMenu />
           <AccountBadge />
           <SettingsMenu />
-          <Button icon="plus" intent="success" small text="Новая игра" onClick={() => navigate('/mission')} />
+          <Button size="sm" className="bg-success hover:bg-success/90" onClick={() => navigate('/mission')}>
+            <Plus className="h-4 w-4 mr-1" /> Новая игра
+          </Button>
         </div>
       </header>
 
       {/* Filters + Stats */}
-      <div className="bg-odi-surface border-b border-odi-border px-5 py-2 flex flex-col gap-2 shrink-0">
+      <div className="bg-card border-b border-border px-5 py-2 flex flex-col gap-2 shrink-0">
         <div className="flex items-center gap-1">
           {FILTERS.map((tab) => {
             const count = tab.value === 'all' ? total : games.filter((g) => g.status === tab.value).length
             return (
               <Button
                 key={tab.value}
-                minimal
-                small
-                active={filter === tab.value}
+                variant="ghost"
+                size="sm"
                 onClick={() => setFilter(tab.value)}
-                className={`!text-xs ${filter === tab.value ? '!text-odi-accent' : '!text-odi-text-muted'}`}
+                className={`text-xs ${filter === tab.value ? 'text-primary' : 'text-muted-foreground'}`}
               >
                 {tab.label}
                 {filter === 'all' && tab.value !== 'all' && count > 0 && (
-                  <Tag minimal round className="!text-[9px] ml-1">{count}</Tag>
+                  <Badge variant="outline" className="text-[9px] ml-1">{count}</Badge>
                 )}
               </Button>
             )
@@ -423,36 +521,48 @@ export function GameList() {
           {loading ? (
             <div className="flex justify-center py-12"><Spinner size={32} /></div>
           ) : error ? (
-            <NonIdealState
-              icon="error"
-              title="Ошибка"
-              description={error}
-              action={<Button text="Повторить" small onClick={loadGames} />}
-            />
+            <div className="flex flex-col items-center gap-4 text-center py-12">
+              <AlertCircle className="h-12 w-12 text-muted-foreground" />
+              <h2 className="text-lg font-semibold text-foreground">Ошибка</h2>
+              <p className="text-sm text-muted-foreground">{error}</p>
+              <Button size="sm" onClick={loadGames}>Повторить</Button>
+            </div>
           ) : games.length === 0 ? (
-            <NonIdealState
-              icon={search || filter !== 'all' ? 'search' : 'cube'}
-              title={search || filter !== 'all' ? 'Ничего не найдено' : 'Нет игр'}
-              description={search || filter !== 'all' ? 'Измените фильтры или запрос' : 'Создайте первую игру'}
-              action={!search && filter === 'all' ? <Button intent="success" icon="plus" text="Создать игру" onClick={() => navigate('/mission')} /> : undefined}
-            />
+            <div className="flex flex-col items-center gap-4 text-center py-12">
+              {search || filter !== 'all' ? (
+                <>
+                  <Search className="h-12 w-12 text-muted-foreground" />
+                  <h2 className="text-lg font-semibold text-foreground">Ничего не найдено</h2>
+                  <p className="text-sm text-muted-foreground">Измените фильтры или запрос</p>
+                </>
+              ) : (
+                <>
+                  <Box className="h-12 w-12 text-muted-foreground" />
+                  <h2 className="text-lg font-semibold text-foreground">Нет игр</h2>
+                  <p className="text-sm text-muted-foreground">Создайте первую игру</p>
+                  <Button className="bg-success hover:bg-success/90" onClick={() => navigate('/mission')}>
+                    <Plus className="h-4 w-4 mr-1" /> Создать игру
+                  </Button>
+                </>
+              )}
+            </div>
           ) : view === 'table' ? (
-            <div className="bg-odi-surface border border-odi-border rounded-lg overflow-hidden">
+            <div className="bg-card border border-border rounded-lg overflow-hidden">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-odi-border bg-odi-bg/50 text-[11px] text-odi-text-muted uppercase tracking-wider">
-                    <th className="px-3 py-2 text-left font-medium cursor-pointer hover:text-odi-text transition-colors w-24" onClick={() => handleSort('status')}>
+                  <tr className="border-b border-border bg-background/50 text-[11px] text-muted-foreground uppercase tracking-wider">
+                    <th className="px-3 py-2 text-left font-medium cursor-pointer hover:text-foreground transition-colors w-24" onClick={() => handleSort('status')}>
                       Статус<SortIcon col="status" />
                     </th>
-                    <th className="px-3 py-2 text-left font-medium cursor-pointer hover:text-odi-text transition-colors" onClick={() => handleSort('title')}>
+                    <th className="px-3 py-2 text-left font-medium cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort('title')}>
                       Название<SortIcon col="title" />
                     </th>
                     <th className="px-3 py-2 text-left font-medium w-32">Команда</th>
-                    <th className="px-3 py-2 text-left font-medium cursor-pointer hover:text-odi-text transition-colors w-36" onClick={() => handleSort('progress')}>
+                    <th className="px-3 py-2 text-left font-medium cursor-pointer hover:text-foreground transition-colors w-36" onClick={() => handleSort('progress')}>
                       Прогресс<SortIcon col="progress" />
                     </th>
                     <th className="px-3 py-2 text-left font-medium w-20">Время</th>
-                    <th className="px-3 py-2 text-left font-medium cursor-pointer hover:text-odi-text transition-colors w-28" onClick={() => handleSort('date')}>
+                    <th className="px-3 py-2 text-left font-medium cursor-pointer hover:text-foreground transition-colors w-28" onClick={() => handleSort('date')}>
                       Дата<SortIcon col="date" />
                     </th>
                     <th className="px-3 py-2 w-24" />
@@ -489,22 +599,26 @@ export function GameList() {
           {totalPages > 1 && (
             <div className="flex items-center justify-center gap-2 mt-4">
               <Button
-                small
-                minimal
-                icon="chevron-left"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
                 disabled={page === 0}
                 onClick={() => setPage((p) => p - 1)}
-              />
-              <span className="text-xs text-odi-text-muted">
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="text-xs text-muted-foreground">
                 {page + 1} / {totalPages}
               </span>
               <Button
-                small
-                minimal
-                icon="chevron-right"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
                 disabled={page >= totalPages - 1}
                 onClick={() => setPage((p) => p + 1)}
-              />
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
             </div>
           )}
         </div>

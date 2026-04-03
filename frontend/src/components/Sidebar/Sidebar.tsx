@@ -1,16 +1,18 @@
 import { useRef, useCallback, useState } from 'react'
-import { Button, ButtonGroup } from '@blueprintjs/core'
+import { PanelLeftOpen, PanelLeftClose, LayoutDashboard, MessageSquare, Eye, Terminal, Pin, Heart } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { useAppSelector, useAppDispatch } from '@/store'
 import { toggleLeftSidebar, setLeftSidebarWidth, setQuickAddCard, syncPreferencesToServer } from '@/store/appSlice'
 import { useViewMode } from '@/hooks/useViewMode'
 import { EmotionWheel } from '@/components/EmotionWheel'
 import type { ViewMode } from '@/types'
+import type { LucideIcon } from 'lucide-react'
 
-const VIEW_MODES: { mode: ViewMode; icon: string; label: string }[] = [
-  { mode: 'board', icon: 'th-derived', label: 'Доска' },
-  { mode: 'theatre', icon: 'chat', label: 'Театр' },
-  { mode: 'aquarium', icon: 'eye-open', label: 'Аквариум' },
-  { mode: 'terminal', icon: 'console', label: 'Терминал' },
+const VIEW_MODES: { mode: ViewMode; icon: LucideIcon; label: string }[] = [
+  { mode: 'board', icon: LayoutDashboard, label: 'Доска' },
+  { mode: 'theatre', icon: MessageSquare, label: 'Театр' },
+  { mode: 'aquarium', icon: Eye, label: 'Аквариум' },
+  { mode: 'terminal', icon: Terminal, label: 'Терминал' },
 ]
 
 const MIN_WIDTH = 160
@@ -71,57 +73,75 @@ export function Sidebar() {
       style={{ width: currentWidth }}
       data-sidebar
     >
-      <div className="flex-1 bg-odi-surface border-r border-odi-border flex flex-col overflow-hidden">
+      <div className="flex-1 bg-card border-r border-border flex flex-col overflow-hidden">
         {/* Header */}
         <div className={`flex items-center shrink-0 ${leftSidebarCollapsed ? 'justify-center p-2' : 'justify-between p-3'}`}>
           {!leftSidebarCollapsed && (
-            <div className="text-xs text-odi-text-muted uppercase tracking-wider whitespace-nowrap overflow-hidden">
+            <div className="text-xs text-muted-foreground uppercase tracking-wider whitespace-nowrap overflow-hidden">
               Режим обзора
             </div>
           )}
           <Button
-            icon={leftSidebarCollapsed ? 'menu-open' : 'menu-closed'}
-            minimal
-            small
-            className="!text-odi-text-muted hover:!text-odi-text shrink-0"
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-muted-foreground hover:text-foreground shrink-0"
             onClick={handleToggle}
             title={leftSidebarCollapsed ? 'Развернуть панель' : 'Свернуть панель'}
-          />
+          >
+            {leftSidebarCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+          </Button>
         </div>
 
         {/* View modes */}
-        <div className={`${leftSidebarCollapsed ? 'px-2' : 'px-3'}`}>
-          <ButtonGroup vertical minimal className="gap-1 w-full">
-            {VIEW_MODES.map(({ mode, icon, label }) => (
-              <Button
-                key={mode}
-                icon={icon as any}
-                text={leftSidebarCollapsed ? undefined : label}
-                active={viewMode === mode}
-                onClick={() => setViewMode(mode)}
-                className={
-                  viewMode === mode
-                    ? '!bg-odi-accent/20 !text-odi-accent'
-                    : '!text-odi-text-muted hover:!text-odi-text hover:!bg-odi-surface-hover'
-                }
-                alignText="left"
-                title={leftSidebarCollapsed ? label : undefined}
-              />
-            ))}
-          </ButtonGroup>
+        <div className={`flex flex-col gap-1 ${leftSidebarCollapsed ? 'px-2' : 'px-3'}`}>
+          {VIEW_MODES.map(({ mode, icon: ModeIcon, label }) => (
+            <Button
+              key={mode}
+              variant="ghost"
+              size="sm"
+              onClick={() => setViewMode(mode)}
+              className={`justify-start ${
+                viewMode === mode
+                  ? 'bg-accent text-accent-foreground'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+              } ${leftSidebarCollapsed ? 'justify-center px-0' : ''}`}
+              title={leftSidebarCollapsed ? label : undefined}
+            >
+              <ModeIcon className="h-4 w-4 shrink-0" />
+              {!leftSidebarCollapsed && <span>{label}</span>}
+            </Button>
+          ))}
         </div>
 
         {/* Quick actions */}
-        <div className={`border-t border-odi-border pt-3 mt-auto mb-3 ${leftSidebarCollapsed ? 'px-2' : 'px-3'}`}>
+        <div className={`border-t border-border pt-3 mt-auto mb-3 ${leftSidebarCollapsed ? 'px-2' : 'px-3'}`}>
           {!leftSidebarCollapsed && (
-            <div className="text-xs text-odi-text-muted uppercase tracking-wider mb-2 whitespace-nowrap overflow-hidden">
+            <div className="text-xs text-muted-foreground uppercase tracking-wider mb-2 whitespace-nowrap overflow-hidden">
               Быстрые действия
             </div>
           )}
-          <ButtonGroup vertical minimal className="gap-1 w-full">
-            <Button icon="pin" text={leftSidebarCollapsed ? undefined : 'На доску'} alignText="left" className="!text-odi-text-muted hover:!text-odi-text" title={leftSidebarCollapsed ? 'На доску' : undefined} onClick={() => dispatch(setQuickAddCard(true))} />
-            <Button icon="heart" text={leftSidebarCollapsed ? undefined : 'Атмосфера'} alignText="left" className="!text-odi-text-muted hover:!text-odi-text" title={leftSidebarCollapsed ? 'Атмосфера' : undefined} onClick={() => setEmotionWheelOpen(true)} />
-          </ButtonGroup>
+          <div className="flex flex-col gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`justify-start text-muted-foreground hover:text-foreground ${leftSidebarCollapsed ? 'justify-center px-0' : ''}`}
+              title={leftSidebarCollapsed ? 'На доску' : undefined}
+              onClick={() => dispatch(setQuickAddCard(true))}
+            >
+              <Pin className="h-4 w-4 shrink-0" />
+              {!leftSidebarCollapsed && <span>На доску</span>}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`justify-start text-muted-foreground hover:text-foreground ${leftSidebarCollapsed ? 'justify-center px-0' : ''}`}
+              title={leftSidebarCollapsed ? 'Атмосфера' : undefined}
+              onClick={() => setEmotionWheelOpen(true)}
+            >
+              <Heart className="h-4 w-4 shrink-0" />
+              {!leftSidebarCollapsed && <span>Атмосфера</span>}
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -129,7 +149,7 @@ export function Sidebar() {
       {!leftSidebarCollapsed && (
         <div
           onMouseDown={handleMouseDown}
-          className="w-1 cursor-col-resize hover:bg-odi-accent/40 active:bg-odi-accent/60 transition-colors"
+          className="w-1 cursor-col-resize hover:bg-border active:bg-muted-foreground transition-colors"
         />
       )}
 

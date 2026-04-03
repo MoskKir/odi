@@ -1,20 +1,17 @@
-import {
-  Button,
-  Card,
-  FormGroup,
-  InputGroup,
-  TextArea,
-  Switch,
-  NumericInput,
-  Tag,
-  Spinner,
-  NonIdealState,
-} from '@blueprintjs/core'
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { ArrowLeft, Save, AlertCircle, Bot } from 'lucide-react'
 import { fetchBots, updateBot, type CreateBotDto } from '@/api/bots'
 import { success, error as toastError } from '@/utils/toaster'
 import { BotTestChat } from './BotTestChat'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
+import { Badge } from '@/components/ui/badge'
+import { Spinner } from '@/components/ui/spinner'
 
 const MODEL_SUGGESTIONS = [
   'google/gemini-2.0-flash-001',
@@ -131,17 +128,20 @@ export function BotEditPage() {
   }
 
   if (loading) {
-    return <div className="flex justify-center py-12"><Spinner size={32} /></div>
+    return <div className="flex justify-center py-12"><Spinner size="lg" /></div>
   }
 
   if (loadError) {
     return (
-      <NonIdealState
-        icon="error"
-        title="Ошибка"
-        description={loadError}
-        action={<Button text="Назад" icon="arrow-left" onClick={() => navigate('/master/bots')} />}
-      />
+      <div className="flex flex-col items-center justify-center py-16 gap-4">
+        <AlertCircle className="h-12 w-12 text-muted-foreground" />
+        <h3 className="text-lg font-semibold text-foreground">Ошибка</h3>
+        <p className="text-sm text-muted-foreground">{loadError}</p>
+        <Button onClick={() => navigate('/master/bots')}>
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          Назад
+        </Button>
+      </div>
     )
   }
 
@@ -150,90 +150,90 @@ export function BotEditPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button icon="arrow-left" minimal small onClick={() => navigate('/master/bots')} className="!text-odi-text-muted" />
-          <span className="text-2xl">{'\u{1F916}'}</span>
-          <h2 className="text-xl font-bold text-odi-text m-0">{name || 'Редактировать бота'}</h2>
-          <Tag minimal className="text-[10px]">{specialistId}</Tag>
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => navigate('/master/bots')}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <Bot className="h-6 w-6 text-muted-foreground" />
+          <h2 className="text-xl font-bold text-foreground m-0">{name || 'Редактировать бота'}</h2>
+          <Badge variant="outline" className="text-[10px]">{specialistId}</Badge>
         </div>
         <div className="flex items-center gap-2">
-          <Switch
-            checked={enabled}
-            label={enabled ? 'Включён' : 'Выключен'}
-            onChange={() => setEnabled(!enabled)}
-            className="!mb-0"
-          />
+          <div className="flex items-center gap-2">
+            <Switch
+              checked={enabled}
+              onCheckedChange={setEnabled}
+            />
+            <Label className="mb-0">{enabled ? 'Включён' : 'Выключен'}</Label>
+          </div>
           <Button
-            intent="primary"
-            icon="floppy-disk"
-            text="Сохранить"
-            loading={saving}
-            disabled={!canSubmit}
+            disabled={!canSubmit || saving}
             onClick={handleSubmit}
-          />
+          >
+            {saving ? <Spinner size="sm" /> : <Save className="h-4 w-4 mr-1" />}
+            Сохранить
+          </Button>
         </div>
       </div>
 
       {error && <div className="text-sm text-red-500 px-1">{error}</div>}
 
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-4">
-        {/* Main content — left 3 cols */}
+        {/* Main content -- left 3 cols */}
         <div className="xl:col-span-3 space-y-4">
           {/* Identity card */}
-          <Card className="!bg-odi-surface !border-odi-border !shadow-none">
-            <h3 className="text-sm font-bold text-odi-text mb-3">Идентичность</h3>
+          <Card className="bg-card border-border shadow-none p-5">
+            <h3 className="text-sm font-bold text-foreground mb-3">Идентичность</h3>
 
-            <FormGroup label="Имя" labelInfo="(обязательно)" className="!mb-3">
-              <InputGroup
+            <div className="space-y-2 mb-3">
+              <Label>Имя <span className="text-muted-foreground">(обязательно)</span></Label>
+              <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Например: Модератор"
-                large
+                className="text-base"
               />
-            </FormGroup>
+            </div>
 
-            <FormGroup label="Описание" labelInfo="(обязательно)" className="!mb-3">
-              <TextArea
+            <div className="space-y-2 mb-3">
+              <Label>Описание <span className="text-muted-foreground">(обязательно)</span></Label>
+              <Textarea
                 value={description}
-                inputRef={descRef}
+                ref={descRef}
                 onChange={(e) => { setDescription(e.target.value); autoResize(e.target) }}
                 placeholder="Что делает этот бот..."
-                fill
                 rows={2}
-                className="!bg-odi-bg !text-odi-text !overflow-hidden !resize-none"
+                className="bg-background text-foreground overflow-hidden resize-none"
               />
-            </FormGroup>
+            </div>
 
-            <FormGroup label="Личность" labelInfo="(обязательно)" className="!mb-0">
-              <TextArea
+            <div className="space-y-2">
+              <Label>Личность <span className="text-muted-foreground">(обязательно)</span></Label>
+              <Textarea
                 value={personality}
-                inputRef={personalityRef}
+                ref={personalityRef}
                 onChange={(e) => { setPersonality(e.target.value); autoResize(e.target) }}
                 placeholder="Характер и стиль общения..."
-                fill
                 rows={2}
-                className="!bg-odi-bg !text-odi-text !overflow-hidden !resize-none"
+                className="bg-background text-foreground overflow-hidden resize-none"
               />
-            </FormGroup>
+            </div>
           </Card>
 
           {/* System prompt card */}
-          <Card className="!bg-odi-surface !border-odi-border !shadow-none">
-            <h3 className="text-sm font-bold text-odi-text mb-3">Системный промпт</h3>
-            <FormGroup className="!mb-0">
-              <TextArea
-                value={systemPrompt}
-                inputRef={promptRef}
-                onChange={(e) => { setSystemPrompt(e.target.value); autoResize(e.target) }}
-                placeholder="Инструкции для LLM..."
-                fill
-                rows={6}
-                className="!bg-odi-bg !text-odi-text !overflow-hidden !resize-none !font-mono !text-sm"
-              />
-            </FormGroup>
+          <Card className="bg-card border-border shadow-none p-5">
+            <h3 className="text-sm font-bold text-foreground mb-3">Системный промпт</h3>
+            <Textarea
+              value={systemPrompt}
+              ref={promptRef}
+              onChange={(e) => { setSystemPrompt(e.target.value); autoResize(e.target) }}
+              placeholder="Инструкции для LLM..."
+              rows={6}
+              className="bg-background text-foreground overflow-hidden resize-none font-mono text-sm"
+            />
           </Card>
 
           {/* Test chat */}
-          <Card className="!bg-odi-surface !border-odi-border !shadow-none !p-0 overflow-hidden" style={{ height: 480 }}>
+          <Card className="bg-card border-border shadow-none p-0 overflow-hidden" style={{ height: 480 }}>
             <BotTestChat
               botId={id!}
               botName={name || 'Бот'}
@@ -245,93 +245,96 @@ export function BotEditPage() {
           </Card>
         </div>
 
-        {/* Sidebar — right col */}
+        {/* Sidebar -- right col */}
         <div className="space-y-4">
           {/* Model settings */}
-          <Card className="!bg-odi-surface !border-odi-border !shadow-none">
-            <h3 className="text-sm font-bold text-odi-text mb-3">Модель</h3>
+          <Card className="bg-card border-border shadow-none p-5">
+            <h3 className="text-sm font-bold text-foreground mb-3">Модель</h3>
 
-            <FormGroup label="LLM" labelInfo="(OpenRouter)" className="!mb-3">
-              <InputGroup
+            <div className="space-y-2 mb-3">
+              <Label>LLM <span className="text-muted-foreground">(OpenRouter)</span></Label>
+              <Input
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
                 placeholder="provider/model-name"
-                fill
                 list="model-suggestions"
               />
               <datalist id="model-suggestions">
                 {MODEL_SUGGESTIONS.map((m) => <option key={m} value={m} />)}
               </datalist>
-            </FormGroup>
+            </div>
 
-            <FormGroup label="Temperature" className="!mb-3">
-              <NumericInput
+            <div className="space-y-2 mb-3">
+              <Label>Temperature</Label>
+              <Input
+                type="number"
                 value={temperature}
-                onValueChange={(v) => setTemperature(v)}
+                onChange={(e) => setTemperature(Number(e.target.value))}
                 min={0}
                 max={2}
-                stepSize={0.1}
-                minorStepSize={0.01}
-                fill
+                step={0.1}
               />
-            </FormGroup>
+            </div>
 
-            <FormGroup label="Max Tokens" className="!mb-0">
-              <NumericInput
+            <div className="space-y-2">
+              <Label>Max Tokens</Label>
+              <Input
+                type="number"
                 value={maxTokens}
-                onValueChange={(v) => setMaxTokens(v)}
+                onChange={(e) => setMaxTokens(Number(e.target.value))}
                 min={256}
                 max={100000}
-                stepSize={256}
-                fill
+                step={256}
               />
-            </FormGroup>
+            </div>
           </Card>
 
           {/* Meta card */}
-          <Card className="!bg-odi-surface !border-odi-border !shadow-none">
-            <h3 className="text-sm font-bold text-odi-text mb-3">Параметры</h3>
+          <Card className="bg-card border-border shadow-none p-5">
+            <h3 className="text-sm font-bold text-foreground mb-3">Параметры</h3>
 
-            <FormGroup label="Тег" className="!mb-3">
-              <InputGroup
+            <div className="space-y-2 mb-3">
+              <Label>Тег</Label>
+              <Input
                 value={tag}
                 onChange={(e) => setTag(e.target.value)}
                 placeholder="Необязательно"
               />
-            </FormGroup>
+            </div>
 
-            <FormGroup label="Звёзды" className="!mb-0">
-              <NumericInput
+            <div className="space-y-2">
+              <Label>Звёзды</Label>
+              <Input
+                type="number"
                 value={stars}
-                onValueChange={(v) => setStars(v)}
+                onChange={(e) => setStars(Number(e.target.value))}
                 min={1}
                 max={5}
-                fill
               />
-            </FormGroup>
+            </div>
           </Card>
 
           {/* Info card */}
-          <Card className="!bg-odi-surface !border-odi-border !shadow-none">
-            <h3 className="text-sm font-bold text-odi-text mb-3">Статистика</h3>
-            <div className="space-y-2 text-xs text-odi-text-muted">
+          <Card className="bg-card border-border shadow-none p-5">
+            <h3 className="text-sm font-bold text-foreground mb-3">Статистика</h3>
+            <div className="space-y-2 text-xs text-muted-foreground">
               <div className="flex justify-between">
                 <span>Specialist ID</span>
-                <span className="font-mono text-odi-text">{specialistId}</span>
+                <span className="font-mono text-foreground">{specialistId}</span>
               </div>
               <div className="flex justify-between">
                 <span>Использований</span>
-                <span className="text-odi-text">{usageCount}</span>
+                <span className="text-foreground">{usageCount}</span>
               </div>
               <div className="flex justify-between">
                 <span>Рейтинг</span>
-                <span className="text-odi-text">{'\u2605'} {avgRating}</span>
+                <span className="text-foreground">{'\u2605'} {avgRating}</span>
               </div>
               <div className="flex justify-between">
                 <span>Статус</span>
                 {enabled
-                  ? <Tag intent="success" minimal round className="text-[10px]">Включён</Tag>
-                  : <Tag intent="warning" minimal round className="text-[10px]">Выключен</Tag>
+                  ? <Badge variant="success" className="text-[10px]">Включён</Badge>
+                  : <Badge variant="warning" className="text-[10px]">Выключен</Badge>
                 }
               </div>
             </div>

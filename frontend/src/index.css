@@ -1,83 +1,126 @@
 @import "tailwindcss";
-@import "@blueprintjs/core/lib/css/blueprint.css";
-@import "@blueprintjs/icons/lib/css/blueprint-icons.css";
 
-@theme {
-  --color-odi-bg: var(--odi-bg);
-  --color-odi-surface: var(--odi-surface);
-  --color-odi-surface-hover: var(--odi-surface-hover);
-  --color-odi-border: var(--odi-border);
-  --color-odi-text: var(--odi-text);
-  --color-odi-text-muted: var(--odi-text-muted);
-  --color-odi-accent: var(--odi-accent);
-  --color-odi-accent-hover: var(--odi-accent-hover);
-  --color-odi-success: var(--odi-success);
-  --color-odi-warning: var(--odi-warning);
-  --color-odi-danger: var(--odi-danger);
-  --color-odi-energy: var(--odi-energy);
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-energy: var(--energy);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 
 /* Dark theme (default) */
 :root,
 [data-theme="dark"] {
-  --odi-bg: #1a1d23;
-  --odi-surface: #242830;
-  --odi-surface-hover: #2d323a;
-  --odi-border: #3a3f4b;
-  --odi-text: #e1e4ea;
-  --odi-text-muted: #8b919e;
-  --odi-accent: #4c9aff;
-  --odi-accent-hover: #3d8bef;
-  --odi-success: #3dcc91;
-  --odi-warning: #ffb366;
-  --odi-danger: #ff6b6b;
-  --odi-energy: #a78bfa;
+  --background: #09090b;
+  --foreground: #fafafa;
+
+  --card: #09090b;
+  --card-foreground: #fafafa;
+
+  --popover: #09090b;
+  --popover-foreground: #fafafa;
+
+  --primary: #fafafa;
+  --primary-foreground: #18181b;
+
+  --secondary: #27272a;
+  --secondary-foreground: #fafafa;
+
+  --muted: #27272a;
+  --muted-foreground: #a1a1aa;
+
+  --accent: #27272a;
+  --accent-foreground: #fafafa;
+
+  --destructive: #7f1d1d;
+  --destructive-foreground: #fafafa;
+
+  --success: #16a34a;
+  --success-foreground: #ffffff;
+
+  --warning: #ca8a04;
+  --warning-foreground: #ffffff;
+
+  --energy: #a78bfa;
+
+  --border: #27272a;
+  --input: #27272a;
+  --ring: #d4d4d8;
+
+  --radius: 0.625rem;
 }
 
 /* Light theme */
 [data-theme="light"] {
-  --odi-bg: #e8eaef;
-  --odi-surface: #ffffff;
-  --odi-surface-hover: #eef0f3;
-  --odi-border: #b0b6c3;
-  --odi-text: #111827;
-  --odi-text-muted: #4b5563;
-  --odi-accent: #1d4ed8;
-  --odi-accent-hover: #1e40af;
-  --odi-success: #15803d;
-  --odi-warning: #b45309;
-  --odi-danger: #b91c1c;
-  --odi-energy: #6d28d9;
+  --background: #ffffff;
+  --foreground: #09090b;
+
+  --card: #ffffff;
+  --card-foreground: #09090b;
+
+  --popover: #ffffff;
+  --popover-foreground: #09090b;
+
+  --primary: #18181b;
+  --primary-foreground: #fafafa;
+
+  --secondary: #f4f4f5;
+  --secondary-foreground: #18181b;
+
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+
+  --accent: #f4f4f5;
+  --accent-foreground: #18181b;
+
+  --destructive: #ef4444;
+  --destructive-foreground: #fafafa;
+
+  --success: #16a34a;
+  --success-foreground: #ffffff;
+
+  --warning: #ca8a04;
+  --warning-foreground: #ffffff;
+
+  --energy: #7c3aed;
+
+  --border: #e4e4e7;
+  --input: #e4e4e7;
+  --ring: #18181b;
+
+  --radius: 0.625rem;
 }
 
 body {
-  @apply bg-odi-bg text-odi-text m-0 font-sans;
+  @apply bg-background text-foreground m-0 font-sans;
 }
 
 #root {
   @apply h-screen w-screen overflow-hidden;
-}
-
-/* Blueprint dark theme overrides */
-.bp5-dark {
-  --pt-app-background-color: var(--odi-bg);
-}
-
-/* Prevent Blueprint Toaster portal from causing scrollbars */
-.bp5-overlay-container {
-  position: fixed;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-.bp5-toast-container {
-  position: fixed !important;
-  overflow: visible;
-  pointer-events: none;
-}
-
-.bp5-toast {
-  pointer-events: auto;
 }
 
 /* Landing B&W palette — scoped via .landing-bw */
@@ -107,12 +150,40 @@ body {
   animation: fade-in 0.3s ease-out;
 }
 
-/* ── Custom scrollbars ── */
+/* Radix UI animations */
+@keyframes animate-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
 
-/* Webkit (Chrome, Safari, Edge) */
+@keyframes animate-out {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.95); }
+}
+
+/* Collapsible animation */
+[data-state="open"] > [data-radix-collapsible-content] {
+  animation: collapsible-down 0.2s ease-out;
+}
+
+[data-state="closed"] > [data-radix-collapsible-content] {
+  animation: collapsible-up 0.2s ease-out;
+}
+
+@keyframes collapsible-down {
+  from { height: 0; opacity: 0; }
+  to { height: var(--radix-collapsible-content-height); opacity: 1; }
+}
+
+@keyframes collapsible-up {
+  from { height: var(--radix-collapsible-content-height); opacity: 1; }
+  to { height: 0; opacity: 0; }
+}
+
+/* ── Custom scrollbars ── */
 * {
-  scrollbar-width: thin;                        /* Firefox */
-  scrollbar-color: var(--odi-border) transparent; /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
 }
 
 *::-webkit-scrollbar {
@@ -125,12 +196,12 @@ body {
 }
 
 *::-webkit-scrollbar-thumb {
-  background: var(--odi-border);
+  background: var(--border);
   border-radius: 3px;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background: var(--odi-text-muted);
+  background: var(--muted-foreground);
 }
 
 *::-webkit-scrollbar-corner {

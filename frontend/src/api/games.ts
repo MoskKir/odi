@@ -16,6 +16,7 @@ export interface GameSessionResponse {
   interfaceMode: string
   aiVisibility: string
   crewSize: number
+  boardColumns?: { id: string; title: string }[] | null
   progress: number
   energy: number
   startedAt: string | null
@@ -49,6 +50,8 @@ export interface CreateGamePayload {
   aiVisibility: string
   crewSize: number
   specialistIds: string[]
+  phases?: { name: string; durationMinutes: number }[]
+  boardColumns?: { id: string; title: string }[]
 }
 
 export async function createGame(payload: CreateGamePayload): Promise<GameSessionResponse> {

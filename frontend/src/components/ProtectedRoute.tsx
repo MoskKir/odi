@@ -1,5 +1,5 @@
 import { Navigate, useLocation } from 'react-router-dom'
-import { Spinner } from '@blueprintjs/core'
+import { Spinner } from '@/components/ui/spinner'
 import { useAppSelector } from '@/store'
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -8,7 +8,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (restoring) {
     return (
-      <div className="h-screen flex items-center justify-center bg-odi-bg">
+      <div className="h-screen flex items-center justify-center bg-background">
         <Spinner size={40} />
       </div>
     )

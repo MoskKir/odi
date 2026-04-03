@@ -1,20 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import {
-  Button,
-  Card,
-  FormGroup,
-  TextArea,
-  InputGroup,
-  Switch,
-  Tag,
-  Spinner,
-  NonIdealState,
-  Tabs,
-  Tab,
-  Collapse,
-  Icon,
-} from '@blueprintjs/core'
+import { ArrowLeft, Save, ChevronRight, Plus, AlertCircle, AlertTriangle } from 'lucide-react'
 import { fetchScenarios, type ScenarioResponse } from '@/api/scenarios'
 import { fetchBots, type BotResponse } from '@/api/bots'
 import {
@@ -25,6 +11,16 @@ import {
   type StageSharedContext,
 } from '@/api/bot-contexts'
 import { success, error as toastError } from '@/utils/toaster'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
+import { Badge } from '@/components/ui/badge'
+import { Spinner } from '@/components/ui/spinner'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { X } from 'lucide-react'
 
 const DEFAULT_STAGES = [
   'Знакомство',
@@ -63,56 +59,62 @@ function SharedContextEditor({ context, onChange }: SharedContextEditorProps) {
   }
 
   return (
-    <Card className="!bg-odi-surface !border-odi-border !shadow-none">
-      <h3 className="text-sm font-bold text-odi-text mb-3">Общий контекст этапа</h3>
+    <Card className="bg-card border-border shadow-none p-5">
+      <h3 className="text-sm font-bold text-foreground mb-3">Общий контекст этапа</h3>
 
-      <FormGroup label="Цель этапа" className="!mb-3">
-        <TextArea
+      <div className="space-y-2 mb-3">
+        <Label>Цель этапа</Label>
+        <Textarea
           value={context.purpose ?? ''}
           onChange={(e) => {
             onChange({ ...context, purpose: e.target.value })
             autoResize(e.target)
           }}
           placeholder="Что должна понять/сделать группа на этом этапе..."
-          fill
           rows={2}
-          className="!bg-odi-bg !text-odi-text !resize-none"
+          className="bg-background text-foreground resize-none"
         />
-      </FormGroup>
+      </div>
 
-      <FormGroup label="Методологическая задача" className="!mb-3">
-        <TextArea
+      <div className="space-y-2 mb-3">
+        <Label>Методологическая задача</Label>
+        <Textarea
           value={context.methodologicalTask ?? ''}
           onChange={(e) => {
             onChange({ ...context, methodologicalTask: e.target.value })
             autoResize(e.target)
           }}
           placeholder="Какую методологическую задачу решает этот этап..."
-          fill
           rows={2}
-          className="!bg-odi-bg !text-odi-text !resize-none"
+          className="bg-background text-foreground resize-none"
         />
-      </FormGroup>
+      </div>
 
-      <FormGroup label="Ключевые концепции" className="!mb-0">
+      <div className="space-y-2">
+        <Label>Ключевые концепции</Label>
         <div className="flex flex-wrap gap-1 mb-2">
           {(context.keyConcepts ?? []).map((c, i) => (
-            <Tag key={i} minimal onRemove={() => removeConcept(i)}>
+            <Badge key={i} variant="outline" className="gap-1">
               {c}
-            </Tag>
+              <button onClick={() => removeConcept(i)} className="ml-1 hover:text-red-500">
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
           ))}
         </div>
         <div className="flex gap-2">
-          <InputGroup
+          <Input
             value={conceptInput}
             onChange={(e) => setConceptInput(e.target.value)}
             placeholder="Добавить концепцию..."
             onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addConcept())}
             className="flex-1"
           />
-          <Button icon="plus" minimal onClick={addConcept} />
+          <Button variant="ghost" size="icon" onClick={addConcept}>
+            <Plus className="h-4 w-4" />
+          </Button>
         </div>
-      </FormGroup>
+      </div>
     </Card>
   )
 }
@@ -157,125 +159,135 @@ function BotContextCard({ bot, context, onChange }: BotContextCardProps) {
   }
 
   return (
-    <Card className="!bg-odi-surface !border-odi-border !shadow-none !p-0">
+    <Card className="bg-card border-border shadow-none p-0">
       <div
         className="px-4 py-3 flex items-center gap-3 cursor-pointer select-none"
         onClick={() => setExpanded(!expanded)}
       >
-        <Icon
-          icon="chevron-right"
-          className={`text-odi-text-muted transition-transform ${expanded ? 'rotate-90' : ''}`}
+        <ChevronRight
+          className={`h-4 w-4 text-muted-foreground transition-transform ${expanded ? 'rotate-90' : ''}`}
         />
         <span className="text-lg">&#x1F916;</span>
         <div className="flex-1 min-w-0">
-          <span className="font-medium text-odi-text text-sm">{bot.name}</span>
-          <Tag minimal className="ml-2 text-[10px]">{bot.specialistId}</Tag>
+          <span className="font-medium text-foreground text-sm">{bot.name}</span>
+          <Badge variant="outline" className="ml-2 text-[10px]">{bot.specialistId}</Badge>
         </div>
-        <Switch
-          checked={context.active !== false}
-          onChange={(e) => {
-            e.stopPropagation()
-            onChange({ ...context, active: !context.active || context.active === undefined ? false : true })
-          }}
-          className="!mb-0"
-          innerLabelChecked="ON"
-          innerLabel="OFF"
-        />
+        <div onClick={(e) => e.stopPropagation()}>
+          <Switch
+            checked={context.active !== false}
+            onCheckedChange={(checked) => {
+              onChange({ ...context, active: checked })
+            }}
+          />
+        </div>
       </div>
 
-      <Collapse isOpen={expanded}>
-        <div className="px-4 pb-4 space-y-3 border-t border-odi-border pt-3">
-          <FormGroup label="Роль на этом этапе" className="!mb-0">
-            <TextArea
+      {expanded && (
+        <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
+          <div className="space-y-2">
+            <Label>Роль на этом этапе</Label>
+            <Textarea
               value={context.roleDescription ?? ''}
               onChange={(e) => {
                 onChange({ ...context, roleDescription: e.target.value })
                 autoResize(e.target)
               }}
               placeholder="Кто этот бот в контексте этого этапа..."
-              fill
               rows={2}
-              className="!bg-odi-bg !text-odi-text !resize-none"
+              className="bg-background text-foreground resize-none"
             />
-          </FormGroup>
+          </div>
 
-          <FormGroup label="Методологическая задача" className="!mb-0">
-            <TextArea
+          <div className="space-y-2">
+            <Label>Методологическая задача</Label>
+            <Textarea
               value={context.methodologicalTask ?? ''}
               onChange={(e) => {
                 onChange({ ...context, methodologicalTask: e.target.value })
                 autoResize(e.target)
               }}
               placeholder="Что должен делать бот, какую задачу решать..."
-              fill
               rows={2}
-              className="!bg-odi-bg !text-odi-text !resize-none"
+              className="bg-background text-foreground resize-none"
             />
-          </FormGroup>
+          </div>
 
-          <FormGroup label="Тон общения" className="!mb-0">
-            <InputGroup
+          <div className="space-y-2">
+            <Label>Тон общения</Label>
+            <Input
               value={context.tone ?? ''}
               onChange={(e) => onChange({ ...context, tone: e.target.value })}
               placeholder="Например: спокойно-сомневающийся, без агрессии"
             />
-          </FormGroup>
+          </div>
 
-          <FormGroup label="Триггеры (что отслеживать)" className="!mb-0">
+          <div className="space-y-2">
+            <Label>Триггеры (что отслеживать)</Label>
             <div className="flex flex-wrap gap-1 mb-2">
               {(context.triggers ?? []).map((t, i) => (
-                <Tag key={i} intent="primary" minimal onRemove={() => removeTrigger(i)}>
+                <Badge key={i} variant="default" className="gap-1">
                   {t}
-                </Tag>
+                  <button onClick={() => removeTrigger(i)} className="ml-1 hover:text-red-500">
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
               ))}
             </div>
             <div className="flex gap-2">
-              <InputGroup
+              <Input
                 value={triggerInput}
                 onChange={(e) => setTriggerInput(e.target.value)}
                 placeholder="Добавить триггер..."
                 onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTrigger())}
                 className="flex-1"
               />
-              <Button icon="plus" minimal onClick={addTrigger} />
+              <Button variant="ghost" size="icon" onClick={addTrigger}>
+                <Plus className="h-4 w-4" />
+              </Button>
             </div>
-          </FormGroup>
+          </div>
 
-          <FormGroup label="Запрещено" className="!mb-0">
+          <div className="space-y-2">
+            <Label>Запрещено</Label>
             <div className="flex flex-wrap gap-1 mb-2">
               {(context.forbidden ?? []).map((f, i) => (
-                <Tag key={i} intent="danger" minimal onRemove={() => removeForbidden(i)}>
+                <Badge key={i} variant="danger" className="gap-1">
                   {f}
-                </Tag>
+                  <button onClick={() => removeForbidden(i)} className="ml-1 hover:text-red-500">
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
               ))}
             </div>
             <div className="flex gap-2">
-              <InputGroup
+              <Input
                 value={forbiddenInput}
                 onChange={(e) => setForbiddenInput(e.target.value)}
                 placeholder="Добавить запрет..."
                 onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addForbidden())}
                 className="flex-1"
               />
-              <Button icon="plus" minimal onClick={addForbidden} />
+              <Button variant="ghost" size="icon" onClick={addForbidden}>
+                <Plus className="h-4 w-4" />
+              </Button>
             </div>
-          </FormGroup>
+          </div>
 
-          <FormGroup label="Поведение по умолчанию" className="!mb-0">
-            <TextArea
+          <div className="space-y-2">
+            <Label>Поведение по умолчанию</Label>
+            <Textarea
               value={context.fallbackBehavior ?? ''}
               onChange={(e) => {
                 onChange({ ...context, fallbackBehavior: e.target.value })
                 autoResize(e.target)
               }}
               placeholder="Что делать, если группа не реагирует..."
-              fill
               rows={2}
-              className="!bg-odi-bg !text-odi-text !resize-none"
+              className="bg-background text-foreground resize-none"
             />
-          </FormGroup>
+          </div>
         </div>
-      </Collapse>
+      )}
     </Card>
   )
 }
@@ -428,25 +440,22 @@ export function BotContextPage() {
   if (loading) {
     return (
       <div className="flex justify-center py-12">
-        <Spinner size={32} />
+        <Spinner size="lg" />
       </div>
     )
   }
 
   if (!scenario) {
     return (
-      <NonIdealState
-        icon="error"
-        title="Ошибка"
-        description={error || 'Сценарий не найден'}
-        action={
-          <Button
-            text="Назад"
-            icon="arrow-left"
-            onClick={() => navigate('/master/scenarios')}
-          />
-        }
-      />
+      <div className="flex flex-col items-center justify-center py-16 gap-4">
+        <AlertCircle className="h-12 w-12 text-muted-foreground" />
+        <h3 className="text-lg font-semibold text-foreground">Ошибка</h3>
+        <p className="text-sm text-muted-foreground">{error || 'Сценарий не найден'}</p>
+        <Button onClick={() => navigate('/master/scenarios')}>
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          Назад
+        </Button>
+      </div>
     )
   }
 
@@ -456,107 +465,107 @@ export function BotContextPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Button
-            icon="arrow-left"
-            minimal
-            small
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-muted-foreground"
             onClick={() => navigate(`/master/scenarios/${scenarioId}/edit`)}
-            className="!text-odi-text-muted"
-          />
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
           <div>
-            <h2 className="text-xl font-bold text-odi-text m-0">
+            <h2 className="text-xl font-bold text-foreground m-0">
               Контексты ботов
             </h2>
-            <span className="text-sm text-odi-text-muted">
+            <span className="text-sm text-muted-foreground">
               {scenario.icon} {scenario.title}
             </span>
           </div>
         </div>
         <div className="flex items-center gap-2">
           {saveSuccess && (
-            <Tag intent="success" minimal>
+            <Badge variant="success">
               Сохранено
-            </Tag>
+            </Badge>
           )}
           {isDirty && (
-            <Tag intent="warning" minimal>
+            <Badge variant="warning">
               Есть изменения
-            </Tag>
+            </Badge>
           )}
           <Button
-            intent="primary"
-            icon="floppy-disk"
-            text="Сохранить"
-            loading={saving}
-            disabled={!isDirty}
+            disabled={!isDirty || saving}
             onClick={handleSave}
-          />
+          >
+            {saving ? <Spinner size="sm" /> : <Save className="h-4 w-4 mr-1" />}
+            Сохранить
+          </Button>
         </div>
       </div>
 
       {error && <div className="text-sm text-red-500 px-1">{error}</div>}
 
       {/* Stage tabs */}
-      <Tabs
-        selectedTabId={activeStage}
-        onChange={(newTab) => setActiveStage(newTab as string)}
-        className="[&_.bp5-tab-list]:!bg-odi-surface [&_.bp5-tab]:!text-odi-text-muted [&_.bp5-tab[aria-selected=true]]:!text-odi-accent"
-      >
-        {DEFAULT_STAGES.map((stage) => (
-          <Tab
-            key={stage}
-            id={stage}
-            title={
+      <Tabs value={activeStage} onValueChange={setActiveStage}>
+        <TabsList>
+          {DEFAULT_STAGES.map((stage) => (
+            <TabsTrigger key={stage} value={stage}>
               <span className="flex items-center gap-1">
                 {stage}
                 {(dirtyShared.has(stage) ||
                   [...dirtyBot].some((k) => k.startsWith(`${stage}::`))) && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-odi-accent inline-block" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block" />
                 )}
               </span>
-            }
-          />
+            </TabsTrigger>
+          ))}
+        </TabsList>
+
+        {DEFAULT_STAGES.map((stage) => (
+          <TabsContent key={stage} value={stage}>
+            {/* Stage content */}
+            <div className="space-y-4">
+              {/* Shared context */}
+              <SharedContextEditor
+                context={sharedContexts[stage] ?? {}}
+                onChange={(ctx) => updateSharedContext(stage, ctx)}
+              />
+
+              {/* Bot cards */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-foreground">
+                    Активные боты на этапе ({scenarioBots.length})
+                  </h3>
+                </div>
+
+                {scenarioBots.length === 0 && (
+                  <Card className="bg-card border-border shadow-none p-5">
+                    <div className="flex flex-col items-center justify-center py-8 gap-3">
+                      <AlertTriangle className="h-10 w-10 text-muted-foreground" />
+                      <h3 className="text-base font-semibold text-foreground">Нет ботов</h3>
+                      <p className="text-sm text-muted-foreground text-center">
+                        Добавьте ботов в сценарий (обязательных или рекомендованных) для настройки их контекста.
+                      </p>
+                    </div>
+                  </Card>
+                )}
+
+                {scenarioBots.map((bot) => {
+                  const key = `${stage}::${bot.id}`
+                  return (
+                    <BotContextCard
+                      key={key}
+                      bot={bot}
+                      context={botContexts[key] ?? { active: true }}
+                      onChange={(ctx) => updateBotContext(stage, bot.id, ctx)}
+                    />
+                  )
+                })}
+              </div>
+            </div>
+          </TabsContent>
         ))}
       </Tabs>
-
-      {/* Stage content */}
-      <div className="space-y-4">
-        {/* Shared context */}
-        <SharedContextEditor
-          context={sharedContexts[activeStage] ?? {}}
-          onChange={(ctx) => updateSharedContext(activeStage, ctx)}
-        />
-
-        {/* Bot cards */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-odi-text">
-              Активные боты на этапе ({scenarioBots.length})
-            </h3>
-          </div>
-
-          {scenarioBots.length === 0 && (
-            <Card className="!bg-odi-surface !border-odi-border !shadow-none">
-              <NonIdealState
-                icon="warning-sign"
-                title="Нет ботов"
-                description="Добавьте ботов в сценарий (обязательных или рекомендованных) для настройки их контекста."
-              />
-            </Card>
-          )}
-
-          {scenarioBots.map((bot) => {
-            const key = `${activeStage}::${bot.id}`
-            return (
-              <BotContextCard
-                key={key}
-                bot={bot}
-                context={botContexts[key] ?? { active: true }}
-                onChange={(ctx) => updateBotContext(activeStage, bot.id, ctx)}
-              />
-            )
-          })}
-        </div>
-      </div>
     </div>
   )
 }

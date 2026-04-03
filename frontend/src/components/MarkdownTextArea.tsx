@@ -1,12 +1,13 @@
 import { useCallback } from 'react'
-import { TextArea, type TextAreaProps } from '@blueprintjs/core'
+import { Textarea } from '@/components/ui/textarea'
 import { handlePasteAsMarkdown } from '@/utils/pasteAsMarkdown'
 
-interface MarkdownTextAreaProps extends TextAreaProps {
+interface MarkdownTextAreaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   onValueChange?: (value: string) => void
+  fill?: boolean
 }
 
-export function MarkdownTextArea({ onValueChange, onPaste, onChange, ...props }: MarkdownTextAreaProps) {
+export function MarkdownTextArea({ onValueChange, onPaste, onChange, fill, className, ...props }: MarkdownTextAreaProps) {
   const handlePaste = useCallback((e: React.ClipboardEvent<HTMLTextAreaElement>) => {
     const md = handlePasteAsMarkdown(e)
     if (md !== null && onValueChange) {
@@ -22,8 +23,9 @@ export function MarkdownTextArea({ onValueChange, onPaste, onChange, ...props }:
   }, [onValueChange, onChange])
 
   return (
-    <TextArea
+    <Textarea
       {...props}
+      className={`${fill ? 'w-full' : ''} ${className ?? ''}`}
       onChange={handleChange}
       onPaste={handlePaste}
     />

@@ -1,5 +1,13 @@
 import { useMemo, useState, useEffect, useCallback } from 'react'
-import { Card, Tag, Icon, NonIdealState, Button, Tabs, Tab, TextArea, ButtonGroup } from '@blueprintjs/core'
+import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  Eye, MessageSquare, Minimize2, Maximize2, LayoutGrid,
+  X, Check, Pencil, RefreshCw, Square, Sun,
+} from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 import { useAppSelector, useAppDispatch } from '@/store'
 import { setAquariumFocusedBotId, setAquariumBotTab } from '@/store/appSlice'
@@ -73,7 +81,6 @@ function useReflections(sessionId: string) {
       setStreams((prev) => {
         const stream = prev[data.streamId]
         if (stream && !data.stopped) {
-          // Only create pending if not stopped — stopped streams won't get reflection:created
           setPendingStreams((p) => ({ ...p, [stream.botConfigId]: { ...stream, done: true } }))
         }
         const next = { ...prev }
@@ -108,7 +115,7 @@ function useReflections(sessionId: string) {
   return { reflections, streams: allStreams }
 }
 
-// ── BotCard ──
+// -- BotCard --
 
 interface BotCardProps {
   bot: SessionBot
@@ -173,163 +180,180 @@ function BotCard({
   const contentMaxH = expanded ? 'max-h-none' : 'max-h-[300px]'
 
   return (
-    <Card className={`!bg-odi-surface !border-odi-border !shadow-none flex flex-col ${expanded ? 'h-full' : ''}`}>
+    <Card className={`bg-card border-border shadow-none flex flex-col p-4 ${expanded ? 'h-full' : ''}`}>
       {/* Bot header */}
       <div className="flex items-center gap-3 mb-2">
         <ChatAvatar name={bot.name} role={bot.specialistId} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-sm text-odi-text truncate">{bot.name}</span>
-            <Tag minimal intent={isOnline ? 'success' : 'none'} className="!text-[10px]">
+            <span className="font-semibold text-sm text-foreground truncate">{bot.name}</span>
+            <Badge variant={isOnline ? 'success' : 'outline'} className="text-[10px]">
               {isOnline ? 'online' : 'offline'}
-            </Tag>
+            </Badge>
           </div>
-          <div className="text-xs text-odi-text-muted truncate">{bot.description}</div>
+          <div className="text-xs text-muted-foreground truncate">{bot.description}</div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <div className="text-xs text-odi-text-muted">
-            <Icon icon="chat" size={10} className="mr-1" />
+          <div className="text-xs text-muted-foreground flex items-center">
+            <MessageSquare className="h-2.5 w-2.5 mr-1" />
             {totalMessages}
           </div>
           <Button
-            icon={expanded ? 'minimize' : 'maximize'}
-            minimal
-            small
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
             onClick={onToggleExpand}
             title={expanded ? 'Свернуть' : 'Развернуть'}
-          />
+          >
+            {expanded ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+          </Button>
         </div>
       </div>
 
       {/* Tabs */}
-      <Tabs
-        id={`bot-tabs-${bot.id}`}
-        selectedTabId={tab}
-        onChange={(id) => onTabChange(id as string)}
-        className="mb-3 [&_.bp5-tab-list]:!bg-transparent [&_.bp5-tab-list]:!border-b [&_.bp5-tab-list]:!border-odi-border/50 [&_.bp5-tab]:!text-xs [&_.bp5-tab]:!text-odi-text-muted [&_.bp5-tab]:!py-1.5 [&_.bp5-tab]:!px-3 [&_.bp5-tab[aria-selected=true]]:!text-odi-accent [&_.bp5-tab-indicator-wrapper]:!hidden"
-      >
-        <Tab id="messages" title="Сообщения" icon="chat" />
-        <Tab id="reflection" title="Рефлексия" icon="lightbulb" />
-      </Tabs>
+      <Tabs value={tab} onValueChange={onTabChange} className="mb-3">
+        <TabsList className="bg-transparent border-b border-border/50 w-full justify-start rounded-none h-auto p-0">
+          <TabsTrigger
+            value="messages"
+            className="text-xs text-muted-foreground py-1.5 px-3 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+          >
+            <MessageSquare className="h-3 w-3 mr-1" /> Сообщения
+          </TabsTrigger>
+          <TabsTrigger
+            value="reflection"
+            className="text-xs text-muted-foreground py-1.5 px-3 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+          >
+            <Sun className="h-3 w-3 mr-1" /> Рефлексия
+          </TabsTrigger>
+        </TabsList>
 
-      {tab === 'messages' && (
-        <>
+        <TabsContent value="messages" className="mt-3">
           {activeStream && (
-            <div className="mb-3 px-3 py-2 rounded-lg bg-odi-accent/10 border border-odi-accent/20 animate-fade-in">
+            <div className="mb-3 px-3 py-2 rounded-lg bg-accent border border-primary/20 animate-fade-in">
               <div className="flex items-center gap-1.5 mb-1">
                 <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-odi-accent opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-odi-accent" />
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-foreground opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-foreground" />
                 </span>
-                <span className="text-[10px] font-medium text-odi-accent uppercase tracking-wider">Генерирует ответ</span>
+                <span className="text-[10px] font-medium text-primary uppercase tracking-wider">Генерирует ответ</span>
               </div>
-              <div className="text-sm text-odi-text break-words leading-relaxed">
+              <div className="text-sm text-foreground break-words leading-relaxed">
                 <Markdown>{activeStream.text}</Markdown>
-                <span className="inline-block w-1.5 h-4 ml-0.5 bg-odi-accent animate-pulse rounded-sm align-text-bottom" />
+                <span className="inline-block w-1.5 h-4 ml-0.5 bg-foreground animate-pulse rounded-sm align-text-bottom" />
               </div>
             </div>
           )}
           <div className={`flex-1 space-y-2 overflow-y-auto ${contentMaxH}`}>
             {lastMessages.length === 0 && !activeStream && (
-              <div className="text-xs text-odi-text-muted italic text-center py-4">Бот ещё не высказывался</div>
+              <div className="text-xs text-muted-foreground italic text-center py-4">Бот ещё не высказывался</div>
             )}
             {lastMessages.slice(-messagesLimit).map((msg) => (
-              <div key={msg.id} className="px-3 py-2 rounded-lg bg-odi-bg/50 border border-odi-border/50">
-                <div className="text-sm text-odi-text break-words leading-relaxed"><Markdown>{msg.text}</Markdown></div>
-                <div className="text-[10px] text-odi-text-muted mt-1">
+              <div key={msg.id} className="px-3 py-2 rounded-lg bg-background/50 border border-border/50">
+                <div className="text-sm text-foreground break-words leading-relaxed"><Markdown>{msg.text}</Markdown></div>
+                <div className="text-[10px] text-muted-foreground mt-1">
                   {formatTime(msg.timestamp)}
                   {msg.isEdited && <span className="ml-1 italic">(ред.)</span>}
                 </div>
               </div>
             ))}
           </div>
-        </>
-      )}
+        </TabsContent>
 
-      {tab === 'reflection' && (
-        <div className="flex flex-col gap-3 flex-1">
-          {isAdmin ? (
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] text-odi-text-muted uppercase tracking-wider">Промпт рефлексии</span>
+        <TabsContent value="reflection" className="mt-3">
+          <div className="flex flex-col gap-3 flex-1">
+            {isAdmin ? (
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Промпт рефлексии</span>
+                  {isEditingPrompt ? (
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => {
+                        setReflectionPrompt(bot.reflectionPrompt || DEFAULT_REFLECTION_PROMPT)
+                        setIsEditingPrompt(false)
+                      }}>
+                        <X className="h-3 w-3" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-6 w-6 text-success" disabled={saving} onClick={async () => {
+                        setSaving(true)
+                        try {
+                          await saveReflectionPrompt(bot.id, reflectionPrompt)
+                          bot.reflectionPrompt = reflectionPrompt
+                        } catch { /* ignore */ }
+                        setSaving(false)
+                        setIsEditingPrompt(false)
+                      }}>
+                        <Check className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsEditingPrompt(true)}>
+                      <Pencil className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
                 {isEditingPrompt ? (
-                  <div className="flex gap-1">
-                    <Button icon="cross" minimal small onClick={() => {
-                      setReflectionPrompt(bot.reflectionPrompt || DEFAULT_REFLECTION_PROMPT)
-                      setIsEditingPrompt(false)
-                    }} />
-                    <Button icon="tick" minimal small intent="success" loading={saving} onClick={async () => {
-                      setSaving(true)
-                      try {
-                        await saveReflectionPrompt(bot.id, reflectionPrompt)
-                        bot.reflectionPrompt = reflectionPrompt
-                      } catch { /* ignore */ }
-                      setSaving(false)
-                      setIsEditingPrompt(false)
-                    }} />
-                  </div>
+                  <Textarea
+                    value={reflectionPrompt}
+                    onChange={(e) => setReflectionPrompt(e.target.value)}
+                    className="bg-background text-foreground border-border text-xs w-full"
+                    rows={4}
+                    autoFocus
+                  />
                 ) : (
-                  <Button icon="edit" minimal small onClick={() => setIsEditingPrompt(true)} />
+                  <div className="px-3 py-2 rounded-lg bg-background/50 border border-border/50 text-xs text-muted-foreground italic">{reflectionPrompt}</div>
                 )}
               </div>
-              {isEditingPrompt ? (
-                <TextArea
-                  value={reflectionPrompt}
-                  onChange={(e) => setReflectionPrompt(e.target.value)}
-                  className="!bg-odi-bg !text-odi-text !border-odi-border !text-xs w-full"
-                  rows={4}
-                  autoFocus
-                />
-              ) : (
-                <div className="px-3 py-2 rounded-lg bg-odi-bg/50 border border-odi-border/50 text-xs text-odi-text-muted italic">{reflectionPrompt}</div>
-              )}
-            </div>
-          ) : (
-            <div className="px-3 py-2 rounded-lg bg-odi-bg/50 border border-odi-border/50 text-xs text-odi-text-muted italic">{reflectionPrompt}</div>
-          )}
-
-          {isStreaming ? (
-            <Button icon="stop" intent="danger" text="Остановить рефлексию" onClick={handleStopReflection} />
-          ) : (
-            <Button icon="refresh" intent="primary" text="Запросить рефлексию" onClick={handleReflect} disabled={!socketJoined || isGenerating} loading={activeReflectionStream?.done} />
-          )}
-
-          {activeReflectionStream && (
-            <div className="px-3 py-2 rounded-lg bg-violet-500/10 border border-violet-500/20 animate-fade-in">
-              <div className="flex items-center gap-1.5 mb-1">
-                <span className="relative flex h-2 w-2">
-                  {!activeReflectionStream.done && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-500 opacity-75" />}
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-500" />
-                </span>
-                <span className="text-[10px] font-medium text-violet-400 uppercase tracking-wider">
-                  {activeReflectionStream.done ? 'Сохранение...' : 'Рефлексия...'}
-                </span>
-              </div>
-              <div className="text-sm text-odi-text break-words leading-relaxed">
-                <Markdown>{activeReflectionStream.text}</Markdown>
-                {!activeReflectionStream.done && <span className="inline-block w-1.5 h-4 ml-0.5 bg-violet-500 animate-pulse rounded-sm align-text-bottom" />}
-              </div>
-            </div>
-          )}
-
-          <div className={`flex-1 space-y-2 overflow-y-auto ${contentMaxH}`}>
-            {botReflections.length === 0 && !activeReflectionStream && (
-              <div className="text-xs text-odi-text-muted italic text-center py-4">Рефлексий пока нет</div>
+            ) : (
+              <div className="px-3 py-2 rounded-lg bg-background/50 border border-border/50 text-xs text-muted-foreground italic">{reflectionPrompt}</div>
             )}
-            {botReflections.map((r) => (
-              <div key={r.id} className="px-3 py-2 rounded-lg bg-odi-bg/50 border border-violet-500/20">
-                <div className="text-sm text-odi-text break-words leading-relaxed"><Markdown>{r.text}</Markdown></div>
-                <div className="text-[10px] text-odi-text-muted mt-1">{formatTime(r.createdAt)}</div>
+
+            {isStreaming ? (
+              <Button variant="destructive" onClick={handleStopReflection}>
+                <Square className="h-4 w-4 mr-1" /> Остановить рефлексию
+              </Button>
+            ) : (
+              <Button onClick={handleReflect} disabled={!socketJoined || isGenerating}>
+                <RefreshCw className="h-4 w-4 mr-1" /> Запросить рефлексию
+              </Button>
+            )}
+
+            {activeReflectionStream && (
+              <div className="px-3 py-2 rounded-lg bg-violet-500/10 border border-violet-500/20 animate-fade-in">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className="relative flex h-2 w-2">
+                    {!activeReflectionStream.done && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-500 opacity-75" />}
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-500" />
+                  </span>
+                  <span className="text-[10px] font-medium text-violet-400 uppercase tracking-wider">
+                    {activeReflectionStream.done ? 'Сохранение...' : 'Рефлексия...'}
+                  </span>
+                </div>
+                <div className="text-sm text-foreground break-words leading-relaxed">
+                  <Markdown>{activeReflectionStream.text}</Markdown>
+                  {!activeReflectionStream.done && <span className="inline-block w-1.5 h-4 ml-0.5 bg-violet-500 animate-pulse rounded-sm align-text-bottom" />}
+                </div>
               </div>
-            ))}
+            )}
+
+            <div className={`flex-1 space-y-2 overflow-y-auto ${contentMaxH}`}>
+              {botReflections.length === 0 && !activeReflectionStream && (
+                <div className="text-xs text-muted-foreground italic text-center py-4">Рефлексий пока нет</div>
+              )}
+              {botReflections.map((r) => (
+                <div key={r.id} className="px-3 py-2 rounded-lg bg-background/50 border border-violet-500/20">
+                  <div className="text-sm text-foreground break-words leading-relaxed"><Markdown>{r.text}</Markdown></div>
+                  <div className="text-[10px] text-muted-foreground mt-1">{formatTime(r.createdAt)}</div>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        </TabsContent>
+      </Tabs>
     </Card>
   )
 }
 
-// ── AquariumView ──
+// -- AquariumView --
 
 export function AquariumView() {
   const dispatch = useAppDispatch()
@@ -387,7 +411,11 @@ export function AquariumView() {
   if (sessionBots.length === 0) {
     return (
       <div className="h-full flex items-center justify-center">
-        <NonIdealState icon="eye-open" title="Нет ботов в сессии" description="Боты появятся здесь, когда будут добавлены в сессию" />
+        <div className="flex flex-col items-center gap-4 text-center max-w-sm">
+          <Eye className="h-12 w-12 text-muted-foreground" />
+          <h2 className="text-lg font-semibold text-foreground">Нет ботов в сессии</h2>
+          <p className="text-sm text-muted-foreground">Боты появятся здесь, когда будут добавлены в сессию</p>
+        </div>
       </div>
     )
   }
@@ -403,40 +431,42 @@ export function AquariumView() {
         {/* Bot switcher strip */}
         <div className={`flex items-center gap-2 mb-3 shrink-0 ${contentClass}`}>
           <Button
-            icon="grid-view"
-            minimal
-            small
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-muted-foreground hover:text-foreground transition-colors"
             onClick={() => handleFocus(null)}
             title="Показать все"
-            className="!text-odi-text-muted hover:!text-odi-text transition-colors"
-          />
-          <div className="w-px h-5 bg-odi-border/50" />
-          <ButtonGroup minimal>
+          >
+            <LayoutGrid className="h-4 w-4" />
+          </Button>
+          <div className="w-px h-5 bg-border/50" />
+          <div className="flex gap-0.5">
             {botData.map((d) => {
               const isActive = d.bot.id === focusedBotId
               const hasActivity = !!d.activeStream || !!d.activeReflectionStream
               return (
                 <Button
                   key={d.bot.id}
+                  variant={isActive ? 'secondary' : 'ghost'}
+                  size="sm"
                   onClick={() => {
                     if (d.bot.id !== focusedBotId) handleFocus(d.bot.id)
                   }}
-                  active={isActive}
-                  className={`!text-xs transition-colors ${isActive ? '!text-odi-accent !font-semibold' : '!text-odi-text-muted'}`}
+                  className={`text-xs transition-colors ${isActive ? 'text-primary font-semibold' : 'text-muted-foreground'}`}
                 >
                   <span className="flex items-center gap-1.5">
                     <ChatAvatar name={d.bot.name} role={d.bot.specialistId} size="sm" />
                     {d.bot.name}
-                    {hasActivity && <span className="w-1.5 h-1.5 rounded-full bg-odi-accent animate-pulse" />}
+                    {hasActivity && <span className="w-1.5 h-1.5 rounded-full bg-foreground animate-pulse" />}
                   </span>
                 </Button>
               )
             })}
-          </ButtonGroup>
+          </div>
         </div>
 
         {/* Full-screen card */}
-        <div className={`flex-1 overflow-hidden ${contentClass}`}>
+        <div className={`flex-1 min-h-0 overflow-y-auto ${contentClass}`}>
           <BotCard
             bot={focusedBot.bot}
             isOnline={focusedBot.participant?.isOnline ?? false}
@@ -461,10 +491,10 @@ export function AquariumView() {
   return (
     <div className="p-6 h-full overflow-y-auto">
       <div className={`flex items-center gap-2 mb-1 ${contentClass}`}>
-        <Icon icon="eye-open" className="text-odi-accent" />
-        <h2 className="text-lg font-bold text-odi-text">Аквариум</h2>
+        <Eye className="h-5 w-5 text-primary" />
+        <h2 className="text-lg font-bold text-foreground">Аквариум</h2>
       </div>
-      <p className={`text-sm text-odi-text-muted mb-5 ${contentClass}`}>
+      <p className={`text-sm text-muted-foreground mb-5 ${contentClass}`}>
         Наблюдайте за AI-агентами в реальном времени
       </p>
 

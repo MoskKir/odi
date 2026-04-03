@@ -43,7 +43,7 @@ export function MainContent() {
   const View = VIEW_MAP[displayedMode]
 
   return (
-    <main className="flex-1 overflow-hidden bg-odi-bg">
+    <main className="flex-1 overflow-hidden bg-background">
       <div
         className={`h-full transition-all duration-150 ease-in-out ${
           phase === 'out'

@@ -1,8 +1,15 @@
-import { Button, Card, FormGroup, InputGroup, TextArea, Switch, NumericInput } from '@blueprintjs/core'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { X, Check } from 'lucide-react'
 import { createBot, type CreateBotDto } from '@/api/bots'
 import { success, error as toastError } from '@/utils/toaster'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
+import { Spinner } from '@/components/ui/spinner'
 
 const MODEL_SUGGESTIONS = [
   'google/gemini-2.0-flash-001',
@@ -68,39 +75,47 @@ export function BotCreatePage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-odi-text">Новый бот</h2>
-        <Button minimal icon="cross" text="Отмена" onClick={() => navigate('/master/bots')} />
+        <h2 className="text-xl font-bold text-foreground">Новый бот</h2>
+        <Button variant="ghost" onClick={() => navigate('/master/bots')}>
+          <X className="h-4 w-4 mr-1" />
+          Отмена
+        </Button>
       </div>
 
-      <Card className="!bg-odi-surface !border-odi-border !shadow-none">
+      <Card className="bg-card border-border shadow-none p-5">
         <div className="space-y-4">
           <div className="flex gap-4">
-            <FormGroup label="Specialist ID" className="!mb-0 flex-1" labelInfo="(обязательно)" helperText="Уникальный slug, например: moderator">
-              <InputGroup
+            <div className="space-y-2 flex-1">
+              <Label>Specialist ID <span className="text-muted-foreground">(обязательно)</span></Label>
+              <Input
                 value={specialistId}
                 onChange={(e) => setSpecialistId(e.target.value)}
                 placeholder="moderator"
               />
-            </FormGroup>
-            <FormGroup label="Тег" className="!mb-0">
-              <InputGroup
+              <p className="text-xs text-muted-foreground">Уникальный slug, например: moderator</p>
+            </div>
+            <div className="space-y-2">
+              <Label>Тег</Label>
+              <Input
                 value={tag}
                 onChange={(e) => setTag(e.target.value)}
                 placeholder="Необязательно"
               />
-            </FormGroup>
+            </div>
           </div>
 
-          <FormGroup label="Имя" labelInfo="(обязательно)">
-            <InputGroup
+          <div className="space-y-2">
+            <Label>Имя <span className="text-muted-foreground">(обязательно)</span></Label>
+            <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Например: Модератор"
             />
-          </FormGroup>
+          </div>
 
-          <FormGroup label="Описание" labelInfo="(обязательно)">
-            <TextArea
+          <div className="space-y-2">
+            <Label>Описание <span className="text-muted-foreground">(обязательно)</span></Label>
+            <Textarea
               value={description}
               onChange={(e) => {
                 setDescription(e.target.value)
@@ -108,14 +123,14 @@ export function BotCreatePage() {
                 e.target.style.height = e.target.scrollHeight + 'px'
               }}
               placeholder="Что делает этот бот..."
-              fill
               rows={2}
-              className="!bg-odi-bg !text-odi-text !overflow-hidden !resize-none"
+              className="bg-background text-foreground overflow-hidden resize-none"
             />
-          </FormGroup>
+          </div>
 
-          <FormGroup label="Личность" labelInfo="(обязательно)">
-            <TextArea
+          <div className="space-y-2">
+            <Label>Личность <span className="text-muted-foreground">(обязательно)</span></Label>
+            <Textarea
               value={personality}
               onChange={(e) => {
                 setPersonality(e.target.value)
@@ -123,14 +138,14 @@ export function BotCreatePage() {
                 e.target.style.height = e.target.scrollHeight + 'px'
               }}
               placeholder="Характер и стиль общения..."
-              fill
               rows={2}
-              className="!bg-odi-bg !text-odi-text !overflow-hidden !resize-none"
+              className="bg-background text-foreground overflow-hidden resize-none"
             />
-          </FormGroup>
+          </div>
 
-          <FormGroup label="Системный промпт" labelInfo="(обязательно)">
-            <TextArea
+          <div className="space-y-2">
+            <Label>Системный промпт <span className="text-muted-foreground">(обязательно)</span></Label>
+            <Textarea
               value={systemPrompt}
               onChange={(e) => {
                 setSystemPrompt(e.target.value)
@@ -138,15 +153,15 @@ export function BotCreatePage() {
                 e.target.style.height = e.target.scrollHeight + 'px'
               }}
               placeholder="Инструкции для LLM..."
-              fill
               rows={4}
-              className="!bg-odi-bg !text-odi-text !overflow-hidden !resize-none"
+              className="bg-background text-foreground overflow-hidden resize-none"
             />
-          </FormGroup>
+          </div>
 
           <div className="flex gap-4 flex-wrap">
-            <FormGroup label="Модель" labelInfo="(OpenRouter)" className="!mb-0">
-              <InputGroup
+            <div className="space-y-2">
+              <Label>Модель <span className="text-muted-foreground">(OpenRouter)</span></Label>
+              <Input
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
                 placeholder="provider/model-name"
@@ -155,47 +170,54 @@ export function BotCreatePage() {
               <datalist id="model-suggestions-create">
                 {MODEL_SUGGESTIONS.map((m) => <option key={m} value={m} />)}
               </datalist>
-            </FormGroup>
+            </div>
 
-            <FormGroup label="Temperature" className="!mb-0">
-              <NumericInput
+            <div className="space-y-2">
+              <Label>Temperature</Label>
+              <Input
+                type="number"
                 value={temperature}
-                onValueChange={(v) => setTemperature(v)}
+                onChange={(e) => setTemperature(Number(e.target.value))}
                 min={0}
                 max={2}
-                stepSize={0.1}
-                minorStepSize={0.01}
-                className="!w-24"
+                step={0.1}
+                className="w-24"
               />
-            </FormGroup>
+            </div>
 
-            <FormGroup label="Max Tokens" className="!mb-0">
-              <NumericInput
+            <div className="space-y-2">
+              <Label>Max Tokens</Label>
+              <Input
+                type="number"
                 value={maxTokens}
-                onValueChange={(v) => setMaxTokens(v)}
+                onChange={(e) => setMaxTokens(Number(e.target.value))}
                 min={256}
                 max={100000}
-                stepSize={256}
-                className="!w-28"
+                step={256}
+                className="w-28"
               />
-            </FormGroup>
+            </div>
 
-            <FormGroup label="Звёзды" className="!mb-0">
-              <NumericInput
+            <div className="space-y-2">
+              <Label>Звёзды</Label>
+              <Input
+                type="number"
                 value={stars}
-                onValueChange={(v) => setStars(v)}
+                onChange={(e) => setStars(Number(e.target.value))}
                 min={1}
                 max={5}
-                className="!w-20"
+                className="w-20"
               />
-            </FormGroup>
+            </div>
           </div>
 
-          <Switch
-            checked={enabled}
-            label="Включён"
-            onChange={() => setEnabled(!enabled)}
-          />
+          <div className="flex items-center gap-2">
+            <Switch
+              checked={enabled}
+              onCheckedChange={setEnabled}
+            />
+            <Label>Включён</Label>
+          </div>
 
           {error && (
             <div className="text-sm text-red-500">{error}</div>
@@ -203,14 +225,14 @@ export function BotCreatePage() {
 
           <div className="flex gap-2 pt-2">
             <Button
-              intent="success"
-              icon="tick"
-              text="Создать бота"
-              loading={saving}
-              disabled={!canSubmit}
+              className="bg-success hover:bg-success/90"
+              disabled={!canSubmit || saving}
               onClick={handleSubmit}
-            />
-            <Button minimal text="Отмена" onClick={() => navigate('/master/bots')} />
+            >
+              {saving ? <Spinner size="sm" /> : <Check className="h-4 w-4 mr-1" />}
+              Создать бота
+            </Button>
+            <Button variant="ghost" onClick={() => navigate('/master/bots')}>Отмена</Button>
           </div>
         </div>
       </Card>

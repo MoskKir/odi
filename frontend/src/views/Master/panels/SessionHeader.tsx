@@ -1,13 +1,24 @@
-import { Tag, ProgressBar, Button, HTMLSelect, Spinner } from '@blueprintjs/core'
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { Eye, Users } from 'lucide-react'
 import { fetchAdminSessions, type AdminSessionResponse } from '@/api/admin-sessions'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Progress } from '@/components/ui/progress'
+import { Spinner } from '@/components/ui/spinner'
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from '@/components/ui/select'
 
-const STATUS_INTENT: Record<string, 'success' | 'warning' | 'danger' | 'primary' | 'none'> = {
+const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'danger' | 'default' | 'outline'> = {
   active: 'success',
   paused: 'warning',
-  completed: 'none',
-  draft: 'primary',
+  completed: 'outline',
+  draft: 'default',
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -78,76 +89,85 @@ export function SessionHeader() {
 
   if (loading) {
     return (
-      <div className="bg-odi-surface border-b border-odi-border px-4 py-2 flex items-center justify-center shrink-0">
-        <Spinner size={16} />
-        <span className="ml-2 text-sm text-odi-text-muted">Загрузка сессий...</span>
+      <div className="bg-card border-b border-border px-4 py-2 flex items-center justify-center shrink-0">
+        <Spinner size="sm" />
+        <span className="ml-2 text-sm text-muted-foreground">Загрузка сессий...</span>
       </div>
     )
   }
 
   if (sessions.length === 0) {
     return (
-      <div className="bg-odi-surface border-b border-odi-border px-4 py-3 flex items-center justify-center shrink-0">
-        <span className="text-sm text-odi-text-muted">Нет активных игр</span>
+      <div className="bg-card border-b border-border px-4 py-3 flex items-center justify-center shrink-0">
+        <span className="text-sm text-muted-foreground">Нет активных игр</span>
       </div>
     )
   }
 
   return (
-    <div className="bg-odi-surface border-b border-odi-border px-4 py-2 flex items-center gap-4 shrink-0">
+    <div className="bg-card border-b border-border px-4 py-2 flex items-center gap-4 shrink-0">
       <div className="flex items-center gap-2">
-        <Tag intent={STATUS_INTENT[current?.status || 'draft'] || 'none'} large>
+        <Badge variant={STATUS_VARIANT[current?.status || 'draft'] || 'outline'} className="text-sm">
           {STATUS_LABEL[current?.status || 'draft'] || current?.status}
-        </Tag>
-        <HTMLSelect
-          value={selectedId || ''}
-          onChange={(e) => onSelect(e.target.value)}
-          minimal
-          className="font-bold text-sm"
-        >
-          {sessions.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.title} ({STATUS_LABEL[s.status] || s.status})
-            </option>
-          ))}
-        </HTMLSelect>
+        </Badge>
+        <Select value={selectedId || ''} onValueChange={onSelect}>
+          <SelectTrigger className="font-bold text-sm border-none bg-transparent">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {sessions.map((s) => (
+              <SelectItem key={s.id} value={s.id}>
+                {s.title} ({STATUS_LABEL[s.status] || s.status})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
-      <Tag minimal icon="people">{onlineCount}/{totalCount} онлайн</Tag>
-      {current?.scenario?.title && <Tag minimal>{current.scenario.title}</Tag>}
+      <Badge variant="outline" className="gap-1">
+        <Users className="h-3 w-3" />
+        {onlineCount}/{totalCount} онлайн
+      </Badge>
+      {current?.scenario?.title && <Badge variant="outline">{current.scenario.title}</Badge>}
 
       <div className="flex-1" />
 
       {startedAt && (
         <>
           <div className="flex items-center gap-2">
-            <span className="font-mono text-lg font-bold text-odi-text">{time}</span>
-            <span className="text-xs text-odi-text-muted">
+            <span className="font-mono text-lg font-bold text-foreground">{time}</span>
+            <span className="text-xs text-muted-foreground">
               / {String(Math.floor((current?.durationMinutes || 90) / 60)).padStart(2, '0')}:
               {String((current?.durationMinutes || 90) % 60).padStart(2, '0')}:00
             </span>
           </div>
 
           <div className="w-32">
-            <ProgressBar
-              value={progress}
-              intent={progress > 0.85 ? 'danger' : progress > 0.6 ? 'warning' : 'primary'}
-              stripes={false}
-              animate={false}
+            <Progress
+              value={progress * 100}
+              indicatorClassName={
+                progress > 0.85
+                  ? 'bg-red-500'
+                  : progress > 0.6
+                    ? 'bg-yellow-500'
+                    : undefined
+              }
             />
           </div>
         </>
       )}
 
       <Button
-        icon="eye-open"
-        small
-        minimal
+        variant="ghost"
+        size="icon"
+        className="h-7 w-7"
         title="Открыть как игрок"
         onClick={() => {
           if (selectedId) window.open(`/game/theatre?session=${selectedId}`, '_blank')
         }}
-      />
+      >
+        <Eye className="h-4 w-4" />
+      </Button>
     </div>
   )
 }

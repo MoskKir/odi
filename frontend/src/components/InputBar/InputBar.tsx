@@ -1,6 +1,8 @@
 import { useRef, useCallback, useState, useEffect } from 'react'
-import { Button, ButtonGroup, Tag } from '@blueprintjs/core'
+import { Mic, Paperclip, Square, Check, Send } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { useAppSelector, useAppDispatch } from '@/store'
 import { setInputBarHeight, syncPreferencesToServer, stopAllStreams, clearEditingMessage, clearPendingMention } from '@/store/appSlice'
 import { getSocket } from '@/api/socket'
@@ -65,7 +67,7 @@ export function InputBar() {
   }
 
   const handleStopStream = () => {
-    // Immediately stop on frontend — no lag
+    // Immediately stop on frontend -- no lag
     dispatch(stopAllStreams())
     // Best-effort: tell backend to abort streams and block new ones
     if (sessionId) {
@@ -123,22 +125,22 @@ export function InputBar() {
   }, [inputBarHeight, dispatch])
 
   return (
-    <div className="bg-odi-surface border-t border-odi-border shrink-0" data-input-bar>
+    <div className="bg-card border-t border-border shrink-0" data-input-bar>
       {/* Resize handle */}
       <div
         onMouseDown={handleResizeMouseDown}
-        className="h-1 cursor-row-resize hover:bg-odi-accent/40 active:bg-odi-accent/60 transition-colors"
+        className="h-1 cursor-row-resize hover:bg-border active:bg-muted-foreground transition-colors"
       />
 
       <div className="px-4 py-3">
         {editingMessage && (
-          <div className="flex items-center gap-2 mb-2 px-1 text-xs text-odi-accent">
-            <span>✏️ Редактирование сообщения</span>
+          <div className="flex items-center gap-2 mb-2 px-1 text-xs text-primary">
+            <span>Редактирование сообщения</span>
             <button
-              className="ml-auto text-odi-text-muted hover:text-odi-text"
+              className="ml-auto text-muted-foreground hover:text-foreground"
               onClick={handleCancelEdit}
             >
-              ✕ Отмена
+              Отмена
             </button>
           </div>
         )}
@@ -149,36 +151,48 @@ export function InputBar() {
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={handleKeyDown}
-            className={`flex-1 resize-none bg-odi-bg text-odi-text border rounded-lg px-3 py-2 text-sm leading-relaxed focus:outline-none placeholder:text-odi-text-muted whitespace-pre-wrap overflow-y-auto ${
-              editingMessage ? 'border-odi-accent' : 'border-odi-border focus:border-odi-accent'
+            className={`flex-1 resize-none bg-background text-foreground border rounded-lg px-3 py-2 text-sm leading-relaxed focus:outline-none placeholder:text-muted-foreground whitespace-pre-wrap overflow-y-auto ${
+              editingMessage ? 'border-primary' : 'border-border focus:border-primary'
             }`}
             style={{ height: inputBarHeight }}
           />
-          <Button icon="microphone" minimal title="Голос" />
-          <Button icon="paperclip" minimal title="Файл" />
+          <Button variant="ghost" size="icon" title="Голос">
+            <Mic className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" title="Файл">
+            <Paperclip className="h-4 w-4" />
+          </Button>
           {isStreaming ? (
-            <Button icon="stop" intent="danger" onClick={handleStopStream} title="Остановить генерацию" />
+            <Button variant="destructive" size="icon" onClick={handleStopStream} title="Остановить генерацию">
+              <Square className="h-4 w-4" />
+            </Button>
           ) : editingMessage ? (
-            <Button icon="tick" intent="success" onClick={handleSend} disabled={!canSend} title="Сохранить" />
+            <Button
+              size="icon"
+              className="bg-success hover:bg-success/90"
+              onClick={handleSend}
+              disabled={!canSend}
+              title="Сохранить"
+            >
+              <Check className="h-4 w-4" />
+            </Button>
           ) : (
-            <Button icon="send-message" intent="primary" onClick={handleSend} disabled={!canSend} />
+            <Button size="icon" onClick={handleSend} disabled={!canSend}>
+              <Send className="h-4 w-4" />
+            </Button>
           )}
         </div>
-        <div className="flex items-center gap-2 mt-2">
-          <ButtonGroup minimal>
-            {sessionBots.map((bot) => (
-              <Tag
-                key={bot.id}
-                interactive
-                minimal
-                intent="primary"
-                className="cursor-pointer"
-                onClick={() => setText((t) => `${t} @${bot.name} `)}
-              >
-                @{bot.name}
-              </Tag>
-            ))}
-          </ButtonGroup>
+        <div className="flex flex-wrap gap-1 mt-2">
+          {sessionBots.map((bot) => (
+            <Badge
+              key={bot.id}
+              variant="outline"
+              className="cursor-pointer hover:bg-accent text-[10px] px-1.5 py-0"
+              onClick={() => setText((t) => `${t} @${bot.name} `)}
+            >
+              @{bot.name}
+            </Badge>
+          ))}
         </div>
       </div>
     </div>

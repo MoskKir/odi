@@ -1,6 +1,7 @@
 import { useRef, useEffect, useCallback, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Button, Icon } from '@blueprintjs/core'
+import { Button } from '@/components/ui/button'
+import { ArrowDown, Trash2 } from 'lucide-react'
 import { useAppSelector } from '@/store'
 import { Markdown } from '@/components/Markdown'
 import { ChatAvatar } from '@/components/ChatAvatar'
@@ -63,9 +64,9 @@ export function TheatreView() {
           if (isDeleted) {
             return (
               <div key={msg.id} className="flex justify-center my-1">
-                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-odi-surface-hover/60 border border-odi-border/30">
-                  <Icon icon="trash" size={10} className="text-odi-text-muted/50" />
-                  <span className="text-[11px] text-odi-text-muted/60 italic">{msg.text.replace('\u26A0 ', '')}</span>
+                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted/60 border border-border/30">
+                  <Trash2 className="h-2.5 w-2.5 text-muted-foreground/50" />
+                  <span className="text-[11px] text-muted-foreground/60 italic">{msg.text.replace('\u26A0 ', '')}</span>
                 </div>
               </div>
             )
@@ -82,20 +83,20 @@ export function TheatreView() {
               {/* Message bubble */}
               <div className={`max-w-[70%] min-w-[120px]`}>
                 {!isMine && (
-                  <div className="text-xs font-medium mb-1 text-odi-text-muted">
+                  <div className="text-xs font-medium mb-1 text-muted-foreground">
                     {msg.author}
                   </div>
                 )}
                 <div
-                  className={`px-3 py-2 rounded-2xl text-sm leading-relaxed break-words ${
+                  className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed break-words ${
                     isMine
-                      ? 'bg-odi-accent text-white rounded-br-md'
-                      : 'bg-odi-surface-hover text-odi-text rounded-bl-md'
+                      ? 'bg-primary text-primary-foreground rounded-br-md'
+                      : 'bg-muted text-foreground rounded-bl-md'
                   }`}
                 >
-                  {msg.role === 'bot' ? <Markdown>{msg.text}</Markdown> : msg.text}
+                  <Markdown>{msg.text}</Markdown>
                 </div>
-                <div className={`text-[10px] text-odi-text-muted mt-1 ${isMine ? 'text-right' : 'text-left'}`}>
+                <div className={`text-[10px] text-muted-foreground mt-1 ${isMine ? 'text-right' : 'text-left'}`}>
                   {formatTime(msg.timestamp)}
                   {msg.isEdited && <span className="ml-1 italic">(ред.)</span>}
                 </div>
@@ -114,12 +115,12 @@ export function TheatreView() {
             <div key={stream.streamId} className="flex items-end gap-2 flex-row">
               <ChatAvatar name={botName} role={role} />
               <div className="max-w-[70%] min-w-[120px]">
-                <div className="text-xs font-medium mb-1 text-odi-text-muted">
+                <div className="text-xs font-medium mb-1 text-muted-foreground">
                   {botName}
                 </div>
-                <div className="px-3 py-2 rounded-2xl rounded-bl-md text-sm leading-relaxed break-words bg-odi-surface-hover text-odi-text">
+                <div className="px-3.5 py-2.5 rounded-2xl rounded-bl-md text-sm leading-relaxed break-words bg-muted text-foreground">
                   <Markdown>{stream.text}</Markdown>
-                  <span className="inline-block w-1.5 h-4 ml-0.5 bg-odi-accent animate-pulse rounded-sm align-text-bottom" />
+                  <span className="inline-block w-1.5 h-4 ml-0.5 bg-foreground animate-pulse rounded-sm align-text-bottom" />
                 </div>
               </div>
             </div>
@@ -129,11 +130,12 @@ export function TheatreView() {
 
       {showScrollDown && (
         <Button
-          icon="arrow-down"
-          intent="primary"
-          className="!absolute bottom-4 left-1/2 -translate-x-1/2 !rounded-full !shadow-lg"
+          size="icon"
+          className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full shadow-lg"
           onClick={scrollToBottom}
-        />
+        >
+          <ArrowDown className="h-4 w-4" />
+        </Button>
       )}
 
       {contextMenu && (

@@ -1,15 +1,16 @@
-import { Button, ButtonGroup } from '@blueprintjs/core'
+import { Button } from '@/components/ui/button'
 import { useSearchParams } from 'react-router-dom'
 import { useAppSelector, useAppDispatch } from '@/store'
 import { setEmotion } from '@/store/appSlice'
 import { getSocket } from '@/api/socket'
+import { Smile, Flame, CloudSun, CloudRain, type LucideIcon } from 'lucide-react'
 import type { Emotion } from '@/types'
 
-const EMOTIONS: { emotion: Emotion; emoji: string; label: string }[] = [
-  { emotion: 'happy', emoji: '\u{1F60A}', label: 'Радость' },
-  { emotion: 'angry', emoji: '\u{1F620}', label: 'Гнев' },
-  { emotion: 'calm', emoji: '\u{1F60C}', label: 'Спокойствие' },
-  { emotion: 'sad', emoji: '\u{1F622}', label: 'Грусть' },
+const EMOTIONS: { emotion: Emotion; icon: LucideIcon; label: string }[] = [
+  { emotion: 'happy', icon: Smile, label: 'Радость' },
+  { emotion: 'angry', icon: Flame, label: 'Гнев' },
+  { emotion: 'calm', icon: CloudSun, label: 'Спокойствие' },
+  { emotion: 'sad', icon: CloudRain, label: 'Грусть' },
 ]
 
 export function EmotionCompass() {
@@ -27,23 +28,22 @@ export function EmotionCompass() {
   }
 
   return (
-    <ButtonGroup className="gap-1 w-full flex">
-      {EMOTIONS.map(({ emotion, emoji, label }) => (
+    <div className="flex gap-1 w-full">
+      {EMOTIONS.map(({ emotion, icon: Icon, label }) => (
         <Button
           key={emotion}
-          minimal
-          active={currentEmotion === emotion}
+          variant="ghost"
           onClick={() => handleEmotion(emotion)}
           title={label}
           className={`flex-1 ${
             currentEmotion === emotion
-              ? '!bg-odi-accent/20'
-              : 'hover:!bg-odi-surface-hover'
+              ? 'bg-accent hover:bg-accent'
+              : 'hover:bg-muted'
           }`}
         >
-          <span className="text-lg">{emoji}</span>
+          <Icon className="h-5 w-5" />
         </Button>
       ))}
-    </ButtonGroup>
+    </div>
   )
 }

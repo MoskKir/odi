@@ -1,6 +1,13 @@
-import { HTMLSelect } from '@blueprintjs/core'
+import { Map } from 'lucide-react'
 import { useAppSelector, useAppDispatch } from '@/store'
 import { selectScenario } from '@/store/missionSlice'
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from '@/components/ui/select'
 
 export function ScenarioSelector() {
   const { scenarios, selectedScenario } = useAppSelector((s) => s.mission)
@@ -8,26 +15,27 @@ export function ScenarioSelector() {
 
   return (
     <div className="flex items-center gap-3">
-      <div className="text-odi-text-muted text-sm font-bold uppercase tracking-wider shrink-0">
-        <span className="text-odi-accent mr-2">[1]</span>
+      <div className="flex items-center gap-1.5 text-muted-foreground text-sm font-bold uppercase tracking-wider shrink-0">
+        <Map className="h-3.5 w-3.5" />
         Сценарий
       </div>
-      <HTMLSelect
+      <Select
         value={selectedScenario ?? ''}
-        onChange={(e) => {
-          const val = e.currentTarget.value
+        onValueChange={(val) => {
           if (val) dispatch(selectScenario(val))
         }}
-        className="!text-sm"
-        fill
       >
-        <option value="">— выберите сценарий —</option>
-        {scenarios.map((s) => (
-          <option key={s.slug} value={s.slug}>
-            {s.icon} {s.title} — {s.subtitle}
-          </option>
-        ))}
-      </HTMLSelect>
+        <SelectTrigger className="w-full text-sm">
+          <SelectValue placeholder="— выберите сценарий —" />
+        </SelectTrigger>
+        <SelectContent>
+          {scenarios.map((s) => (
+            <SelectItem key={s.slug} value={s.slug}>
+              {s.icon} {s.title} — {s.subtitle}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   )
 }

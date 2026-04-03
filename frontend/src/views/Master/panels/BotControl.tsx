@@ -1,8 +1,20 @@
-import { Card, Button, Tag, Switch, InputGroup, Dialog, DialogBody, DialogFooter } from '@blueprintjs/core'
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { RefreshCw, MessageSquare, Hand, Bot } from 'lucide-react'
 import { useAppSelector } from '@/store'
 import { getSocket } from '@/api/socket'
+import { Card } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Switch } from '@/components/ui/switch'
+import { Input } from '@/components/ui/input'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
 
 export function BotControl() {
   const participants = useAppSelector((s) => s.app.sessionParticipants)
@@ -85,13 +97,13 @@ export function BotControl() {
 
   return (
     <>
-      <Card className="!bg-odi-surface !border-odi-border !shadow-none h-full flex flex-col overflow-hidden !p-3">
-        <span className="text-xs font-bold text-odi-text-muted uppercase tracking-wider mb-2">
+      <Card className="bg-card border-border shadow-none h-full flex flex-col overflow-hidden p-3">
+        <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">
           Управление ботами
         </span>
         <div className="flex-1 overflow-y-auto space-y-2">
           {bots.length === 0 && (
-            <div className="text-xs text-odi-text-muted text-center py-4">Нет ботов в сессии</div>
+            <div className="text-xs text-muted-foreground text-center py-4">Нет ботов в сессии</div>
           )}
           {bots.map((bot) => {
             const botCfgId = bot.botConfigId || bot.id
@@ -122,58 +134,46 @@ export function BotControl() {
       </Card>
 
       {/* Strategy Dialog */}
-      <Dialog
-        isOpen={!!strategyDialog}
-        onClose={() => setStrategyDialog(null)}
-        title={`Стратегия: ${strategyDialog?.botName}`}
-        className="bp5-dark"
-      >
-        <DialogBody>
-          <InputGroup
+      <Dialog open={!!strategyDialog} onOpenChange={(open) => !open && setStrategyDialog(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Стратегия: {strategyDialog?.botName}</DialogTitle>
+          </DialogHeader>
+          <Input
             placeholder="Например: Будь более агрессивным критиком..."
             value={strategyText}
             onChange={(e) => setStrategyText(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleChangeStrategy()}
             autoFocus
           />
-        </DialogBody>
-        <DialogFooter
-          actions={
-            <>
-              <Button text="Отмена" onClick={() => setStrategyDialog(null)} />
-              <Button text="Применить" intent="primary" onClick={handleChangeStrategy} disabled={!strategyText.trim()} />
-            </>
-          }
-        />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setStrategyDialog(null)}>Отмена</Button>
+            <Button onClick={handleChangeStrategy} disabled={!strategyText.trim()}>Применить</Button>
+          </DialogFooter>
+        </DialogContent>
       </Dialog>
 
       {/* Speak Dialog */}
-      <Dialog
-        isOpen={!!speakDialog}
-        onClose={() => setSpeakDialog(null)}
-        title={`Попросить высказаться: ${speakDialog?.botName}`}
-        className="bp5-dark"
-      >
-        <DialogBody>
-          <InputGroup
+      <Dialog open={!!speakDialog} onOpenChange={(open) => !open && setSpeakDialog(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Попросить высказаться: {speakDialog?.botName}</DialogTitle>
+          </DialogHeader>
+          <Input
             placeholder="Подсказка (необязательно)..."
             value={speakPrompt}
             onChange={(e) => setSpeakPrompt(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSpeak()}
             autoFocus
           />
-          <p className="text-xs text-odi-text-muted mt-2">
-            Оставьте пустым — бот выскажется по текущей теме
+          <p className="text-xs text-muted-foreground mt-2">
+            Оставьте пустым -- бот выскажется по текущей теме
           </p>
-        </DialogBody>
-        <DialogFooter
-          actions={
-            <>
-              <Button text="Отмена" onClick={() => setSpeakDialog(null)} />
-              <Button text="Высказаться" intent="primary" onClick={handleSpeak} />
-            </>
-          }
-        />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setSpeakDialog(null)}>Отмена</Button>
+            <Button onClick={handleSpeak}>Высказаться</Button>
+          </DialogFooter>
+        </DialogContent>
       </Dialog>
     </>
   )
@@ -201,52 +201,57 @@ function BotCard({
   onSpeak: () => void
 }) {
   return (
-    <div className={`p-2 rounded border border-odi-border ${isMuted ? 'opacity-50' : 'bg-odi-surface-hover'}`}>
+    <div className={`p-2 rounded border border-border ${isMuted ? 'opacity-50' : 'bg-muted'}`}>
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-1.5">
-          <span className="text-sm">{'\u{1F916}'}</span>
-          <span className="text-xs font-bold text-odi-text">{name}</span>
+          <Bot className="h-4 w-4 text-muted-foreground" />
+          <span className="text-xs font-bold text-foreground">{name}</span>
           {specialistId && (
-            <Tag minimal className="text-[9px]">{specialistId}</Tag>
+            <Badge variant="outline" className="text-[9px]">{specialistId}</Badge>
           )}
-          <Tag minimal intent={isMuted ? 'danger' : isOnline ? 'success' : 'none'} className="text-[9px]">
+          <Badge variant={isMuted ? 'danger' : isOnline ? 'success' : 'outline'} className="text-[9px]">
             {isMuted ? 'MUTE' : isOnline ? 'ON' : 'OFF'}
-          </Tag>
+          </Badge>
         </div>
         <Switch
           checked={!isMuted}
-          onChange={onToggleMute}
+          onCheckedChange={onToggleMute}
           disabled={!canAct}
-          className="!mb-0"
         />
       </div>
       {!isMuted && (
         <div className="flex items-center gap-2 mt-1">
           <Button
-            icon="refresh"
-            minimal
-            small
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
             title="Сменить стратегию"
             disabled={!canAct}
             onClick={onChangeStrategy}
-          />
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+          </Button>
           <Button
-            icon="chat"
-            minimal
-            small
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
             title="Попросить высказаться"
             disabled={!canAct}
             onClick={onSpeak}
-          />
+          >
+            <MessageSquare className="h-3.5 w-3.5" />
+          </Button>
           <Button
-            icon="hand"
-            minimal
-            small
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
             title="Замолчать"
             disabled={!canAct}
             onClick={onToggleMute}
-          />
-          <span className="text-[10px] text-odi-text-muted ml-auto">
+          >
+            <Hand className="h-3.5 w-3.5" />
+          </Button>
+          <span className="text-[10px] text-muted-foreground ml-auto">
             {contributions} msg
           </span>
         </div>

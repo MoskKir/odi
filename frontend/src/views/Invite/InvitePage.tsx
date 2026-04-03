@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Spinner, NonIdealState } from '@blueprintjs/core'
+import { Spinner } from '@/components/ui/spinner'
+import { Button } from '@/components/ui/button'
+import { AlertCircle } from 'lucide-react'
 import { resolveInvite, joinGame } from '@/api/games'
 
 export function InvitePage() {
@@ -21,25 +23,23 @@ export function InvitePage() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-screen bg-odi-bg">
-        <NonIdealState
-          icon="error"
-          title="Ошибка приглашения"
-          description={error}
-          action={
-            <a href="/dashboard" className="bp5-button bp5-intent-primary">
-              На главную
-            </a>
-          }
-        />
+      <div className="flex items-center justify-center h-screen bg-background">
+        <div className="flex flex-col items-center gap-4 text-center max-w-sm">
+          <AlertCircle className="h-12 w-12 text-muted-foreground" />
+          <h2 className="text-lg font-semibold text-foreground">Ошибка приглашения</h2>
+          <p className="text-sm text-muted-foreground">{error}</p>
+          <Button onClick={() => navigate('/dashboard')}>
+            На главную
+          </Button>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="flex items-center justify-center h-screen bg-odi-bg">
+    <div className="flex items-center justify-center h-screen bg-background">
       <Spinner size={50} />
-      <span className="ml-4 text-odi-text">Присоединение к игре...</span>
+      <span className="ml-4 text-foreground">Присоединение к игре...</span>
     </div>
   )
 }

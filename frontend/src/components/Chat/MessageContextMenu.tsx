@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useLayoutEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { Icon } from '@blueprintjs/core'
+import { Pencil, Trash2 } from 'lucide-react'
 import { useAppSelector, useAppDispatch } from '@/store'
 import { setEditingMessage } from '@/store/appSlice'
 import { getSocket } from '@/api/socket'
@@ -49,7 +49,7 @@ export function MessageContextMenu({ message, sessionId, x, y, onClose }: Props)
     requestAnimationFrame(() => setPhase('in'))
   }, [x, y])
 
-  // Outside click / Escape / scroll → animated close
+  // Outside click / Escape / scroll -> animated close
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
@@ -102,13 +102,13 @@ export function MessageContextMenu({ message, sessionId, x, y, onClose }: Props)
         visibility: phase === 'measuring' ? 'hidden' : 'visible',
       }}
     >
-      <div className="bg-odi-surface border border-odi-border rounded-lg shadow-2xl py-1 min-w-[160px] overflow-hidden">
+      <div className="bg-card border border-border rounded-lg shadow-2xl py-1 min-w-[160px] overflow-hidden">
         {canEdit && (
           <button
-            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-odi-text hover:bg-odi-surface-hover transition-colors"
+            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-foreground hover:bg-muted transition-colors"
             onClick={handleEdit}
           >
-            <Icon icon="edit" size={13} className="text-odi-text-muted" />
+            <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
             Редактировать
           </button>
         )}
@@ -117,7 +117,7 @@ export function MessageContextMenu({ message, sessionId, x, y, onClose }: Props)
             className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-red-400 hover:bg-red-500/10 transition-colors"
             onClick={handleDelete}
           >
-            <Icon icon="trash" size={13} />
+            <Trash2 className="h-3.5 w-3.5" />
             Удалить
           </button>
         )}

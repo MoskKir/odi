@@ -74,6 +74,9 @@ export class GameSessionEntity {
   @Column({ type: 'int', default: 7 })
   energy: number;
 
+  @Column({ type: 'jsonb', nullable: true })
+  boardColumns: { id: string; title: string }[] | null;
+
   @Column({ type: 'timestamptz', nullable: true })
   startedAt: Date | null;
 

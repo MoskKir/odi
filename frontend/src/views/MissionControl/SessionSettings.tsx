@@ -1,4 +1,4 @@
-import { HTMLSelect } from '@blueprintjs/core'
+import { Settings } from 'lucide-react'
 import { useAppSelector, useAppDispatch } from '@/store'
 import {
   setDifficulty,
@@ -6,6 +6,13 @@ import {
   setInterfaceMode,
   setAiVisibility,
 } from '@/store/missionSlice'
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from '@/components/ui/select'
 import type { Difficulty, Duration, InterfaceMode, AiVisibility } from '@/types'
 
 export function SessionSettings() {
@@ -16,63 +23,76 @@ export function SessionSettings() {
 
   return (
     <div>
-      <div className="text-sm font-bold text-odi-text-muted mb-3">
-        {'\u2699\uFE0F'} НАСТРОЙКИ СЕССИИ
+      <div className="flex items-center gap-1.5 text-sm font-bold text-muted-foreground mb-3">
+        <Settings className="h-3.5 w-3.5" />
+        НАСТРОЙКИ СЕССИИ
       </div>
-      <div className="bg-odi-surface rounded-lg border border-odi-border p-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="bg-card rounded-lg border border-border p-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div>
-          <label className="text-xs text-odi-text-muted block mb-1">Сложность</label>
-          <HTMLSelect
+          <label className="text-xs text-muted-foreground block mb-1">Сложность</label>
+          <Select
             value={difficulty}
-            onChange={(e) => dispatch(setDifficulty(e.currentTarget.value as Difficulty))}
-            fill
-            className="!text-sm"
+            onValueChange={(val) => dispatch(setDifficulty(val as Difficulty))}
           >
-            <option value="easy">Легкая (обучение)</option>
-            <option value="medium">Средняя</option>
-            <option value="hard">Сложная (эксперт)</option>
-          </HTMLSelect>
+            <SelectTrigger className="w-full text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="easy">Легкая (обучение)</SelectItem>
+              <SelectItem value="medium">Средняя</SelectItem>
+              <SelectItem value="hard">Сложная (эксперт)</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div>
-          <label className="text-xs text-odi-text-muted block mb-1">Длительность</label>
-          <HTMLSelect
+          <label className="text-xs text-muted-foreground block mb-1">Длительность</label>
+          <Select
             value={String(duration)}
-            onChange={(e) => dispatch(setDuration(Number(e.currentTarget.value) as Duration))}
-            fill
-            className="!text-sm"
+            onValueChange={(val) => dispatch(setDuration(Number(val) as Duration))}
           >
-            <option value="30">30 мин</option>
-            <option value="60">60 мин</option>
-            <option value="90">90 мин</option>
-            <option value="0">Без лимита</option>
-          </HTMLSelect>
+            <SelectTrigger className="w-full text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="30">30 мин</SelectItem>
+              <SelectItem value="60">60 мин</SelectItem>
+              <SelectItem value="90">90 мин</SelectItem>
+              <SelectItem value="0">Без лимита</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div>
-          <label className="text-xs text-odi-text-muted block mb-1">Интерфейс</label>
-          <HTMLSelect
+          <label className="text-xs text-muted-foreground block mb-1">Интерфейс</label>
+          <Select
             value={interfaceMode}
-            onChange={(e) => dispatch(setInterfaceMode(e.currentTarget.value as InterfaceMode))}
-            fill
-            className="!text-sm"
+            onValueChange={(val) => dispatch(setInterfaceMode(val as InterfaceMode))}
           >
-            <option value="chameleon">Хамелеон (адаптивный)</option>
-            <option value="board">Доска</option>
-            <option value="theatre">Театр</option>
-            <option value="terminal">Терминал</option>
-          </HTMLSelect>
+            <SelectTrigger className="w-full text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="chameleon">Хамелеон (адаптивный)</SelectItem>
+              <SelectItem value="board">Доска</SelectItem>
+              <SelectItem value="theatre">Театр</SelectItem>
+              <SelectItem value="terminal">Терминал</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div>
-          <label className="text-xs text-odi-text-muted block mb-1">AI-мысли</label>
-          <HTMLSelect
+          <label className="text-xs text-muted-foreground block mb-1">AI-мысли</label>
+          <Select
             value={aiVisibility}
-            onChange={(e) => dispatch(setAiVisibility(e.currentTarget.value as AiVisibility))}
-            fill
-            className="!text-sm"
+            onValueChange={(val) => dispatch(setAiVisibility(val as AiVisibility))}
           >
-            <option value="hidden">Скрыты</option>
-            <option value="captain">Только капитан</option>
-            <option value="team">Вся команда</option>
-          </HTMLSelect>
+            <SelectTrigger className="w-full text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="hidden">Скрыты</SelectItem>
+              <SelectItem value="captain">Только капитан</SelectItem>
+              <SelectItem value="team">Вся команда</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
     </div>

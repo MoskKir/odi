@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAppDispatch } from '@/store'
-import { setMessages, addMessage, editMessage, deleteMessage, setCards, addCard, updateCard, removeCard, updateSession, updatePhase, setSocketJoined, setSessionTitle, setScenarioInfo, setSessionBots, setSessionParticipants, setInviteCode, startStream, appendStreamChunk, endStream } from '@/store/appSlice'
+import { setMessages, addMessage, editMessage, deleteMessage, setCards, addCard, updateCard, removeCard, updateSession, updatePhase, setSocketJoined, setSessionTitle, setScenarioInfo, setSessionBots, setSessionParticipants, setSessionBoardColumns, setInviteCode, startStream, appendStreamChunk, endStream } from '@/store/appSlice'
 import { connectSocket, disconnectSocket } from '@/api/socket'
 import { fetchGame, fetchBoardCards } from '@/api/games'
 import type { ChatMessage, BoardCard } from '@/types'
@@ -73,6 +73,9 @@ export function useGameSocket() {
         }
         if (game?.scenario) {
           dispatch(setScenarioInfo(game.scenario))
+        }
+        if (game?.boardColumns) {
+          dispatch(setSessionBoardColumns(game.boardColumns))
         }
         if (game?.participants) {
           const bots = game.participants

@@ -1,4 +1,6 @@
-import { Card, Tag } from '@blueprintjs/core'
+import { Timer, Bot, User, Settings, BarChart3, type LucideIcon } from 'lucide-react'
+import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 
 interface LogEntry {
   id: string
@@ -20,28 +22,29 @@ const LOG_ENTRIES: LogEntry[] = [
   { id: '10', time: '14:30', type: 'bot', text: 'Аналитик отключён мастером' },
 ]
 
-const TYPE_CONFIG: Record<string, { color: string; prefix: string }> = {
-  phase: { color: 'text-odi-accent', prefix: '\u{23F1}' },
-  bot: { color: 'text-odi-energy', prefix: '\u{1F916}' },
-  player: { color: 'text-odi-success', prefix: '\u{1F464}' },
-  system: { color: 'text-odi-text-muted', prefix: '\u{2699}' },
-  emotion: { color: 'text-odi-warning', prefix: '\u{1F4CA}' },
+const TYPE_CONFIG: Record<string, { color: string; icon: LucideIcon }> = {
+  phase: { color: 'text-primary', icon: Timer },
+  bot: { color: 'text-energy', icon: Bot },
+  player: { color: 'text-success', icon: User },
+  system: { color: 'text-muted-foreground', icon: Settings },
+  emotion: { color: 'text-warning', icon: BarChart3 },
 }
 
 export function ActivityLog() {
   return (
-    <Card className="!bg-odi-surface !border-odi-border !shadow-none h-full flex flex-col overflow-hidden !p-3">
+    <Card className="bg-card border-border shadow-none h-full flex flex-col overflow-hidden p-3">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-bold text-odi-text-muted uppercase tracking-wider">Лог активности</span>
-        <Tag minimal className="text-[10px]">{LOG_ENTRIES.length}</Tag>
+        <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Лог активности</span>
+        <Badge variant="outline" className="text-[10px]">{LOG_ENTRIES.length}</Badge>
       </div>
       <div className="flex-1 overflow-y-auto space-y-0.5">
         {LOG_ENTRIES.map((entry) => {
           const cfg = TYPE_CONFIG[entry.type]
+          const Icon = cfg.icon
           return (
             <div key={entry.id} className="flex gap-2 text-[11px] py-0.5">
-              <span className="text-odi-text-muted shrink-0 font-mono w-10">{entry.time}</span>
-              <span className="shrink-0">{cfg.prefix}</span>
+              <span className="text-muted-foreground shrink-0 font-mono w-10">{entry.time}</span>
+              <Icon className="h-3 w-3 shrink-0 mt-0.5" />
               <span className={cfg.color}>{entry.text}</span>
             </div>
           )

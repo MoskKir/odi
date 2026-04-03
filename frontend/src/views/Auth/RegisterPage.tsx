@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { Callout } from '@blueprintjs/core'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useAppDispatch, useAppSelector } from '@/store'
 import { registerAsync, clearError } from '@/store/authSlice'
 import { loadPreferencesFromServer } from '@/store/appSlice'
@@ -51,20 +51,20 @@ export function RegisterPage() {
 
   return (
     <AuthLayout>
-      <h2 className="text-2xl font-bold text-odi-text">Создать аккаунт</h2>
-      <p className="text-sm text-odi-text-muted mt-1 mb-6">
+      <h2 className="text-2xl font-bold text-foreground">Создать аккаунт</h2>
+      <p className="text-sm text-muted-foreground mt-1 mb-6">
         Заполните данные для регистрации
       </p>
 
       {displayError && (
-        <Callout intent="danger" className="mb-4 !text-sm !rounded-lg">
-          {displayError}
-        </Callout>
+        <Alert variant="destructive" className="mb-4 text-sm rounded-lg">
+          <AlertDescription>{displayError}</AlertDescription>
+        </Alert>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="name" className="block text-sm font-medium text-odi-text mb-1.5">
+          <label htmlFor="name" className="block text-sm font-medium text-foreground mb-1.5">
             Имя
           </label>
           <input
@@ -73,12 +73,12 @@ export function RegisterPage() {
             placeholder="Как вас зовут?"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full h-10 px-3 rounded-lg border border-odi-border bg-odi-bg text-odi-text text-sm placeholder:text-odi-text-muted/50 focus:outline-none focus:ring-2 focus:ring-odi-accent/40 focus:border-odi-accent transition-colors"
+            className="w-full h-10 px-3 rounded-lg border border-border bg-background text-foreground text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors"
           />
         </div>
 
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-odi-text mb-1.5">
+          <label htmlFor="email" className="block text-sm font-medium text-foreground mb-1.5">
             Email
           </label>
           <input
@@ -87,12 +87,12 @@ export function RegisterPage() {
             placeholder="m@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full h-10 px-3 rounded-lg border border-odi-border bg-odi-bg text-odi-text text-sm placeholder:text-odi-text-muted/50 focus:outline-none focus:ring-2 focus:ring-odi-accent/40 focus:border-odi-accent transition-colors"
+            className="w-full h-10 px-3 rounded-lg border border-border bg-background text-foreground text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors"
           />
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-odi-text mb-1.5">
+          <label htmlFor="password" className="block text-sm font-medium text-foreground mb-1.5">
             Пароль
           </label>
           <input
@@ -101,12 +101,12 @@ export function RegisterPage() {
             placeholder="Минимум 6 символов"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full h-10 px-3 rounded-lg border border-odi-border bg-odi-bg text-odi-text text-sm placeholder:text-odi-text-muted/50 focus:outline-none focus:ring-2 focus:ring-odi-accent/40 focus:border-odi-accent transition-colors"
+            className="w-full h-10 px-3 rounded-lg border border-border bg-background text-foreground text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors"
           />
         </div>
 
         <div>
-          <label htmlFor="confirm" className="block text-sm font-medium text-odi-text mb-1.5">
+          <label htmlFor="confirm" className="block text-sm font-medium text-foreground mb-1.5">
             Повторите пароль
           </label>
           <input
@@ -115,22 +115,22 @@ export function RegisterPage() {
             placeholder="Ещё раз"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full h-10 px-3 rounded-lg border border-odi-border bg-odi-bg text-odi-text text-sm placeholder:text-odi-text-muted/50 focus:outline-none focus:ring-2 focus:ring-odi-accent/40 focus:border-odi-accent transition-colors"
+            className="w-full h-10 px-3 rounded-lg border border-border bg-background text-foreground text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors"
           />
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full h-10 rounded-lg bg-odi-text text-odi-bg text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
+          className="w-full h-10 rounded-lg bg-foreground text-background text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
         >
           {loading ? 'Создание...' : 'Создать аккаунт'}
         </button>
       </form>
 
-      <p className="text-center mt-6 text-sm text-odi-text-muted">
+      <p className="text-center mt-6 text-sm text-muted-foreground">
         Уже есть аккаунт?{' '}
-        <Link to="/login" className="text-odi-text font-medium underline underline-offset-2 hover:text-odi-accent">
+        <Link to="/login" className="text-foreground font-medium underline underline-offset-2 hover:text-primary">
           Войти
         </Link>
       </p>

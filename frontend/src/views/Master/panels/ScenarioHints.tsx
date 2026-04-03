@@ -1,9 +1,20 @@
 import { useState } from 'react'
-import { Collapse, Icon, type IconName } from '@blueprintjs/core'
+import {
+  Clipboard,
+  LogIn,
+  ArrowLeftRight,
+  Network,
+  Zap,
+  Wrench,
+  LogOut,
+  BookOpen,
+  CheckCircle2,
+  ChevronDown,
+} from 'lucide-react'
 
 interface HintSection {
   key: string
-  icon: IconName
+  icon: React.ElementType
   title: string
   content: string
 }
@@ -11,7 +22,7 @@ interface HintSection {
 const HINTS: HintSection[] = [
   {
     key: 'context',
-    icon: 'clipboard',
+    icon: Clipboard,
     title: 'Контекст заказчика',
     content: `Заполняется перед началом разработки:
 
@@ -22,7 +33,7 @@ const HINTS: HintSection[] = [
   },
   {
     key: 'block0',
-    icon: 'log-in',
+    icon: LogIn,
     title: 'Блок 0. Установка и вход',
     content: `Цель: Разорвать привычную \u00abрабочую\u00bb реальность, ввести нормы ОДИ.
 
@@ -34,7 +45,7 @@ const HINTS: HintSection[] = [
   },
   {
     key: 'block1',
-    icon: 'exchange',
+    icon: ArrowLeftRight,
     title: 'Блок 1. Самоопределение и конфликт',
     content: `Цель: Выявить скрытые позиции, столкнуть их, сделать конфликт видимым и легитимным.
 
@@ -48,7 +59,7 @@ const HINTS: HintSection[] = [
   },
   {
     key: 'block2',
-    icon: 'diagram-tree',
+    icon: Network,
     title: 'Блок 2. Схематизация',
     content: `Цель: Перевести группу из обсуждения содержания в обсуждение средств и способов мышления.
 
@@ -63,7 +74,7 @@ const HINTS: HintSection[] = [
   },
   {
     key: 'block3',
-    icon: 'lightning',
+    icon: Zap,
     title: 'Блок 3. Разрыв и новое средство',
     content: `Цель: Показать, что старые средства не работают, и ввести новое мыследеятельностное средство.
 
@@ -76,7 +87,7 @@ const HINTS: HintSection[] = [
   },
   {
     key: 'block4',
-    icon: 'build',
+    icon: Wrench,
     title: 'Блок 4. Нормопроектирование',
     content: `Цель: Перевести схему и новое средство в формат первого шага в реальности.
 
@@ -91,7 +102,7 @@ const HINTS: HintSection[] = [
   },
   {
     key: 'block5',
-    icon: 'log-out',
+    icon: LogOut,
     title: 'Блок 5. Рефлексия и выход',
     content: `Цель: Зафиксировать не результат, а изменение способа работы.
 
@@ -106,7 +117,7 @@ const HINTS: HintSection[] = [
   },
   {
     key: 'principles',
-    icon: 'manual',
+    icon: BookOpen,
     title: 'Принципы ведения',
     content: `\u2022 Не решать за группу \u2014 создавать условия для рефлексии
 \u2022 Схема вместо текста \u2014 обсуждение останавливается, если не переведено в схему
@@ -117,7 +128,7 @@ const HINTS: HintSection[] = [
   },
   {
     key: 'checklist',
-    icon: 'tick-circle',
+    icon: CheckCircle2,
     title: 'Чек-лист готовности',
     content: `Перед проведением проверьте:
 
@@ -142,8 +153,8 @@ export function ScenarioHints() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <div className="px-3 py-2.5 border-b border-odi-border shrink-0">
-        <span className="text-xs font-semibold text-odi-text-muted uppercase tracking-wider">
+      <div className="px-3 py-2.5 border-b border-border shrink-0">
+        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           Методология ОДИ
         </span>
       </div>
@@ -151,33 +162,30 @@ export function ScenarioHints() {
       <div className="flex-1 min-h-0 overflow-y-auto px-3 py-2">
         {HINTS.map((hint) => {
           const isOpen = !!openSections[hint.key]
+          const IconComp = hint.icon
           return (
             <div key={hint.key} className="shrink-0">
               <button
                 onClick={() => toggle(hint.key)}
-                className="w-full flex items-center gap-2 px-2 py-1.5 -mx-0.5 rounded hover:bg-odi-surface-hover transition-colors select-none group"
+                className="w-full flex items-center gap-2 px-2 py-1.5 -mx-0.5 rounded hover:bg-muted transition-colors select-none group"
               >
-                <Icon
-                  icon={hint.icon}
-                  size={13}
-                  className="text-odi-text-muted group-hover:text-odi-text transition-colors shrink-0"
+                <IconComp
+                  className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors shrink-0"
                 />
-                <span className="text-xs font-medium text-odi-text-muted group-hover:text-odi-text flex-1 text-left transition-colors">
+                <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground flex-1 text-left transition-colors">
                   {hint.title}
                 </span>
-                <Icon
-                  icon="chevron-down"
-                  size={12}
-                  className={`text-odi-text-muted transition-transform duration-200 ${isOpen ? '' : '-rotate-90'}`}
+                <ChevronDown
+                  className={`h-3 w-3 text-muted-foreground transition-transform duration-200 ${isOpen ? '' : '-rotate-90'}`}
                 />
               </button>
-              <Collapse isOpen={isOpen}>
+              {isOpen && (
                 <div className="pt-1.5 pb-3 px-1">
-                  <p className="text-xs text-odi-text leading-relaxed whitespace-pre-wrap">
+                  <p className="text-xs text-foreground leading-relaxed whitespace-pre-wrap">
                     {hint.content}
                   </p>
                 </div>
-              </Collapse>
+              )}
             </div>
           )
         })}

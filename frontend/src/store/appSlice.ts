@@ -74,6 +74,16 @@ export interface SessionBot {
   reflectionPrompt?: string | null
 }
 
+export interface SessionPhase {
+  id: string
+  name: string
+  durationMinutes: number
+  orderIndex: number
+  status: 'pending' | 'active' | 'done'
+  startedAt: string | null
+  completedAt: string | null
+}
+
 export interface SessionParticipant {
   id: string
   role: string
@@ -113,6 +123,7 @@ interface AppState {
   sessionBots: SessionBot[]
   sessionParticipants: SessionParticipant[]
   sessionBoardColumns: { id: string; title: string }[] | null
+  sessionPhases: SessionPhase[]
   rightPanelCollapsed: boolean
   rightPanelWidth: number
   rightPanelSections: RightPanelSections
@@ -152,6 +163,7 @@ const initialState: AppState = {
   sessionBots: [],
   sessionParticipants: [],
   sessionBoardColumns: null,
+  sessionPhases: [],
   rightPanelCollapsed: saved.rightPanelCollapsed ?? false,
   rightPanelWidth: saved.rightPanelWidth ?? 256,
   rightPanelSections: saved.rightPanelSections ?? { scenario: true, emotion: true, meta: true, bots: true, chat: true },
@@ -326,6 +338,9 @@ export const appSlice = createSlice({
     setSessionBoardColumns(state, action: PayloadAction<{ id: string; title: string }[] | null>) {
       state.sessionBoardColumns = action.payload
     },
+    setSessionPhases(state, action: PayloadAction<SessionPhase[]>) {
+      state.sessionPhases = action.payload.sort((a, b) => a.orderIndex - b.orderIndex)
+    },
     setSocketJoined(state, action: PayloadAction<boolean>) {
       state.socketJoined = action.payload
     },
@@ -444,6 +459,7 @@ export const {
   setSessionBots,
   setSessionParticipants,
   setSessionBoardColumns,
+  setSessionPhases,
   setInviteCode,
   setQuickAddCard,
   setBoardColumnWidths,

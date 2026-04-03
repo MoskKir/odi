@@ -34,6 +34,15 @@ export interface GameSessionResponse {
     user?: { id: string; name: string; email?: string }
     botConfig?: { id: string; specialistId: string; name: string; description: string; stars: number; tag?: string | null }
   }[]
+  phases?: {
+    id: string
+    name: string
+    durationMinutes: number
+    orderIndex: number
+    status: 'pending' | 'active' | 'done'
+    startedAt: string | null
+    completedAt: string | null
+  }[]
 }
 
 export interface GameListResponse {

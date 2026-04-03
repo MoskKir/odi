@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAppDispatch } from '@/store'
-import { setMessages, addMessage, editMessage, deleteMessage, setCards, addCard, updateCard, removeCard, updateSession, updatePhase, setSocketJoined, setSessionTitle, setScenarioInfo, setSessionBots, setSessionParticipants, setSessionBoardColumns, setInviteCode, startStream, appendStreamChunk, endStream } from '@/store/appSlice'
+import { setMessages, addMessage, editMessage, deleteMessage, setCards, addCard, updateCard, removeCard, updateSession, updatePhase, setSocketJoined, setSessionTitle, setScenarioInfo, setSessionBots, setSessionParticipants, setSessionBoardColumns, setSessionPhases, setInviteCode, startStream, appendStreamChunk, endStream } from '@/store/appSlice'
 import { connectSocket, disconnectSocket } from '@/api/socket'
 import { fetchGame, fetchBoardCards } from '@/api/games'
 import type { ChatMessage, BoardCard } from '@/types'
@@ -77,6 +77,9 @@ export function useGameSocket() {
         if (game?.boardColumns) {
           dispatch(setSessionBoardColumns(game.boardColumns))
         }
+        if (game?.phases) {
+          dispatch(setSessionPhases(game.phases))
+        }
         if (game?.participants) {
           const bots = game.participants
             .filter((p) => p.botConfig)
@@ -127,8 +130,10 @@ export function useGameSocket() {
       if (mounted) dispatch(updateSession(data))
     })
 
-    socket.on('phase:update', (data: { phase?: string; elapsed?: string }) => {
-      if (mounted) dispatch(updatePhase(data))
+    socket.on('phase:update', (data: { phase?: string; elapsed?: string; phases?: any[]; currentPhase?: any }) => {
+      if (!mounted) return
+      dispatch(updatePhase(data))
+      if (data.phases) dispatch(setSessionPhases(data.phases))
     })
 
     socket.on('chat:stream-start', (data: { streamId: string; botConfigId: string }) => {

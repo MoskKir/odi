@@ -1,6 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import axios, { AxiosInstance } from 'axios';
+import { SystemSettingEntity } from '@app/database';
 import {
   OpenRouterRequest,
   OpenRouterResponse,
@@ -8,20 +11,38 @@ import {
   OpenRouterStreamChunk,
 } from './openrouter.types';
 
+export const LLM_SETTINGS_KEYS = {
+  USE_LOCAL: 'llm.useLocal',
+  LOCAL_BASE_URL: 'llm.localBaseUrl',
+  LOCAL_MODEL: 'llm.localModel',
+} as const;
+
+interface LlmConfig {
+  useLocal: boolean;
+  localBaseUrl: string;
+  localModel: string | null;
+}
+
 @Injectable()
 export class OpenRouterService {
   private readonly logger = new Logger(OpenRouterService.name);
-  private readonly client: AxiosInstance;
+  private readonly remoteClient: AxiosInstance;
   private readonly maxRetries = 3;
+  private cachedConfig: { value: LlmConfig; expiresAt: number } | null = null;
+  private readonly cacheTtlMs = 3000;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    @InjectRepository(SystemSettingEntity)
+    private readonly settingsRepo: Repository<SystemSettingEntity>,
+  ) {
     const baseURL = this.configService.get<string>(
       'OPENROUTER_BASE_URL',
       'https://openrouter.ai/api/v1',
     );
     const apiKey = this.configService.get<string>('OPENROUTER_API_KEY');
 
-    this.client = axios.create({
+    this.remoteClient = axios.create({
       baseURL,
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -33,14 +54,69 @@ export class OpenRouterService {
     });
   }
 
+  private async loadLlmConfig(): Promise<LlmConfig> {
+    if (this.cachedConfig && this.cachedConfig.expiresAt > Date.now()) {
+      return this.cachedConfig.value;
+    }
+    const defaults: LlmConfig = {
+      useLocal: false,
+      localBaseUrl: this.configService.get<string>(
+        'LOCAL_LLM_BASE_URL',
+        'http://127.0.0.1:1234/v1',
+      ),
+      localModel: null,
+    };
+    try {
+      const rows = await this.settingsRepo.find({
+        where: [
+          { key: LLM_SETTINGS_KEYS.USE_LOCAL },
+          { key: LLM_SETTINGS_KEYS.LOCAL_BASE_URL },
+          { key: LLM_SETTINGS_KEYS.LOCAL_MODEL },
+        ],
+      });
+      for (const row of rows) {
+        if (row.key === LLM_SETTINGS_KEYS.USE_LOCAL) {
+          defaults.useLocal = row.value === true || row.value === 'true';
+        } else if (row.key === LLM_SETTINGS_KEYS.LOCAL_BASE_URL && row.value) {
+          defaults.localBaseUrl = String(row.value);
+        } else if (row.key === LLM_SETTINGS_KEYS.LOCAL_MODEL && row.value) {
+          defaults.localModel = String(row.value);
+        }
+      }
+    } catch (e) {
+      this.logger.warn(`Failed to load LLM settings, using defaults: ${(e as Error).message}`);
+    }
+    this.cachedConfig = { value: defaults, expiresAt: Date.now() + this.cacheTtlMs };
+    return defaults;
+  }
+
+  /** Invalidate the in-memory settings cache (call after settings update) */
+  invalidateConfigCache() {
+    this.cachedConfig = null;
+  }
+
+  private buildLocalClient(baseURL: string): AxiosInstance {
+    return axios.create({
+      baseURL,
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 60000,
+    });
+  }
+
   async complete(params: {
     model: string;
     messages: OpenRouterMessage[];
     temperature?: number;
     maxTokens?: number;
   }): Promise<string> {
+    const cfg = await this.loadLlmConfig();
+    const client = cfg.useLocal
+      ? this.buildLocalClient(cfg.localBaseUrl)
+      : this.remoteClient;
+    const model = cfg.useLocal && cfg.localModel ? cfg.localModel : params.model;
+
     const request: OpenRouterRequest = {
-      model: params.model,
+      model,
       messages: params.messages,
       temperature: params.temperature ?? 0.7,
       max_tokens: params.maxTokens ?? 4096,
@@ -48,7 +124,7 @@ export class OpenRouterService {
 
     for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
       try {
-        const response = await this.client.post<OpenRouterResponse>(
+        const response = await client.post<OpenRouterResponse>(
           '/chat/completions',
           request,
         );
@@ -59,7 +135,8 @@ export class OpenRouterService {
         }
 
         return content;
-      } catch (error) {
+      } catch (err) {
+        const error = err as any;
         const status = error.httpStatus ?? error.response?.status;
         this.logger.warn(
           `OpenRouter attempt ${attempt}/${this.maxRetries} failed (status=${status}): ${error.message}`,
@@ -87,8 +164,14 @@ export class OpenRouterService {
     maxTokens?: number;
     signal?: AbortSignal;
   }): AsyncGenerator<string, void, unknown> {
+    const cfg = await this.loadLlmConfig();
+    const client = cfg.useLocal
+      ? this.buildLocalClient(cfg.localBaseUrl)
+      : this.remoteClient;
+    const model = cfg.useLocal && cfg.localModel ? cfg.localModel : params.model;
+
     const request: OpenRouterRequest & { stream: boolean } = {
-      model: params.model,
+      model,
       messages: params.messages,
       temperature: params.temperature ?? 0.7,
       max_tokens: params.maxTokens ?? 4096,
@@ -97,7 +180,7 @@ export class OpenRouterService {
 
     for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
       try {
-        const response = await this.client.post(
+        const response = await client.post(
           '/chat/completions',
           request,
           {
@@ -176,7 +259,8 @@ export class OpenRouterService {
           }
         }
         return;
-      } catch (error) {
+      } catch (err) {
+        const error = err as any;
         const status = error.httpStatus ?? error.response?.status;
         let detail = '';
         try {

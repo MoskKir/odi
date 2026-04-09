@@ -11,6 +11,7 @@ import {
   SessionPhaseEntity,
   BotStageContextEntity,
   StageSharedContextEntity,
+  SystemSettingEntity,
 } from '@app/database';
 import { AiController } from './ai.controller';
 import { AiService } from './ai.service';
@@ -31,6 +32,7 @@ import { EmotionAnalyzerService } from './emotion/emotion-analyzer.service';
       SessionPhaseEntity,
       BotStageContextEntity,
       StageSharedContextEntity,
+      SystemSettingEntity,
     ]),
     ClientsModule.registerAsync([
       {

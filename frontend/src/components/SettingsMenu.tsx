@@ -1,9 +1,11 @@
+import { useEffect, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Settings, LogOut, Zap, Moon, Minus, Plus, Home, List, Rocket,
   Crown, Shield, LogIn, UserPlus, LayoutDashboard, MessageSquare,
-  GitGraph, Eye, Terminal,
+  GitGraph, Eye, Terminal, Cpu,
 } from 'lucide-react'
+import { fetchLlmSettings, updateLlmSettings, type LlmSettings } from '@/api/llm'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
@@ -56,6 +58,30 @@ export function SettingsMenu() {
   const currentViewMode = location.pathname.startsWith('/game')
     ? location.pathname.split('/')[2]
     : null
+
+  const { isAuthenticated: isAuth } = useAppSelector((s) => s.auth)
+  const [llmSettings, setLlmSettings] = useState<LlmSettings | null>(null)
+  const [llmSaving, setLlmSaving] = useState(false)
+
+  useEffect(() => {
+    if (!isAuth) return
+    fetchLlmSettings()
+      .then(setLlmSettings)
+      .catch(() => setLlmSettings(null))
+  }, [isAuth])
+
+  const toggleLocalLlm = async () => {
+    if (!llmSettings || llmSaving) return
+    setLlmSaving(true)
+    try {
+      const next = await updateLlmSettings({ useLocal: !llmSettings.useLocal })
+      setLlmSettings(next)
+    } catch (e) {
+      console.error('Failed to toggle local LLM', e)
+    } finally {
+      setLlmSaving(false)
+    }
+  }
 
   return (
     <DropdownMenu>
@@ -127,6 +153,29 @@ export function SettingsMenu() {
             </Button>
           </div>
         </div>
+        {isAuthenticated && llmSettings && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Локальная LLM</DropdownMenuLabel>
+            <div className="px-3 py-1.5">
+              <div className="flex items-center gap-2">
+                <Cpu className="h-4 w-4 text-muted-foreground" />
+                <Switch
+                  checked={llmSettings.useLocal}
+                  disabled={llmSaving}
+                  onCheckedChange={toggleLocalLlm}
+                  id="local-llm"
+                />
+                <Label htmlFor="local-llm" className="text-sm cursor-pointer">
+                  LM Studio
+                </Label>
+              </div>
+              <div className="text-[10px] text-muted-foreground mt-1 break-all">
+                {llmSettings.useLocal ? llmSettings.localBaseUrl : 'OpenRouter'}
+              </div>
+            </div>
+          </>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuLabel>Разработчик</DropdownMenuLabel>
         <div className="px-3 py-1.5">

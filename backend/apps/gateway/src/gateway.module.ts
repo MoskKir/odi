@@ -12,6 +12,7 @@ import { BotController } from './controllers/bot.controller';
 import { AdminController } from './controllers/admin.controller';
 import { ChatController } from './controllers/chat.controller';
 import { BotContextController } from './controllers/bot-context.controller';
+import { LlmController } from './controllers/llm.controller';
 import { EventListenerService } from './kafka/event-listener.service';
 
 @Module({
@@ -35,6 +36,7 @@ import { EventListenerService } from './kafka/event-listener.service';
     AdminController,
     ChatController,
     BotContextController,
+    LlmController,
     EventListenerService,
   ],
   providers: [KafkaInitService],

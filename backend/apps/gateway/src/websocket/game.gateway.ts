@@ -231,6 +231,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
       model: string;
       temperature: number;
       maxTokens: number;
+      provider?: string;
     },
   ) {
     const user = client.data?.user;
@@ -248,6 +249,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
         model: data.model,
         temperature: data.temperature,
         maxTokens: data.maxTokens,
+        provider: data.provider,
       }),
     ).catch((err) => {
       this.logger.error(`bot:test-chat failed: ${err.message}`);

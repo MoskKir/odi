@@ -18,6 +18,7 @@ export function useBotTestChat(botConfig: {
   model: string
   temperature: number
   maxTokens: number
+  provider?: string | null
 } | null) {
   const [messages, setMessages] = useState<TestChatMessage[]>([])
   const [streaming, setStreaming] = useState<StreamState | null>(null)
@@ -141,6 +142,7 @@ export function useBotTestChat(botConfig: {
           model: botConfig.model,
           temperature: botConfig.temperature,
           maxTokens: botConfig.maxTokens,
+          provider: botConfig.provider ?? undefined,
         })
         return updated
       })

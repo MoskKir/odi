@@ -11,22 +11,30 @@ import {
   OpenRouterStreamChunk,
 } from './openrouter.types';
 
+export type LlmProvider = 'openrouter' | 'local' | 'mistral' | 'ollama';
+
 export const LLM_SETTINGS_KEYS = {
   USE_LOCAL: 'llm.useLocal',
   LOCAL_BASE_URL: 'llm.localBaseUrl',
   LOCAL_MODEL: 'llm.localModel',
+  PROVIDER: 'llm.provider',
+  OLLAMA_BASE_URL: 'llm.ollamaBaseUrl',
 } as const;
 
 interface LlmConfig {
-  useLocal: boolean;
+  provider: LlmProvider;
   localBaseUrl: string;
   localModel: string | null;
+  ollamaBaseUrl: string;
+  /** @deprecated use provider === 'local' */
+  useLocal: boolean;
 }
 
 @Injectable()
 export class OpenRouterService {
   private readonly logger = new Logger(OpenRouterService.name);
   private readonly remoteClient: AxiosInstance;
+  private readonly mistralClient: AxiosInstance;
   private readonly maxRetries = 3;
   private cachedConfig: { value: LlmConfig; expiresAt: number } | null = null;
   private readonly cacheTtlMs = 3000;
@@ -52,6 +60,16 @@ export class OpenRouterService {
       },
       timeout: 30000,
     });
+
+    const mistralApiKey = this.configService.get<string>('MISTRAL_API_KEY', '');
+    this.mistralClient = axios.create({
+      baseURL: 'https://api.mistral.ai/v1',
+      headers: {
+        Authorization: `Bearer ${mistralApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      timeout: 30000,
+    });
   }
 
   private async loadLlmConfig(): Promise<LlmConfig> {
@@ -59,12 +77,17 @@ export class OpenRouterService {
       return this.cachedConfig.value;
     }
     const defaults: LlmConfig = {
+      provider: 'openrouter',
       useLocal: false,
       localBaseUrl: this.configService.get<string>(
         'LOCAL_LLM_BASE_URL',
         'http://127.0.0.1:1234/v1',
       ),
       localModel: null,
+      ollamaBaseUrl: this.configService.get<string>(
+        'OLLAMA_BASE_URL',
+        'http://localhost:11434/v1',
+      ),
     };
     try {
       const rows = await this.settingsRepo.find({
@@ -72,17 +95,34 @@ export class OpenRouterService {
           { key: LLM_SETTINGS_KEYS.USE_LOCAL },
           { key: LLM_SETTINGS_KEYS.LOCAL_BASE_URL },
           { key: LLM_SETTINGS_KEYS.LOCAL_MODEL },
+          { key: LLM_SETTINGS_KEYS.PROVIDER },
+          { key: LLM_SETTINGS_KEYS.OLLAMA_BASE_URL },
         ],
       });
+      let explicitProvider: LlmProvider | null = null;
+      let legacyUseLocal = false;
+
       for (const row of rows) {
-        if (row.key === LLM_SETTINGS_KEYS.USE_LOCAL) {
-          defaults.useLocal = row.value === true || row.value === 'true';
+        if (row.key === LLM_SETTINGS_KEYS.PROVIDER && row.value) {
+          explicitProvider = String(row.value) as LlmProvider;
+        } else if (row.key === LLM_SETTINGS_KEYS.USE_LOCAL) {
+          legacyUseLocal = row.value === true || row.value === 'true';
         } else if (row.key === LLM_SETTINGS_KEYS.LOCAL_BASE_URL && row.value) {
           defaults.localBaseUrl = String(row.value);
         } else if (row.key === LLM_SETTINGS_KEYS.LOCAL_MODEL && row.value) {
           defaults.localModel = String(row.value);
+        } else if (row.key === LLM_SETTINGS_KEYS.OLLAMA_BASE_URL && row.value) {
+          defaults.ollamaBaseUrl = String(row.value);
         }
       }
+
+      // llm.provider takes precedence; fall back to legacy useLocal flag
+      if (explicitProvider) {
+        defaults.provider = explicitProvider;
+      } else if (legacyUseLocal) {
+        defaults.provider = 'local';
+      }
+      defaults.useLocal = defaults.provider === 'local';
     } catch (e) {
       this.logger.warn(`Failed to load LLM settings, using defaults: ${(e as Error).message}`);
     }
@@ -103,17 +143,62 @@ export class OpenRouterService {
     });
   }
 
+  private getClientForProvider(provider: LlmProvider, cfg: LlmConfig): AxiosInstance {
+    if (provider === 'local') return this.buildLocalClient(cfg.localBaseUrl);
+    if (provider === 'ollama') return this.buildLocalClient(cfg.ollamaBaseUrl);
+    if (provider === 'mistral') return this.mistralClient;
+    return this.remoteClient;
+  }
+
+  private getModelForProvider(provider: LlmProvider, cfg: LlmConfig, requestedModel: string): string {
+    // LM Studio: single active model overrides bot config
+    if (provider === 'local' && cfg.localModel) return cfg.localModel;
+    return requestedModel;
+  }
+
+  /** @deprecated use getClientForProvider */
+  private resolveClient(cfg: LlmConfig): AxiosInstance {
+    return this.getClientForProvider(cfg.provider, cfg);
+  }
+
+  /** @deprecated use getModelForProvider */
+  private resolveModel(cfg: LlmConfig, requestedModel: string): string {
+    return this.getModelForProvider(cfg.provider, cfg, requestedModel);
+  }
+
+  /** Fetch models available in Ollama. Returns empty array on error. */
+  async fetchOllamaModels(): Promise<string[]> {
+    const cfg = await this.loadLlmConfig();
+    const baseURL = cfg.ollamaBaseUrl;
+    try {
+      const client = this.buildLocalClient(baseURL);
+      const res = await client.get<{ data?: { id: string }[]; models?: { name: string }[] }>('/models', { timeout: 5000 });
+      // OpenAI-compat format: { data: [{ id }] }
+      if (Array.isArray(res.data?.data)) {
+        return res.data.data.map((m) => m.id).filter(Boolean);
+      }
+      // Ollama native format (if exposed): { models: [{ name }] }
+      if (Array.isArray(res.data?.models)) {
+        return res.data.models.map((m) => m.name).filter(Boolean);
+      }
+      return [];
+    } catch (e) {
+      this.logger.warn(`Failed to fetch Ollama models: ${(e as Error).message}`);
+      return [];
+    }
+  }
+
   async complete(params: {
     model: string;
     messages: OpenRouterMessage[];
     temperature?: number;
     maxTokens?: number;
+    providerOverride?: LlmProvider;
   }): Promise<string> {
     const cfg = await this.loadLlmConfig();
-    const client = cfg.useLocal
-      ? this.buildLocalClient(cfg.localBaseUrl)
-      : this.remoteClient;
-    const model = cfg.useLocal && cfg.localModel ? cfg.localModel : params.model;
+    const provider = params.providerOverride ?? cfg.provider;
+    const client = this.getClientForProvider(provider, cfg);
+    const model = this.getModelForProvider(provider, cfg, params.model);
 
     const request: OpenRouterRequest = {
       model,
@@ -131,7 +216,7 @@ export class OpenRouterService {
 
         const content = response.data?.choices?.[0]?.message?.content;
         if (!content) {
-          throw new Error('Empty response from OpenRouter');
+          throw new Error('Empty response from LLM provider');
         }
 
         return content;
@@ -139,13 +224,13 @@ export class OpenRouterService {
         const error = err as any;
         const status = error.httpStatus ?? error.response?.status;
         this.logger.warn(
-          `OpenRouter attempt ${attempt}/${this.maxRetries} failed (status=${status}): ${error.message}`,
+          `LLM attempt ${attempt}/${this.maxRetries} failed (status=${status}): ${error.message}`,
         );
 
         // Don't retry client errors (4xx) — they won't succeed on retry
         if ((status && status >= 400 && status < 500) || attempt === this.maxRetries) {
           throw new Error(
-            `OpenRouter request failed: ${error.message}`,
+            `LLM request failed: ${error.message}`,
           );
         }
 
@@ -154,7 +239,7 @@ export class OpenRouterService {
         );
       }
     }
-    throw new Error('OpenRouter request failed: exhausted retries');
+    throw new Error('LLM request failed: exhausted retries');
   }
 
   async *completeStream(params: {
@@ -163,12 +248,12 @@ export class OpenRouterService {
     temperature?: number;
     maxTokens?: number;
     signal?: AbortSignal;
+    providerOverride?: LlmProvider;
   }): AsyncGenerator<string, void, unknown> {
     const cfg = await this.loadLlmConfig();
-    const client = cfg.useLocal
-      ? this.buildLocalClient(cfg.localBaseUrl)
-      : this.remoteClient;
-    const model = cfg.useLocal && cfg.localModel ? cfg.localModel : params.model;
+    const provider = params.providerOverride ?? cfg.provider;
+    const client = this.getClientForProvider(provider, cfg);
+    const model = this.getModelForProvider(provider, cfg, params.model);
 
     const request: OpenRouterRequest & { stream: boolean } = {
       model,
@@ -198,7 +283,7 @@ export class OpenRouterService {
             errorBody += chunk.toString();
           }
           const err = new Error(
-            `OpenRouter returned ${response.status}: ${errorBody}`,
+            `LLM provider returned ${response.status}: ${errorBody}`,
           ) as any;
           err.httpStatus = response.status;
           throw err;
@@ -276,7 +361,7 @@ export class OpenRouterService {
           detail = `status=${status ?? 'unknown'}`;
         }
         this.logger.warn(
-          `OpenRouter stream attempt ${attempt}/${this.maxRetries} failed: ${error.message} | ${detail}`,
+          `LLM stream attempt ${attempt}/${this.maxRetries} failed: ${error.message} | ${detail}`,
         );
         this.logger.warn(
           `Request was: model=${request.model}, messages=${request.messages.length}, temp=${request.temperature}`,
@@ -285,7 +370,7 @@ export class OpenRouterService {
         // Don't retry client errors (4xx) — they won't succeed on retry
         if ((status && status >= 400 && status < 500) || attempt === this.maxRetries) {
           throw new Error(
-            `OpenRouter stream failed: ${error.message} | ${detail}`,
+            `LLM stream failed: ${error.message} | ${detail}`,
           );
         }
 

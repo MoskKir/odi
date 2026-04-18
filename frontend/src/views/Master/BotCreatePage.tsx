@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { X, Check } from 'lucide-react'
-import { createBot, type CreateBotDto } from '@/api/bots'
+import { createBot, type CreateBotDto, type BotProvider } from '@/api/bots'
+import { fetchOllamaModels } from '@/api/llm'
 import { success, error as toastError } from '@/utils/toaster'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -11,7 +12,7 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Spinner } from '@/components/ui/spinner'
 
-const MODEL_SUGGESTIONS = [
+const CLOUD_MODEL_SUGGESTIONS = [
   'google/gemini-2.0-flash-001',
   'anthropic/claude-sonnet-4',
   'anthropic/claude-haiku-4',
@@ -19,6 +20,14 @@ const MODEL_SUGGESTIONS = [
   'openai/gpt-4o',
   'meta-llama/llama-4-maverick',
   'deepseek/deepseek-chat-v3-0324',
+]
+
+const MISTRAL_MODEL_SUGGESTIONS = [
+  'mistral-large-latest',
+  'mistral-small-latest',
+  'mistral-medium-latest',
+  'codestral-latest',
+  'open-mistral-nemo',
 ]
 
 export function BotCreatePage() {
@@ -31,12 +40,23 @@ export function BotCreatePage() {
   const [description, setDescription] = useState('')
   const [personality, setPersonality] = useState('')
   const [systemPrompt, setSystemPrompt] = useState('')
-  const [model, setModel] = useState(MODEL_SUGGESTIONS[0])
+  const [model, setModel] = useState(CLOUD_MODEL_SUGGESTIONS[0])
   const [enabled, setEnabled] = useState(true)
   const [stars, setStars] = useState(3)
   const [tag, setTag] = useState('')
   const [temperature, setTemperature] = useState(0.7)
   const [maxTokens, setMaxTokens] = useState(4096)
+  const [botProvider, setBotProvider] = useState<BotProvider | null>(null)
+  const [ollamaModels, setOllamaModels] = useState<string[]>([])
+
+  useEffect(() => {
+    if (botProvider === 'ollama') {
+      fetchOllamaModels().then((models) => {
+        setOllamaModels(models)
+        if (models.length > 0) setModel(models[0])
+      }).catch(() => {})
+    }
+  }, [botProvider])
 
   const canSubmit = specialistId.trim() && name.trim() && description.trim() && personality.trim() && systemPrompt.trim()
 
@@ -52,6 +72,7 @@ export function BotCreatePage() {
       personality: personality.trim(),
       systemPrompt: systemPrompt.trim(),
       model,
+      provider: botProvider,
       enabled,
       stars,
       tag: tag.trim() || null,
@@ -160,16 +181,44 @@ export function BotCreatePage() {
 
           <div className="flex gap-4 flex-wrap">
             <div className="space-y-2">
-              <Label>Модель <span className="text-muted-foreground">(OpenRouter)</span></Label>
+              <Label>Провайдер</Label>
+              <select
+                className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                value={botProvider ?? ''}
+                onChange={(e) => setBotProvider((e.target.value as BotProvider) || null)}
+              >
+                <option value="">Глобальный (по умолчанию)</option>
+                <option value="openrouter">OpenRouter</option>
+                <option value="mistral">Mistral AI</option>
+                <option value="ollama">Ollama (локально)</option>
+                <option value="local">LM Studio (локально)</option>
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>
+                Модель{' '}
+                <span className="text-muted-foreground text-[11px]">
+                  {botProvider === 'ollama' ? '(Ollama)' : botProvider === 'mistral' ? '(Mistral AI)' : botProvider === 'local' ? '(LM Studio)' : botProvider === 'openrouter' ? '(OpenRouter)' : '(глобальный провайдер)'}
+                </span>
+              </Label>
               <Input
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
-                placeholder="provider/model-name"
+                placeholder={botProvider === 'ollama' ? 'llama3.2' : 'provider/model-name'}
                 list="model-suggestions-create"
               />
               <datalist id="model-suggestions-create">
-                {MODEL_SUGGESTIONS.map((m) => <option key={m} value={m} />)}
+                {botProvider === 'ollama'
+                  ? ollamaModels.map((m) => <option key={m} value={m} />)
+                  : botProvider === 'mistral'
+                  ? MISTRAL_MODEL_SUGGESTIONS.map((m) => <option key={m} value={m} />)
+                  : CLOUD_MODEL_SUGGESTIONS.map((m) => <option key={m} value={m} />)
+                }
               </datalist>
+              {botProvider === 'ollama' && ollamaModels.length === 0 && (
+                <p className="text-[11px] text-muted-foreground">Ollama не доступна или нет загруженных моделей</p>
+              )}
             </div>
 
             <div className="space-y-2">

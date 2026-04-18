@@ -6,6 +6,7 @@ import {
   GitGraph, Eye, Terminal, Cpu,
 } from 'lucide-react'
 import { fetchLlmSettings, updateLlmSettings, type LlmSettings } from '@/api/llm'
+import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
@@ -60,26 +61,24 @@ export function SettingsMenu() {
     : null
 
   const { isAuthenticated: isAuth } = useAppSelector((s) => s.auth)
-  const [llmSettings, setLlmSettings] = useState<LlmSettings | null>(null)
-  const [llmSaving, setLlmSaving] = useState(false)
+  const [ollamaUrlDraft, setOllamaUrlDraft] = useState('http://localhost:11434/v1')
+  const [ollamaSaving, setOllamaSaving] = useState(false)
 
   useEffect(() => {
     if (!isAuth) return
     fetchLlmSettings()
-      .then(setLlmSettings)
-      .catch(() => setLlmSettings(null))
+      .then((s) => setOllamaUrlDraft(s.ollamaBaseUrl))
+      .catch(() => {})
   }, [isAuth])
 
-  const toggleLocalLlm = async () => {
-    if (!llmSettings || llmSaving) return
-    setLlmSaving(true)
+  const saveOllamaUrl = async () => {
+    setOllamaSaving(true)
     try {
-      const next = await updateLlmSettings({ useLocal: !llmSettings.useLocal })
-      setLlmSettings(next)
+      await updateLlmSettings({ ollamaBaseUrl: ollamaUrlDraft })
     } catch (e) {
-      console.error('Failed to toggle local LLM', e)
+      console.error('Failed to update Ollama URL', e)
     } finally {
-      setLlmSaving(false)
+      setOllamaSaving(false)
     }
   }
 
@@ -153,26 +152,24 @@ export function SettingsMenu() {
             </Button>
           </div>
         </div>
-        {isAuthenticated && llmSettings && (
+        {isAuthenticated && (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuLabel>Локальная LLM</DropdownMenuLabel>
-            <div className="px-3 py-1.5">
-              <div className="flex items-center gap-2">
-                <Cpu className="h-4 w-4 text-muted-foreground" />
-                <Switch
-                  checked={llmSettings.useLocal}
-                  disabled={llmSaving}
-                  onCheckedChange={toggleLocalLlm}
-                  id="local-llm"
-                />
-                <Label htmlFor="local-llm" className="text-sm cursor-pointer">
-                  LM Studio
-                </Label>
-              </div>
-              <div className="text-[10px] text-muted-foreground mt-1 break-all">
-                {llmSettings.useLocal ? llmSettings.localBaseUrl : 'OpenRouter'}
-              </div>
+            <DropdownMenuLabel>
+              <Cpu className="h-3.5 w-3.5 inline mr-1" />
+              Ollama URL
+            </DropdownMenuLabel>
+            <div className="px-3 pb-2" onClick={(e) => e.stopPropagation()}>
+              <Input
+                className="h-7 text-[11px] px-2"
+                value={ollamaUrlDraft}
+                disabled={ollamaSaving}
+                onChange={(e) => setOllamaUrlDraft(e.target.value)}
+                onBlur={saveOllamaUrl}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); saveOllamaUrl() } }}
+                placeholder="http://localhost:11434/v1"
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">Провайдер выбирается в настройках каждого бота</p>
             </div>
           </>
         )}

@@ -42,6 +42,7 @@ export const KAFKA_TOPICS = {
     ANALYZE_EMOTION: 'odi.ai.analyze-emotion',
     CHANGE_STRATEGY: 'odi.ai.change-strategy',
     STOP_STREAM: 'odi.ai.stop-stream',
+    OLLAMA_MODELS: 'odi.ai.ollama-models',
     RESULT: 'odi.ai.result',
   },
   EVENTS: {

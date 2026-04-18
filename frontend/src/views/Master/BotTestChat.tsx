@@ -12,9 +12,10 @@ interface BotTestChatProps {
   model: string
   temperature: number
   maxTokens: number
+  provider?: string | null
 }
 
-export function BotTestChat({ botId, botName, systemPrompt, model, temperature, maxTokens }: BotTestChatProps) {
+export function BotTestChat({ botId, botName, systemPrompt, model, temperature, maxTokens, provider }: BotTestChatProps) {
   const {
     messages,
     streaming,
@@ -24,7 +25,7 @@ export function BotTestChat({ botId, botName, systemPrompt, model, temperature, 
     isLoading,
     sendMessage,
     clearMessages,
-  } = useBotTestChat({ botId, systemPrompt, model, temperature, maxTokens })
+  } = useBotTestChat({ botId, systemPrompt, model, temperature, maxTokens, provider })
 
   const [text, setText] = useState('')
   const containerRef = useRef<HTMLDivElement>(null)

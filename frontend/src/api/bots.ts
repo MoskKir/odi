@@ -7,6 +7,8 @@ function getAuthHeaders(): HeadersInit {
     : { 'Content-Type': 'application/json' }
 }
 
+export type BotProvider = 'openrouter' | 'mistral' | 'ollama' | 'local'
+
 export interface BotResponse {
   id: string
   specialistId: string
@@ -15,6 +17,7 @@ export interface BotResponse {
   personality: string
   systemPrompt: string
   model: string
+  provider: BotProvider | null
   enabled: boolean
   stars: number
   tag: string | null
@@ -31,6 +34,7 @@ export interface CreateBotDto {
   personality: string
   systemPrompt: string
   model: string
+  provider: BotProvider | null
   enabled: boolean
   stars: number
   tag: string | null

@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Save, AlertCircle, Bot } from 'lucide-react'
-import { fetchBots, updateBot, type CreateBotDto } from '@/api/bots'
+import { fetchBots, updateBot, type CreateBotDto, type BotProvider } from '@/api/bots'
+import { fetchOllamaModels } from '@/api/llm'
 import { success, error as toastError } from '@/utils/toaster'
 import { BotTestChat } from './BotTestChat'
 import { Button } from '@/components/ui/button'
@@ -13,7 +14,7 @@ import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
 import { Spinner } from '@/components/ui/spinner'
 
-const MODEL_SUGGESTIONS = [
+const CLOUD_MODEL_SUGGESTIONS = [
   'google/gemini-2.0-flash-001',
   'anthropic/claude-sonnet-4',
   'anthropic/claude-haiku-4',
@@ -21,6 +22,14 @@ const MODEL_SUGGESTIONS = [
   'openai/gpt-4o',
   'meta-llama/llama-4-maverick',
   'deepseek/deepseek-chat-v3-0324',
+]
+
+const MISTRAL_MODEL_SUGGESTIONS = [
+  'mistral-large-latest',
+  'mistral-small-latest',
+  'mistral-medium-latest',
+  'codestral-latest',
+  'open-mistral-nemo',
 ]
 
 function autoResize(el: HTMLTextAreaElement) {
@@ -42,7 +51,7 @@ export function BotEditPage() {
   const [description, setDescription] = useState('')
   const [personality, setPersonality] = useState('')
   const [systemPrompt, setSystemPrompt] = useState('')
-  const [model, setModel] = useState(MODEL_SUGGESTIONS[0])
+  const [model, setModel] = useState(CLOUD_MODEL_SUGGESTIONS[0])
   const [enabled, setEnabled] = useState(true)
   const [stars, setStars] = useState(3)
   const [tag, setTag] = useState('')
@@ -50,6 +59,14 @@ export function BotEditPage() {
   const [maxTokens, setMaxTokens] = useState(4096)
   const [usageCount, setUsageCount] = useState(0)
   const [avgRating, setAvgRating] = useState(0)
+  const [botProvider, setBotProvider] = useState<BotProvider | null>(null)
+  const [ollamaModels, setOllamaModels] = useState<string[]>([])
+
+  useEffect(() => {
+    if (botProvider === 'ollama') {
+      fetchOllamaModels().then(setOllamaModels).catch(() => {})
+    }
+  }, [botProvider])
 
   useEffect(() => {
     let cancelled = false
@@ -76,6 +93,7 @@ export function BotEditPage() {
         setMaxTokens(bot.maxTokens ?? 4096)
         setUsageCount(bot.usageCount)
         setAvgRating(bot.avgRating)
+        setBotProvider(bot.provider)
       })
       .catch(() => { if (!cancelled) setLoadError('Не удалось загрузить бота') })
       .finally(() => { if (!cancelled) setLoading(false) })
@@ -107,6 +125,7 @@ export function BotEditPage() {
       personality: personality.trim(),
       systemPrompt: systemPrompt.trim(),
       model,
+      provider: botProvider,
       enabled,
       stars,
       tag: tag.trim() || null,
@@ -241,6 +260,7 @@ export function BotEditPage() {
               model={model}
               temperature={temperature}
               maxTokens={maxTokens}
+              provider={botProvider}
             />
           </Card>
         </div>
@@ -252,16 +272,44 @@ export function BotEditPage() {
             <h3 className="text-sm font-bold text-foreground mb-3">Модель</h3>
 
             <div className="space-y-2 mb-3">
-              <Label>LLM <span className="text-muted-foreground">(OpenRouter)</span></Label>
+              <Label>Провайдер</Label>
+              <select
+                className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+                value={botProvider ?? ''}
+                onChange={(e) => setBotProvider((e.target.value as BotProvider) || null)}
+              >
+                <option value="">Глобальный (по умолчанию)</option>
+                <option value="openrouter">OpenRouter</option>
+                <option value="mistral">Mistral AI</option>
+                <option value="ollama">Ollama (локально)</option>
+                <option value="local">LM Studio (локально)</option>
+              </select>
+            </div>
+
+            <div className="space-y-2 mb-3">
+              <Label>
+                Модель{' '}
+                <span className="text-muted-foreground text-[11px]">
+                  {botProvider === 'ollama' ? '(Ollama)' : botProvider === 'mistral' ? '(Mistral AI)' : botProvider === 'local' ? '(LM Studio)' : botProvider === 'openrouter' ? '(OpenRouter)' : '(глобальный провайдер)'}
+                </span>
+              </Label>
               <Input
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
-                placeholder="provider/model-name"
+                placeholder={botProvider === 'ollama' ? 'llama3.2' : 'provider/model-name'}
                 list="model-suggestions"
               />
               <datalist id="model-suggestions">
-                {MODEL_SUGGESTIONS.map((m) => <option key={m} value={m} />)}
+                {botProvider === 'ollama'
+                  ? ollamaModels.map((m) => <option key={m} value={m} />)
+                  : botProvider === 'mistral'
+                  ? MISTRAL_MODEL_SUGGESTIONS.map((m) => <option key={m} value={m} />)
+                  : CLOUD_MODEL_SUGGESTIONS.map((m) => <option key={m} value={m} />)
+                }
               </datalist>
+              {botProvider === 'ollama' && ollamaModels.length === 0 && (
+                <p className="text-[11px] text-muted-foreground">Ollama не доступна или нет загруженных моделей</p>
+              )}
             </div>
 
             <div className="space-y-2 mb-3">

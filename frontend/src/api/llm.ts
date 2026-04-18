@@ -7,10 +7,14 @@ function getAuthHeaders(): HeadersInit {
     : { 'Content-Type': 'application/json' };
 }
 
+export type LlmProvider = 'openrouter' | 'local' | 'mistral' | 'ollama';
+
 export interface LlmSettings {
+  provider: LlmProvider;
   useLocal: boolean;
   localBaseUrl: string;
   localModel: string | null;
+  ollamaBaseUrl: string;
 }
 
 export async function fetchLlmSettings(): Promise<LlmSettings> {
@@ -29,4 +33,11 @@ export async function updateLlmSettings(
   });
   if (!res.ok) throw new Error('Failed to update LLM settings');
   return res.json();
+}
+
+export async function fetchOllamaModels(): Promise<string[]> {
+  const res = await fetch(`${API_BASE}/models`, { headers: getAuthHeaders() });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.models ?? [];
 }

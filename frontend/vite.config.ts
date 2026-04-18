@@ -11,6 +11,8 @@ export default defineConfig({
     },
   },
   server: {
+    host: true, // или '0.0.0.0' — разрешает доступ по сети
+    port: 5173, // порт, на котором будет работать сервер
     proxy: {
       '/api': {
         target: 'http://localhost:3000',

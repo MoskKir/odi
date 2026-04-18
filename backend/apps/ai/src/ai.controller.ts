@@ -59,4 +59,9 @@ export class AiController {
   ) {
     return this.aiService.changeStrategy(data);
   }
+
+  @MessagePattern(KAFKA_TOPICS.AI.OLLAMA_MODELS)
+  async getOllamaModels() {
+    return this.aiService.getOllamaModels();
+  }
 }

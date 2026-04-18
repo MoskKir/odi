@@ -32,6 +32,9 @@ export class BotConfigEntity {
   @Column()
   model: string;
 
+  @Column({ type: 'varchar', nullable: true })
+  provider: string | null;
+
   @Column({ default: true })
   enabled: boolean;
 

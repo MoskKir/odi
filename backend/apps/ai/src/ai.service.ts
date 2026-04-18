@@ -180,6 +180,7 @@ export class AiService implements OnModuleInit {
         temperature: Number(botConfig.temperature) || 0.7,
         maxTokens: botConfig.maxTokens || 4096,
         signal: abortController.signal,
+        providerOverride: botConfig.provider as any ?? undefined,
       });
 
       for await (const chunk of stream) {
@@ -376,6 +377,7 @@ export class AiService implements OnModuleInit {
         temperature: Number(botConfig.temperature) || 0.7,
         maxTokens: botConfig.maxTokens || 4096,
         signal: abortController.signal,
+        providerOverride: botConfig.provider as any ?? undefined,
       });
 
       for await (const chunk of stream) {
@@ -469,6 +471,7 @@ export class AiService implements OnModuleInit {
     model: string;
     temperature: number;
     maxTokens: number;
+    provider?: string;
   }) {
     // Deduplicate: hash the message content + room to detect Kafka re-delivery
     const lastMsg = data.messages?.[data.messages.length - 1]?.content || '';
@@ -510,13 +513,14 @@ export class AiService implements OnModuleInit {
         })),
       ];
 
-      // Stream from OpenRouter
+      // Stream from LLM provider
       let fullText = '';
       const stream = this.openRouterService.completeStream({
         model: data.model,
         messages,
         temperature: Number(data.temperature) || 0.7,
         maxTokens: Number(data.maxTokens) || 4096,
+        providerOverride: data.provider as any ?? undefined,
       });
 
       for await (const chunk of stream) {
@@ -604,6 +608,10 @@ export class AiService implements OnModuleInit {
       }
     }
     return { ok: true };
+  }
+
+  async getOllamaModels(): Promise<string[]> {
+    return this.openRouterService.fetchOllamaModels();
   }
 
   async changeStrategy(data: { botConfigId: string; strategy: string }) {

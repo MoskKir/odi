@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Spinner } from '@/components/ui/spinner'
+import { Label } from '@/components/ui/label'
 import {
   Popover,
   PopoverTrigger,
@@ -27,6 +28,7 @@ import {
   MessageSquare,
   Thermometer,
   Maximize,
+  Layers,
 } from 'lucide-react'
 import { fetchBots, createBot, deleteBot, updateBot, type BotResponse } from '@/api/bots'
 import { success, error as toastError } from '@/utils/toaster'
@@ -64,6 +66,9 @@ export function BotsPage() {
   const [toggling, setToggling] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<FilterTab>('all')
+  const [bulkProvider, setBulkProvider] = useState('')
+  const [bulkModel, setBulkModel] = useState('')
+  const [bulkApplying, setBulkApplying] = useState(false)
 
   const loadBots = useCallback(() => {
     let cancelled = false
@@ -85,6 +90,7 @@ export function BotsPage() {
     if (search.trim()) {
       const q = search.toLowerCase()
       list = list.filter((b) =>
+        b.id.toLowerCase().includes(q) ||
         b.name.toLowerCase().includes(q) ||
         b.specialistId.toLowerCase().includes(q) ||
         b.model.toLowerCase().includes(q) ||
@@ -128,6 +134,7 @@ export function BotsPage() {
         tag: bot.tag,
         temperature: bot.temperature ?? 0.7,
         maxTokens: bot.maxTokens ?? 4096,
+        provider: bot.provider,
       })
       setBots((prev) => [copy, ...prev])
       success('Бот дублирован')
@@ -151,6 +158,28 @@ export function BotsPage() {
     }
   }
 
+  const handleBulkApply = async () => {
+    if (!bulkProvider && !bulkModel.trim()) return
+    setBulkApplying(true)
+    const patch: Record<string, any> = {}
+    if (bulkProvider) patch.provider = bulkProvider
+    if (bulkModel.trim()) patch.model = bulkModel.trim()
+    try {
+      const results = await Promise.allSettled(bots.map((b) => updateBot(b.id, patch)))
+      const updated = results.filter((r) => r.status === 'fulfilled').length
+      const failed = results.length - updated
+      setBots((prev) => prev.map((b, i) => {
+        const r = results[i]
+        return r.status === 'fulfilled' ? { ...b, ...patch } : b
+      }))
+      success(`Обновлено ${updated} из ${bots.length} ботов${failed ? ` (${failed} ошибок)` : ''}`)
+    } catch {
+      toastError('Ошибка при массовом обновлении')
+    } finally {
+      setBulkApplying(false)
+    }
+  }
+
   return (
     <div className="space-y-5">
       {/* Header */}
@@ -170,7 +199,7 @@ export function BotsPage() {
         <div className="relative w-64">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Поиск по имени, роли, модели..."
+            placeholder="Поиск по id, имени, роли, модели..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9 h-8 text-sm"
@@ -193,6 +222,62 @@ export function BotsPage() {
           })}
         </div>
       </div>
+
+      {/* Bulk update */}
+      <Card className="bg-card border-border shadow-none p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Layers className="h-4 w-4 text-muted-foreground" />
+          <Label className="text-sm font-semibold">Применить ко всем ботам ({bots.length})</Label>
+        </div>
+        <div className="flex items-end gap-3 flex-wrap">
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">Провайдер</Label>
+            <select
+              className="h-8 rounded-md border border-input bg-background px-3 text-sm min-w-[160px]"
+              value={bulkProvider}
+              onChange={(e) => setBulkProvider(e.target.value)}
+            >
+              <option value="">— не менять —</option>
+              <option value="openrouter">OpenRouter</option>
+              <option value="mistral">Mistral AI</option>
+              <option value="ollama">Ollama (локально)</option>
+              <option value="local">LM Studio (локально)</option>
+            </select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">Модель</Label>
+            <Input
+              className="h-8 text-sm w-64"
+              placeholder="Оставить пустым — не менять"
+              value={bulkModel}
+              onChange={(e) => setBulkModel(e.target.value)}
+            />
+          </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                size="sm"
+                disabled={bulkApplying || (!bulkProvider && !bulkModel.trim())}
+              >
+                {bulkApplying ? <Spinner size={14} /> : <Layers className="h-3.5 w-3.5 mr-1.5" />}
+                Применить
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto">
+              <p className="text-sm text-foreground mb-1">Обновить всех <strong>{bots.length}</strong> ботов?</p>
+              <p className="text-xs text-muted-foreground mb-3">
+                {[bulkProvider && `провайдер → ${bulkProvider}`, bulkModel.trim() && `модель → ${bulkModel.trim()}`].filter(Boolean).join(', ')}
+              </p>
+              <div className="flex gap-2 justify-end">
+                <Button size="sm" variant="ghost">Отмена</Button>
+                <Button size="sm" disabled={bulkApplying} onClick={handleBulkApply}>
+                  {bulkApplying ? <Spinner size={14} /> : 'Применить'}
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+      </Card>
 
       {/* Content */}
       {loading ? (

@@ -173,7 +173,7 @@ export function MasterChat() {
               <span className="font-medium text-foreground"><Bot className="h-3 w-3 inline mr-0.5" /> {botName}</span>
               <div className="text-foreground mt-0.5 break-words">
                 <Markdown>{stream.text}</Markdown>
-                <span className="inline-block w-1 h-3 ml-0.5 bg-foreground animate-pulse rounded-sm align-text-bottom" />
+                {!stream.ended && <span className="inline-block w-1 h-3 ml-0.5 bg-foreground animate-pulse rounded-sm align-text-bottom" />}
               </div>
             </div>
           )

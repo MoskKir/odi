@@ -122,7 +122,7 @@ interface BotCardProps {
   isOnline: boolean
   totalMessages: number
   lastMessages: { id: string; text: string; timestamp: number; isEdited?: boolean }[]
-  activeStream: { streamId: string; botConfigId: string; text: string } | undefined
+  activeStream: { streamId: string; botConfigId: string; text: string; ended?: boolean } | undefined
   botReflections: Reflection[]
   activeReflectionStream: ReflectionStream | undefined
   sessionId: string
@@ -230,16 +230,18 @@ function BotCard({
         <TabsContent value="messages" className="mt-3">
           {activeStream && (
             <div className="mb-3 px-3 py-2 rounded-lg bg-accent border border-primary/20 animate-fade-in">
-              <div className="flex items-center gap-1.5 mb-1">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-foreground opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-foreground" />
-                </span>
-                <span className="text-[10px] font-medium text-primary uppercase tracking-wider">Генерирует ответ</span>
-              </div>
+              {!activeStream.ended && (
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-foreground opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-foreground" />
+                  </span>
+                  <span className="text-[10px] font-medium text-primary uppercase tracking-wider">Генерирует ответ</span>
+                </div>
+              )}
               <div className="text-sm text-foreground break-words leading-relaxed">
                 <Markdown>{activeStream.text}</Markdown>
-                <span className="inline-block w-1.5 h-4 ml-0.5 bg-foreground animate-pulse rounded-sm align-text-bottom" />
+                {!activeStream.ended && <span className="inline-block w-1.5 h-4 ml-0.5 bg-foreground animate-pulse rounded-sm align-text-bottom" />}
               </div>
             </div>
           )}

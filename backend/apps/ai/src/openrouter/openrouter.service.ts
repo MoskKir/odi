@@ -250,134 +250,169 @@ export class OpenRouterService {
     signal?: AbortSignal;
     providerOverride?: LlmProvider;
   }): AsyncGenerator<string, void, unknown> {
+    const MAX_CONTINUATIONS = 3;
+
     const cfg = await this.loadLlmConfig();
     const provider = params.providerOverride ?? cfg.provider;
     const client = this.getClientForProvider(provider, cfg);
     const model = this.getModelForProvider(provider, cfg, params.model);
 
-    const request: OpenRouterRequest & { stream: boolean } = {
-      model,
-      messages: params.messages,
-      temperature: params.temperature ?? 0.7,
-      max_tokens: params.maxTokens ?? 4096,
-      stream: true,
-    };
+    let currentMessages: OpenRouterMessage[] = [...params.messages];
+    let accumulated = '';
 
-    for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
-      try {
-        const response = await client.post(
-          '/chat/completions',
-          request,
-          {
-            responseType: 'stream',
-            timeout: 60000,
-            validateStatus: () => true, // don't throw on 4xx/5xx — we read the stream ourselves
-            signal: params.signal,
-          },
-        );
+    for (let pass = 0; pass <= MAX_CONTINUATIONS; pass++) {
+      const request: OpenRouterRequest & { stream: boolean } = {
+        model,
+        messages: currentMessages,
+        temperature: params.temperature ?? 0.7,
+        max_tokens: params.maxTokens ?? 4096,
+        stream: true,
+      };
 
-        // If non-2xx, read the error body from the stream
-        if (response.status >= 400) {
-          let errorBody = '';
-          for await (const chunk of response.data) {
-            errorBody += chunk.toString();
-          }
-          const err = new Error(
-            `LLM provider returned ${response.status}: ${errorBody}`,
-          ) as any;
-          err.httpStatus = response.status;
-          throw err;
-        }
+      let finishReason: string | null = null;
+      let passText = '';
 
-        // When abort signal fires, destroy the underlying stream immediately
-        if (params.signal) {
-          const nodeStream = response.data;
-          const onAbort = () => nodeStream.destroy();
-          params.signal.addEventListener('abort', onAbort, { once: true });
-        }
+      // Retry loop for network/server errors
+      for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
+        try {
+          const response = await client.post(
+            '/chat/completions',
+            request,
+            {
+              responseType: 'stream',
+              timeout: 60000,
+              validateStatus: () => true,
+              signal: params.signal,
+            },
+          );
 
-        let buffer = '';
-
-        for await (const rawChunk of response.data) {
-          if (params.signal?.aborted) return;
-          buffer += rawChunk.toString();
-
-          const lines = buffer.split('\n');
-          // Keep the last (possibly incomplete) line in buffer
-          buffer = lines.pop() || '';
-
-          for (const line of lines) {
-            const trimmed = line.trim();
-            if (!trimmed || !trimmed.startsWith('data: ')) continue;
-
-            const jsonStr = trimmed.slice(6);
-            if (jsonStr === '[DONE]') return;
-
-            try {
-              const chunk: OpenRouterStreamChunk = JSON.parse(jsonStr);
-              const content = chunk.choices?.[0]?.delta?.content;
-              if (content) {
-                yield content;
-              }
-            } catch {
-              // skip malformed chunks
+          if (response.status >= 400) {
+            let errorBody = '';
+            for await (const chunk of response.data) {
+              errorBody += chunk.toString();
             }
+            const err = new Error(
+              `LLM provider returned ${response.status}: ${errorBody}`,
+            ) as any;
+            err.httpStatus = response.status;
+            throw err;
           }
-        }
 
-        // Process any remaining data left in the buffer
-        if (buffer.trim()) {
-          const trimmed = buffer.trim();
-          if (trimmed.startsWith('data: ')) {
-            const jsonStr = trimmed.slice(6);
-            if (jsonStr !== '[DONE]') {
+          if (params.signal) {
+            const nodeStream = response.data;
+            const onAbort = () => nodeStream.destroy();
+            params.signal.addEventListener('abort', onAbort, { once: true });
+          }
+
+          let buffer = '';
+
+          for await (const rawChunk of response.data) {
+            if (params.signal?.aborted) return;
+            buffer += rawChunk.toString();
+
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
+
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (!trimmed || !trimmed.startsWith('data: ')) continue;
+
+              const jsonStr = trimmed.slice(6);
+              if (jsonStr === '[DONE]') break;
+
               try {
                 const chunk: OpenRouterStreamChunk = JSON.parse(jsonStr);
+                const fr = chunk.choices?.[0]?.finish_reason;
+                if (fr) finishReason = fr;
+
                 const content = chunk.choices?.[0]?.delta?.content;
                 if (content) {
                   yield content;
+                  passText += content;
                 }
               } catch {
-                // skip malformed chunk
+                // skip malformed chunks
               }
             }
           }
-        }
-        return;
-      } catch (err) {
-        const error = err as any;
-        const status = error.httpStatus ?? error.response?.status;
-        let detail = '';
-        try {
-          const respData = error.response?.data;
-          if (typeof respData === 'string') {
-            detail = respData;
-          } else if (respData && typeof respData.read !== 'function') {
-            detail = JSON.stringify(respData);
-          } else {
+
+          // Flush remaining buffer
+          if (buffer.trim()) {
+            const trimmed = buffer.trim();
+            if (trimmed.startsWith('data: ')) {
+              const jsonStr = trimmed.slice(6);
+              if (jsonStr !== '[DONE]') {
+                try {
+                  const chunk: OpenRouterStreamChunk = JSON.parse(jsonStr);
+                  const fr = chunk.choices?.[0]?.finish_reason;
+                  if (fr) finishReason = fr;
+
+                  const content = chunk.choices?.[0]?.delta?.content;
+                  if (content) {
+                    yield content;
+                    passText += content;
+                  }
+                } catch {
+                  // skip malformed chunk
+                }
+              }
+            }
+          }
+
+          break; // success — exit retry loop
+        } catch (err) {
+          const error = err as any;
+          const status = error.httpStatus ?? error.response?.status;
+          let detail = '';
+          try {
+            const respData = error.response?.data;
+            if (typeof respData === 'string') {
+              detail = respData;
+            } else if (respData && typeof respData.read !== 'function') {
+              detail = JSON.stringify(respData);
+            } else {
+              detail = `status=${status ?? 'unknown'}`;
+            }
+          } catch {
             detail = `status=${status ?? 'unknown'}`;
           }
-        } catch {
-          detail = `status=${status ?? 'unknown'}`;
-        }
-        this.logger.warn(
-          `LLM stream attempt ${attempt}/${this.maxRetries} failed: ${error.message} | ${detail}`,
-        );
-        this.logger.warn(
-          `Request was: model=${request.model}, messages=${request.messages.length}, temp=${request.temperature}`,
-        );
-
-        // Don't retry client errors (4xx) — they won't succeed on retry
-        if ((status && status >= 400 && status < 500) || attempt === this.maxRetries) {
-          throw new Error(
-            `LLM stream failed: ${error.message} | ${detail}`,
+          this.logger.warn(
+            `LLM stream attempt ${attempt}/${this.maxRetries} failed: ${error.message} | ${detail}`,
           );
-        }
+          this.logger.warn(
+            `Request was: model=${request.model}, messages=${request.messages.length}, pass=${pass}`,
+          );
 
-        await new Promise((resolve) =>
-          setTimeout(resolve, 1000 * attempt),
-        );
+          if ((status && status >= 400 && status < 500) || attempt === this.maxRetries) {
+            throw new Error(`LLM stream failed: ${error.message} | ${detail}`);
+          }
+
+          await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+        }
       }
+
+      accumulated += passText;
+
+      // Normal finish or abort
+      if (finishReason !== 'length') return;
+
+      // Hit token limit — try to continue
+      if (pass === MAX_CONTINUATIONS) {
+        this.logger.warn(
+          `Max continuations (${MAX_CONTINUATIONS}) reached for model ${model}, response may be incomplete`,
+        );
+        return;
+      }
+
+      this.logger.log(
+        `finish_reason=length on pass ${pass}, requesting continuation (accumulated ${accumulated.length} chars)`,
+      );
+
+      // Add partial response as assistant turn so the model continues from where it stopped
+      currentMessages = [
+        ...currentMessages,
+        { role: 'assistant', content: accumulated },
+      ];
     }
   }
 }

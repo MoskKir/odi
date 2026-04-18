@@ -5,7 +5,7 @@ import {
   Crown, Shield, LogIn, UserPlus, LayoutDashboard, MessageSquare,
   GitGraph, Eye, Terminal, Cpu,
 } from 'lucide-react'
-import { fetchLlmSettings, updateLlmSettings, type LlmSettings } from '@/api/llm'
+import { fetchLlmSettings, updateLlmSettings } from '@/api/llm'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'

@@ -60,7 +60,6 @@ export function PhaseTimer() {
 
   if (phases.length === 0) return null
 
-  const activeIndex = phases.findIndex((p) => p.status === 'active')
   const totalPhases = phases.length
   const doneCount = phases.filter((p) => p.status === 'done').length
 

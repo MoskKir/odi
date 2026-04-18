@@ -100,6 +100,7 @@ interface StreamingMessage {
   streamId: string
   botConfigId: string
   text: string
+  ended?: boolean
 }
 
 interface AppState {
@@ -269,8 +270,11 @@ export const appSlice = createSlice({
           text: stream.text,
           timestamp: Date.now(),
         })
+        delete state.streamingMessages[action.payload.streamId]
+      } else if (stream) {
+        // Normal end — keep text visible until addMessage replaces it with the saved message
+        stream.ended = true
       }
-      delete state.streamingMessages[action.payload.streamId]
     },
     /** Immediately stop all active streams on the frontend */
     stopAllStreams(state) {

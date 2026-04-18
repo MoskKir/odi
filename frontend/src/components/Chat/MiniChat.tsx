@@ -32,7 +32,7 @@ export function MiniChat() {
           <span className="text-foreground font-semibold">{stream.botConfigId}</span>
           <div className="text-foreground mt-0.5 break-words leading-relaxed">
             <Markdown>{stream.text}</Markdown>
-            <span className="inline-block w-1 h-3 ml-0.5 bg-foreground animate-pulse rounded-sm align-text-bottom" />
+            {!stream.ended && <span className="inline-block w-1 h-3 ml-0.5 bg-foreground animate-pulse rounded-sm align-text-bottom" />}
           </div>
         </div>
       ))}

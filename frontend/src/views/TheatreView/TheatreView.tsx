@@ -120,7 +120,7 @@ export function TheatreView() {
                 </div>
                 <div className="px-3.5 py-2.5 rounded-2xl rounded-bl-md text-sm leading-relaxed break-words bg-muted text-foreground">
                   <Markdown>{stream.text}</Markdown>
-                  <span className="inline-block w-1.5 h-4 ml-0.5 bg-foreground animate-pulse rounded-sm align-text-bottom" />
+                  {!stream.ended && <span className="inline-block w-1.5 h-4 ml-0.5 bg-foreground animate-pulse rounded-sm align-text-bottom" />}
                 </div>
               </div>
             </div>

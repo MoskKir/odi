@@ -31,7 +31,7 @@ export function MiniChat() {
         <div key={stream.streamId} className="text-xs px-2.5 py-2 rounded-md bg-background/50 border border-border">
           <span className="text-foreground font-semibold">{stream.botConfigId}</span>
           <div className="text-foreground mt-0.5 break-words leading-relaxed">
-            <Markdown>{stream.text}</Markdown>
+            {stream.ended ? <Markdown>{stream.text}</Markdown> : <span className="whitespace-pre-wrap">{stream.text}</span>}
             {!stream.ended && <span className="inline-block w-1 h-3 ml-0.5 bg-foreground animate-pulse rounded-sm align-text-bottom" />}
           </div>
         </div>

@@ -229,12 +229,27 @@ export const appSlice = createSlice({
       state.messages = action.payload
     },
     addMessage(state, action: PayloadAction<ChatMessage>) {
-      // If this message replaces a streaming message, remove the stream
-      const streamId = Object.keys(state.streamingMessages).find(
+      // Primary: match by exact text (stream accumulated same content as saved message)
+      let matchedStreamId = Object.keys(state.streamingMessages).find(
         (sid) => state.streamingMessages[sid].text === action.payload.text,
       )
-      if (streamId) {
-        delete state.streamingMessages[streamId]
+
+      // Fallback: if chunks were lost the texts differ — match by botConfigId via participantId
+      if (!matchedStreamId && action.payload.participantId) {
+        const participant = state.sessionParticipants.find(
+          (p) => p.id === action.payload.participantId,
+        )
+        if (participant?.botConfigId) {
+          matchedStreamId = Object.keys(state.streamingMessages).find(
+            (sid) =>
+              state.streamingMessages[sid].botConfigId === participant.botConfigId &&
+              state.streamingMessages[sid].ended,
+          )
+        }
+      }
+
+      if (matchedStreamId) {
+        delete state.streamingMessages[matchedStreamId]
       }
       state.messages.push(action.payload)
     },
@@ -274,6 +289,14 @@ export const appSlice = createSlice({
       } else if (stream) {
         // Normal end — keep text visible until addMessage replaces it with the saved message
         stream.ended = true
+      }
+    },
+    /** Remove ended streams — called on socket reconnect when history reloads */
+    clearEndedStreams(state) {
+      for (const sid of Object.keys(state.streamingMessages)) {
+        if (state.streamingMessages[sid].ended) {
+          delete state.streamingMessages[sid]
+        }
       }
     },
     /** Immediately stop all active streams on the frontend */
@@ -476,6 +499,7 @@ export const {
   toggleMasterHintsPanel,
   setMasterHintsPanelWidth,
   stopAllStreams,
+  clearEndedStreams,
   setEditingMessage,
   clearEditingMessage,
   setPendingMention,

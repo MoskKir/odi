@@ -1,9 +1,10 @@
 import { useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAppDispatch } from '@/store'
-import { setMessages, addMessage, editMessage, deleteMessage, setCards, addCard, updateCard, removeCard, updateSession, updatePhase, setSocketJoined, setSessionTitle, setScenarioInfo, setSessionBots, setSessionParticipants, setSessionBoardColumns, setSessionPhases, setInviteCode, startStream, appendStreamChunk, endStream } from '@/store/appSlice'
+import { setMessages, addMessage, editMessage, deleteMessage, setCards, addCard, updateCard, removeCard, updateSession, updatePhase, setSocketJoined, setSessionTitle, setScenarioInfo, setSessionBots, setSessionParticipants, setSessionBoardColumns, setSessionPhases, setInviteCode, startStream, appendStreamChunk, endStream, clearEndedStreams } from '@/store/appSlice'
 import { connectSocket, disconnectSocket } from '@/api/socket'
 import { fetchGame, fetchBoardCards } from '@/api/games'
+import { error as toastError } from '@/utils/toaster'
 import type { ChatMessage, BoardCard } from '@/types'
 
 interface ServerChatMessage {
@@ -54,7 +55,10 @@ export function useGameSocket() {
     const socket = connectSocket()
     let mounted = true
 
+    console.log(`[SOCKET] connectSocket() called | sessionId=${sessionId} socketId=${socket.id} connected=${socket.connected}`)
+
     const joinSession = async () => {
+      console.log(`[SOCKET] joinSession() | socketId=${socket.id} connected=${socket.connected} sessionId=${sessionId}`)
       socket.emit('session:join', { sessionId })
       const [history, game, cards] = await Promise.all([
         loadHistory(sessionId),
@@ -62,6 +66,7 @@ export function useGameSocket() {
         fetchBoardCards(sessionId).catch(() => []),
       ])
       if (mounted) {
+        dispatch(clearEndedStreams())
         dispatch(setMessages(history))
         dispatch(setCards(cards))
         if (game?.title) {
@@ -102,7 +107,20 @@ export function useGameSocket() {
       }
     }
 
+    socket.on('disconnect', (reason) => {
+      console.warn(`[SOCKET] disconnect event | reason=${reason} socketId=${socket.id}`)
+    })
+
+    socket.on('connect_error', (err) => {
+      console.error(`[SOCKET] connect_error | ${err.message}`)
+    })
+
+    socket.on('reconnect', (attempt) => {
+      console.log(`[SOCKET] reconnected after ${attempt} attempt(s) | socketId=${socket.id}`)
+    })
+
     socket.on('session:joined', () => {
+      console.log(`[SOCKET] session:joined | sessionId=${sessionId}`)
       if (mounted) dispatch(setSocketJoined(true))
     })
 
@@ -137,15 +155,53 @@ export function useGameSocket() {
     })
 
     socket.on('chat:stream-start', (data: { streamId: string; botConfigId: string }) => {
+      console.log(`[STREAM] chat:stream-start | streamId=${data.streamId} botConfigId=${data.botConfigId}`)
       if (mounted) dispatch(startStream({ streamId: data.streamId, botConfigId: data.botConfigId }))
     })
 
+    // Chunk batching: accumulate chunks for FLUSH_INTERVAL ms, then dispatch once.
+    // Reduces React re-renders from ~800 to ~50 per response.
+    const FLUSH_INTERVAL = 50
+    let chunkCounter: Record<string, number> = {}
+    const chunkBuffer: Record<string, string> = {}
+    let flushTimer: ReturnType<typeof setTimeout> | null = null
+
+    const flushBuffer = () => {
+      flushTimer = null
+      for (const streamId of Object.keys(chunkBuffer)) {
+        const content = chunkBuffer[streamId]
+        if (content && mounted) {
+          dispatch(appendStreamChunk({ streamId, content }))
+        }
+        delete chunkBuffer[streamId]
+      }
+    }
+
     socket.on('chat:stream-chunk', (data: { streamId: string; content: string }) => {
-      if (mounted) dispatch(appendStreamChunk({ streamId: data.streamId, content: data.content }))
+      if (!mounted) return
+      chunkCounter[data.streamId] = (chunkCounter[data.streamId] ?? 0) + 1
+      const n = chunkCounter[data.streamId]
+      if (n === 1 || n % 50 === 0) {
+        console.log(`[STREAM] chat:stream-chunk #${n} | streamId=${data.streamId} contentLen=${data.content.length}`)
+      }
+      chunkBuffer[data.streamId] = (chunkBuffer[data.streamId] ?? '') + data.content
+      if (!flushTimer) {
+        flushTimer = setTimeout(flushBuffer, FLUSH_INTERVAL)
+      }
     })
 
-    socket.on('chat:stream-end', (data: { streamId: string; stopped?: boolean }) => {
-      if (mounted) dispatch(endStream({ streamId: data.streamId, stopped: data.stopped }))
+    socket.on('chat:stream-end', (data: { streamId: string; stopped?: boolean; error?: string }) => {
+      // Flush any buffered chunks before marking stream as ended
+      if (flushTimer) {
+        clearTimeout(flushTimer)
+        flushBuffer()
+      }
+      const total = chunkCounter[data.streamId] ?? 0
+      console.log(`[STREAM] chat:stream-end | streamId=${data.streamId} totalChunks=${total} stopped=${data.stopped} error=${data.error}`)
+      delete chunkCounter[data.streamId]
+      if (!mounted) return
+      dispatch(endStream({ streamId: data.streamId, stopped: data.stopped }))
+      if (data.error) toastError(`Ошибка генерации: ${data.error}`)
     })
 
     socket.on('emotion:update', () => {})
@@ -163,10 +219,14 @@ export function useGameSocket() {
       }
     })
 
-    socket.on('connect', joinSession)
+    socket.on('connect', () => {
+      console.log(`[SOCKET] connect → joinSession | socketId=${socket.id}`)
+      joinSession()
+    })
 
     // Socket may already be connected (e.g. reconnect)
     if (socket.connected) {
+      console.log(`[SOCKET] already connected → joinSession immediately | socketId=${socket.id}`)
       joinSession()
     }
 

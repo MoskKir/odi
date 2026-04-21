@@ -44,7 +44,7 @@ export function TerminalView() {
           <span className="text-primary">[{stream.botConfigId}]</span>{' '}
           <span className="text-muted-foreground">bot:</span>{' '}
           <span className="text-foreground break-words">
-            <Markdown>{stream.text}</Markdown>
+            {stream.ended ? <Markdown>{stream.text}</Markdown> : <span className="whitespace-pre-wrap">{stream.text}</span>}
             {!stream.ended && <span className="animate-pulse">▌</span>}
           </span>
         </div>

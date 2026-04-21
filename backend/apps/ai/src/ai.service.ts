@@ -155,6 +155,7 @@ export class AiService implements OnModuleInit {
       });
 
       // Notify clients that streaming started
+      this.logger.log(`[STREAM] START emitting to Kafka | streamId=${streamId}`);
       await lastValueFrom(
         this.kafkaClient.emit(KAFKA_TOPICS.EVENTS.CHAT_STREAM, {
           sessionId: dto.sessionId,
@@ -164,44 +165,58 @@ export class AiService implements OnModuleInit {
         }),
       );
       streamStarted = true;
+      this.logger.log(`[STREAM] START confirmed by Kafka | streamId=${streamId}`);
 
       // Stream response from OpenRouter using bot's own model/params
+      const resolvedModel = botConfig.model || 'google/gemini-2.0-flash-001';
+      const resolvedTemperature = Number(botConfig.temperature) || 0.7;
+      const resolvedMaxTokens = botConfig.maxTokens || 4096;
+      const resolvedProvider = (botConfig.provider as any) ?? undefined;
+      this.logger.log(
+        `[BOT_CONFIG] name="${botConfig.name}" model=${resolvedModel} maxTokens=${resolvedMaxTokens} (db=${botConfig.maxTokens}) temperature=${resolvedTemperature} (db=${botConfig.temperature}) provider=${resolvedProvider ?? 'default'}`,
+      );
+
       const abortController = new AbortController();
       this.activeStreams.set(streamId, abortController);
-      // Track stream by session for stop-all
       if (!this.sessionStreams.has(dto.sessionId)) {
         this.sessionStreams.set(dto.sessionId, new Set());
       }
       this.sessionStreams.get(dto.sessionId)!.add(streamId);
 
       const stream = this.openRouterService.completeStream({
-        model: botConfig.model || 'google/gemini-2.0-flash-001',
+        model: resolvedModel,
         messages,
-        temperature: Number(botConfig.temperature) || 0.7,
-        maxTokens: botConfig.maxTokens || 4096,
+        temperature: resolvedTemperature,
+        maxTokens: resolvedMaxTokens,
         signal: abortController.signal,
-        providerOverride: botConfig.provider as any ?? undefined,
+        providerOverride: resolvedProvider,
       });
 
+      let chunkCount = 0;
       for await (const chunk of stream) {
         fullText += chunk;
+        chunkCount++;
 
-        // Emit each chunk for real-time display
-        await lastValueFrom(
-          this.kafkaClient.emit(KAFKA_TOPICS.EVENTS.CHAT_STREAM, {
-            sessionId: dto.sessionId,
-            botConfigId: dto.botConfigId,
-            streamId,
-            type: 'chunk',
-            content: chunk,
-          }),
-        );
+        if (chunkCount === 1) {
+          this.logger.log(`[STREAM] First chunk received | streamId=${streamId} len=${chunk.length}`);
+        }
+
+        // Emit each chunk fire-and-forget so we don't throttle the LLM stream
+        this.kafkaClient.emit(KAFKA_TOPICS.EVENTS.CHAT_STREAM, {
+          sessionId: dto.sessionId,
+          botConfigId: dto.botConfigId,
+          streamId,
+          type: 'chunk',
+          content: chunk,
+        }).subscribe({ error: (e) => this.logger.warn(`[STREAM] chunk emit error | streamId=${streamId} chunk=${chunkCount}: ${e.message}`) });
       }
 
+      this.logger.log(`[STREAM] LLM done | streamId=${streamId} chunks=${chunkCount} totalChars=${fullText.length}`);
       this.activeStreams.delete(streamId);
       this.sessionStreams.get(dto.sessionId)?.delete(streamId);
 
       // Notify clients that streaming ended
+      this.logger.log(`[STREAM] END emitting to Kafka | streamId=${streamId}`);
       await lastValueFrom(
         this.kafkaClient.emit(KAFKA_TOPICS.EVENTS.CHAT_STREAM, {
           sessionId: dto.sessionId,
@@ -210,9 +225,11 @@ export class AiService implements OnModuleInit {
           type: 'end',
         }),
       );
+      this.logger.log(`[STREAM] END confirmed by Kafka | streamId=${streamId}`);
 
       // Only save non-empty responses
       if (fullText.trim()) {
+        this.logger.log(`[STREAM] Saving message to DB | streamId=${streamId} chars=${fullText.length}`);
         await lastValueFrom(
           this.kafkaClient.emit(KAFKA_TOPICS.CHAT.SEND, {
             sessionId: dto.sessionId,
@@ -221,6 +238,7 @@ export class AiService implements OnModuleInit {
             isBot: true,
           }),
         );
+        this.logger.log(`[STREAM] Message saved to DB | streamId=${streamId}`);
       }
 
       return { text: fullText };
@@ -228,14 +246,29 @@ export class AiService implements OnModuleInit {
       this.activeStreams.delete(streamId);
       this.sessionStreams.get(dto.sessionId)?.delete(streamId);
 
-      // If aborted by user, gracefully end the stream without saving
       const isAborted = error.name === 'AbortError'
         || error.name === 'CanceledError'
         || error.code === 'ERR_CANCELED'
         || error.code === 'ERR_STREAM_PREMATURE_CLOSE'
         || (error.code === 'ERR_STREAM_DESTROYED');
+
+      this.logger.error(`[STREAM] CATCH | streamId=${streamId} isAborted=${isAborted} error=${error.name}:${error.message} fullTextLen=${fullText.length}`);
+
+      // Save whatever was generated so far (partial response is better than nothing)
+      if (fullText.trim()) {
+        this.logger.log(`[STREAM] Saving partial text to DB | streamId=${streamId} chars=${fullText.length}`);
+        await lastValueFrom(
+          this.kafkaClient.emit(KAFKA_TOPICS.CHAT.SEND, {
+            sessionId: dto.sessionId,
+            botConfigId: dto.botConfigId,
+            text: fullText,
+            isBot: true,
+          }),
+        ).catch((e) => this.logger.error(`[STREAM] Failed to save partial text: ${e.message}`));
+      }
+
       if (isAborted) {
-        this.logger.log(`Stream ${streamId} was stopped by user (${fullText.length} chars generated)`);
+        this.logger.log(`[STREAM] Aborted by user | streamId=${streamId} chars=${fullText.length}`);
 
         if (streamStarted) {
           await lastValueFrom(
@@ -382,15 +415,13 @@ export class AiService implements OnModuleInit {
 
       for await (const chunk of stream) {
         fullText += chunk;
-        await lastValueFrom(
-          this.kafkaClient.emit(KAFKA_TOPICS.EVENTS.REFLECTION_STREAM, {
-            sessionId: dto.sessionId,
-            botConfigId: dto.botConfigId,
-            streamId,
-            type: 'chunk',
-            content: chunk,
-          }),
-        );
+        this.kafkaClient.emit(KAFKA_TOPICS.EVENTS.REFLECTION_STREAM, {
+          sessionId: dto.sessionId,
+          botConfigId: dto.botConfigId,
+          streamId,
+          type: 'chunk',
+          content: chunk,
+        }).subscribe({ error: (e) => this.logger.warn(`reflection chunk emit error: ${e.message}`) });
       }
 
       this.activeStreams.delete(streamId);
@@ -427,6 +458,18 @@ export class AiService implements OnModuleInit {
         || error.code === 'ERR_CANCELED'
         || error.code === 'ERR_STREAM_PREMATURE_CLOSE'
         || error.code === 'ERR_STREAM_DESTROYED';
+
+      // Save partial reflection so it's not lost
+      if (fullText.trim()) {
+        await lastValueFrom(
+          this.kafkaClient.emit(KAFKA_TOPICS.REFLECTION.SAVE, {
+            sessionId: dto.sessionId,
+            botConfigId: dto.botConfigId,
+            prompt: dto.trigger,
+            text: fullText,
+          }),
+        ).catch(() => {});
+      }
 
       if (isAborted) {
         if (streamStarted) {
@@ -525,15 +568,13 @@ export class AiService implements OnModuleInit {
 
       for await (const chunk of stream) {
         fullText += chunk;
-        await lastValueFrom(
-          this.kafkaClient.emit(KAFKA_TOPICS.EVENTS.CHAT_STREAM, {
-            sessionId: data.roomId,
-            botConfigId: data.botId,
-            streamId,
-            type: 'chunk',
-            content: chunk,
-          }),
-        );
+        this.kafkaClient.emit(KAFKA_TOPICS.EVENTS.CHAT_STREAM, {
+          sessionId: data.roomId,
+          botConfigId: data.botId,
+          streamId,
+          type: 'chunk',
+          content: chunk,
+        }).subscribe({ error: (e) => this.logger.warn(`test chunk emit error: ${e.message}`) });
       }
 
       // Notify stream ended

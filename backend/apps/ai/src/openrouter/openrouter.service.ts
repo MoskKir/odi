@@ -250,7 +250,7 @@ export class OpenRouterService {
     signal?: AbortSignal;
     providerOverride?: LlmProvider;
   }): AsyncGenerator<string, void, unknown> {
-    const MAX_CONTINUATIONS = 3;
+    const MAX_CONTINUATIONS = 1;
 
     const cfg = await this.loadLlmConfig();
     const provider = params.providerOverride ?? cfg.provider;
@@ -383,11 +383,15 @@ export class OpenRouterService {
             `Request was: model=${request.model}, messages=${request.messages.length}, pass=${pass}`,
           );
 
-          if ((status && status >= 400 && status < 500) || attempt === this.maxRetries) {
+          // 429 is retryable (rate limit) — wait longer before retry
+          const isRateLimit = status === 429;
+          if ((status && status >= 400 && status < 500 && !isRateLimit) || attempt === this.maxRetries) {
             throw new Error(`LLM stream failed: ${error.message} | ${detail}`);
           }
 
-          await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+          const delay = isRateLimit ? 5000 * attempt : 1000 * attempt;
+          this.logger.log(`Retrying in ${delay}ms (attempt ${attempt}, status=${status})`);
+          await new Promise((resolve) => setTimeout(resolve, delay));
         }
       }
 
@@ -408,10 +412,16 @@ export class OpenRouterService {
         `finish_reason=length on pass ${pass}, requesting continuation (accumulated ${accumulated.length} chars)`,
       );
 
-      // Add partial response as assistant turn so the model continues from where it stopped
+      // Small pause between continuation passes to avoid rate limiting
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      // Add partial response as assistant turn + user "continue" prompt.
+      // Some providers (e.g. Mistral) require the last message to be user/tool —
+      // appending only an assistant message causes 400 "Expected last role User or Tool".
       currentMessages = [
         ...currentMessages,
         { role: 'assistant', content: accumulated },
+        { role: 'user', content: 'Продолжи с того места, где остановился. Не повторяй уже написанное.' },
       ];
     }
   }
